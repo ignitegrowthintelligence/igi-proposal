@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IGI Proposal Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.min.js"></script>
+<style>
+:root {
+  --cyan:       #00aebd;
+  --cyan-dark:  #008fa0;
+  --bg-nav:     #1a1a1a;
+  --bg-page:    #121212;
+  --bg-card:    #1e1e1e;
+  --bg-sec:     #2a2a2a;
+  --border:     #333;
+  --text:       #ffffff;
+  --text-muted: #888888;
+  --text-sec:   #51585c;
+  --green:      #75BE19;
+  --orange:     #ef9809;
+  --red:        #e53935;
+  --radius:     4px;
+}
+[data-theme="light"] {
+  --bg-page: #f5f5f5; --bg-card: #ffffff; --bg-sec: #e4e4e5;
+  --border: #cccccc; --text: #0a0a0a; --text-muted: #666666; --text-sec: #444444;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Roboto', sans-serif; background: var(--bg-page); color: var(--text); min-height: 100vh; }
+
+/* ── Nav ── */
+nav { background: var(--bg-nav); height: 52px; display: flex; align-items: center; padding: 0 24px; gap: 16px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--border); }
+.nav-logo { display: flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 15px; color: var(--text); text-decoration: none; }
+.nav-logo span { color: var(--cyan); }
+.nav-spacer { flex: 1; }
+.nav-btn { font-family: 'Inter', sans-serif; font-size: 13px; padding: 5px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: transparent; color: var(--text-muted); cursor: pointer; transition: color .15s, border-color .15s; }
+.nav-btn:hover, .nav-btn.active { color: var(--cyan); border-color: var(--cyan); }
+.nav-btn.primary { background: var(--cyan); color: #fff; border-color: var(--cyan); }
+.nav-btn.primary:hover { background: var(--cyan-dark); border-color: var(--cyan-dark); color: #fff; }
+
+/* ── Layout ── */
+#app { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+/* ── Home chooser ── */
+.home-hero { text-align: center; padding: 48px 0 32px; }
+.home-hero h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+.home-hero p { color: var(--text-muted); font-size: 15px; }
+.entry-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 32px; }
+.entry-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 28px 24px; cursor: pointer; transition: border-color .2s, transform .15s; text-align: left; }
+.entry-card:hover { border-color: var(--cyan); transform: translateY(-2px); }
+.entry-card .ec-icon { font-size: 28px; margin-bottom: 12px; }
+.entry-card h3 { font-size: 16px; font-weight: 500; margin-bottom: 6px; }
+.entry-card p { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+.entry-card .ec-badge { display: inline-block; margin-top: 12px; font-size: 11px; padding: 2px 8px; border-radius: 10px; background: var(--bg-sec); color: var(--text-muted); font-family: 'Inter', sans-serif; }
+
+/* ── Forms ── */
+.form-wrap { max-width: 680px; margin: 0 auto; }
+.form-header { margin-bottom: 28px; }
+.form-header h2 { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
+.form-header p { font-size: 13px; color: var(--text-muted); }
+.form-group { margin-bottom: 18px; }
+.form-group label { display: block; font-size: 13px; font-family: 'Inter', sans-serif; color: var(--text-muted); margin-bottom: 6px; }
+.form-group label span { color: var(--red); margin-left: 2px; }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+  color: var(--text); font-family: 'Roboto', sans-serif; font-size: 14px; padding: 9px 12px; outline: none; transition: border-color .15s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--cyan); }
+.form-group textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+.form-group select option { background: var(--bg-card); }
+.form-hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-actions { display: flex; gap: 12px; margin-top: 28px; }
+.btn { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; padding: 8px 20px; border-radius: var(--radius); border: none; cursor: pointer; transition: background .15s, opacity .15s; }
+.btn-primary { background: var(--cyan); color: #fff; }
+.btn-primary:hover { background: var(--cyan-dark); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+.btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+.btn-ghost:hover { color: var(--text); border-color: #555; }
+.btn-danger { background: var(--red); color: #fff; }
+
+/* Discovery sub-toggle */
+.sub-toggle { display: flex; gap: 0; margin-bottom: 24px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.sub-toggle button { flex: 1; padding: 9px 16px; background: transparent; border: none; color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 13px; cursor: pointer; transition: background .15s, color .15s; }
+.sub-toggle button.active { background: var(--cyan); color: #fff; }
+
+/* Tag input for competitors */
+.tag-input-wrap { display: flex; flex-wrap: wrap; gap: 6px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 10px; min-height: 40px; cursor: text; }
+.tag-input-wrap:focus-within { border-color: var(--cyan); }
+.tag { display: inline-flex; align-items: center; gap: 4px; background: var(--bg-sec); border-radius: 10px; padding: 2px 8px; font-size: 12px; }
+.tag button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; padding: 0; line-height: 1; }
+.tag-input { border: none; background: transparent; color: var(--text); font-size: 14px; outline: none; min-width: 120px; flex: 1; }
+
+/* Product multi-select */
+.multi-check { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+.multi-check label { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; padding: 4px; }
+.multi-check input[type="checkbox"] { accent-color: var(--cyan); }
+
+/* RFP upload */
+.dropzone { border: 2px dashed var(--border); border-radius: 8px; padding: 40px 24px; text-align: center; cursor: pointer; transition: border-color .2s, background .2s; }
+.dropzone:hover, .dropzone.dragging { border-color: var(--cyan); background: rgba(0,174,189,.05); }
+.dropzone p { color: var(--text-muted); font-size: 14px; margin-top: 8px; }
+.dropzone .dz-icon { font-size: 32px; }
+
+/* ── Generating state ── */
+.generating-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; gap: 20px; }
+.spinner { width: 48px; height: 48px; border: 3px solid var(--border); border-top-color: var(--cyan); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.generating-wrap h3 { font-size: 18px; font-weight: 500; }
+.generating-wrap p { font-size: 14px; color: var(--text-muted); text-align: center; max-width: 400px; line-height: 1.6; }
+.gen-steps { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.gen-step { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-muted); }
+.gen-step.done { color: var(--green); }
+.gen-step.active { color: var(--text); }
+
+/* ── Workspace ── */
+.workspace { display: grid; grid-template-columns: 1fr 360px; gap: 16px; align-items: start; }
+.workspace-left { display: flex; flex-direction: column; gap: 0; }
+.proposal-header { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px 8px 0 0; padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
+.proposal-header h2 { font-size: 17px; font-weight: 500; flex: 1; }
+.badge { display: inline-block; font-size: 11px; font-family: 'Inter', sans-serif; padding: 2px 8px; border-radius: 10px; }
+.badge-fresh { background: rgba(0,174,189,.15); color: var(--cyan); }
+.badge-discovery { background: rgba(117,190,25,.15); color: var(--green); }
+.badge-rfp { background: rgba(239,152,9,.15); color: var(--orange); }
+.badge-pass { background: rgba(117,190,25,.15); color: var(--green); }
+.badge-fail { background: rgba(229,57,53,.15); color: var(--red); }
+.badge-draft { background: var(--bg-sec); color: var(--text-muted); }
+
+/* Section cards */
+.section-card { background: var(--bg-card); border: 1px solid var(--border); border-top: none; }
+.section-card:last-child { border-radius: 0 0 8px 8px; }
+.section-header { display: flex; align-items: center; gap: 10px; padding: 12px 20px; cursor: pointer; user-select: none; }
+.section-header:hover { background: rgba(255,255,255,.03); }
+.section-num { font-size: 11px; color: var(--text-muted); font-family: 'Inter', sans-serif; width: 18px; }
+.section-title { font-size: 14px; font-weight: 500; flex: 1; }
+.section-confidence { font-size: 11px; font-family: 'Inter', sans-serif; padding: 1px 7px; border-radius: 10px; }
+.conf-confirmed { background: rgba(117,190,25,.12); color: var(--green); }
+.conf-generated { background: rgba(0,174,189,.12); color: var(--cyan); }
+.conf-validate   { background: rgba(239,152,9,.12); color: var(--orange); }
+.section-chevron { font-size: 10px; color: var(--text-muted); transition: transform .2s; }
+.section-card.open .section-chevron { transform: rotate(90deg); }
+.section-body { display: none; padding: 0 20px 20px; }
+.section-card.open .section-body { display: block; }
+.section-content { font-size: 14px; line-height: 1.7; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+.section-content p { margin-bottom: 10px; }
+.section-actions { display: flex; gap: 8px; margin-top: 14px; }
+.btn-sm { font-size: 12px; padding: 5px 12px; }
+.section-edit-area { width: 100%; background: var(--bg-sec); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 13px; font-family: 'Roboto', sans-serif; line-height: 1.6; padding: 10px 12px; resize: vertical; min-height: 120px; outline: none; margin-top: 10px; }
+.section-edit-area:focus { border-color: var(--cyan); }
+
+/* Products cards */
+.products-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.product-card { background: var(--bg-sec); border-radius: var(--radius); padding: 12px 14px; }
+.product-card h4 { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.product-cat  { font-size: 11px; color: var(--cyan); font-family: 'Inter', sans-serif; margin-bottom: 6px; }
+.product-card p { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+.product-card .product-benefit { margin-top: 4px; font-size: 12px; color: var(--green); }
+
+/* Case studies */
+.case-study-card { background: var(--bg-sec); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px; }
+.case-study-card h4 { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+.case-study-ind { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
+.case-study-row { display: flex; gap: 8px; font-size: 12px; margin-bottom: 3px; }
+.case-study-label { color: var(--text-muted); min-width: 64px; font-family: 'Inter', sans-serif; }
+.case-study-result { color: var(--green); }
+
+/* Why Ignite */
+.why-list { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.why-item { display: flex; gap: 12px; background: var(--bg-sec); border-radius: var(--radius); padding: 12px 14px; }
+.why-icon { font-size: 18px; flex-shrink: 0; }
+.why-text { font-size: 13px; line-height: 1.5; }
+
+/* Investment summary */
+.inv-narrative { font-size: 14px; line-height: 1.7; margin-bottom: 12px; }
+.inv-note { font-size: 12px; color: var(--text-muted); font-style: italic; padding: 10px 14px; background: var(--bg-sec); border-radius: var(--radius); }
+
+/* Workspace bottom bar */
+.workspace-bottom { display: flex; gap: 10px; padding: 16px 20px; background: var(--bg-card); border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; }
+
+/* ── Right panel: Chatbot ── */
+.workspace-right { position: sticky; top: 68px; display: flex; flex-direction: column; gap: 12px; }
+.panel-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; }
+.panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+.panel-header h3 { font-size: 14px; font-weight: 500; flex: 1; }
+.panel-header .panel-icon { font-size: 16px; }
+
+/* Chat */
+.chat-messages { height: 380px; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.chat-msg { max-width: 90%; }
+.chat-msg.user { align-self: flex-end; }
+.chat-msg.ai { align-self: flex-start; }
+.chat-bubble { padding: 9px 13px; border-radius: 12px; font-size: 13px; line-height: 1.55; }
+.chat-msg.user .chat-bubble { background: var(--cyan); color: #fff; border-radius: 12px 12px 2px 12px; }
+.chat-msg.ai .chat-bubble { background: var(--bg-sec); color: var(--text); border-radius: 12px 12px 12px 2px; }
+.chat-update-pill { font-size: 11px; margin-top: 5px; color: var(--cyan); cursor: pointer; font-family: 'Inter', sans-serif; }
+.chat-input-row { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--border); }
+.chat-input { flex: 1; background: var(--bg-sec); border: 1px solid var(--border); border-radius: 20px; padding: 7px 14px; color: var(--text); font-size: 13px; outline: none; font-family: 'Roboto', sans-serif; }
+.chat-input:focus { border-color: var(--cyan); }
+.chat-send { background: var(--cyan); border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; color: #fff; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .15s; }
+.chat-send:hover { background: var(--cyan-dark); }
+
+/* Tech Check panel */
+.tc-list { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; }
+.tc-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; }
+.tc-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+.tc-label { flex: 1; line-height: 1.4; }
+.tc-detail { font-size: 11px; color: var(--orange); margin-top: 2px; }
+
+/* ── Proposals Library ── */
+.library-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.library-header h2 { font-size: 20px; font-weight: 500; flex: 1; }
+.proposals-table { width: 100%; border-collapse: collapse; background: var(--bg-card); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+.proposals-table th { background: var(--bg-nav); text-align: left; padding: 10px 16px; font-size: 11px; font-family: 'Inter', sans-serif; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+.proposals-table td { padding: 13px 16px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+.proposals-table tr:last-child td { border-bottom: none; }
+.proposals-table tr:hover td { background: rgba(255,255,255,.02); cursor: pointer; }
+.outcome-win  { color: var(--green); font-weight: 500; }
+.outcome-loss { color: var(--red); }
+.outcome-pending { color: var(--text-muted); }
+
+/* ── Share / read-only view ── */
+.share-proposal { max-width: 820px; margin: 0 auto; }
+.share-cover { background: linear-gradient(135deg, #1a1a1a 0%, #0d2f35 100%); border-radius: 12px; padding: 48px 48px 40px; margin-bottom: 24px; position: relative; overflow: hidden; }
+.share-cover::before { content: ''; position: absolute; top: -60px; right: -60px; width: 240px; height: 240px; background: radial-gradient(circle, rgba(0,174,189,.25) 0%, transparent 70%); }
+.share-cover h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+.share-cover .cover-sub { font-size: 14px; color: rgba(255,255,255,.6); margin-bottom: 20px; }
+.share-cover .cover-meta { display: flex; gap: 24px; font-size: 13px; color: rgba(255,255,255,.7); }
+.share-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 28px 32px; margin-bottom: 16px; }
+.share-section h2 { font-size: 16px; font-weight: 600; color: var(--cyan); margin-bottom: 14px; text-transform: uppercase; letter-spacing: .06em; font-size: 12px; font-family: 'Inter', sans-serif; }
+.share-section .share-text { font-size: 14px; line-height: 1.75; color: var(--text); white-space: pre-wrap; }
+
+/* ── Tech Check modal ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.65); display: flex; align-items: center; justify-content: center; z-index: 200; }
+.modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 28px; max-width: 500px; width: 90%; }
+.modal-box h3 { font-size: 17px; font-weight: 500; margin-bottom: 16px; }
+.modal-checks { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.modal-check { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; background: var(--bg-sec); border-radius: var(--radius); }
+.modal-check .mc-icon { font-size: 16px; flex-shrink: 0; }
+.modal-check .mc-label { font-size: 13px; font-weight: 500; }
+.modal-check .mc-detail { font-size: 12px; color: var(--orange); margin-top: 2px; }
+
+/* Outcome modal */
+.outcome-radios { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.outcome-radio { display: none; }
+.outcome-label { padding: 7px 16px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; cursor: pointer; transition: border-color .15s, background .15s; }
+.outcome-radio:checked + .outcome-label { border-color: var(--cyan); background: rgba(0,174,189,.12); color: var(--cyan); }
+
+/* ── Print styles for PDF export ── */
+@media print {
+  nav, .workspace-right, .workspace-bottom, .section-actions, .proposal-header .badge, .nav-btn { display: none !important; }
+  body { background: #fff; color: #000; }
+  .workspace { display: block; }
+  .section-body { display: block !important; }
+  .section-header .section-chevron { display: none; }
+  .section-card { border: none; border-bottom: 1px solid #eee; page-break-inside: avoid; }
+  .section-content { color: #000; }
+}
+
+/* ── Misc ── */
+.empty-state { text-align: center; padding: 60px 24px; color: var(--text-muted); }
+.empty-state h3 { font-size: 16px; margin-bottom: 8px; color: var(--text); }
+.empty-state p { font-size: 14px; }
+.alert { padding: 10px 14px; border-radius: var(--radius); font-size: 13px; margin-bottom: 16px; }
+.alert-error { background: rgba(229,57,53,.12); border: 1px solid rgba(229,57,53,.3); color: #ff6b6b; }
+.alert-info  { background: rgba(0,174,189,.12); border: 1px solid rgba(0,174,189,.3); color: var(--cyan); }
+.divider { height: 1px; background: var(--border); margin: 24px 0; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="#" onclick="goHome()">IGI <span>Proposal</span></a>
+  <div class="nav-spacer"></div>
+  <button class="nav-btn" onclick="showLibrary()">📋 All Proposals</button>
+  <button class="nav-btn" id="btn-new" style="display:none" onclick="goHome()">+ New Proposal</button>
+  <button class="nav-btn" id="btn-save" style="display:none" onclick="saveProposal()">💾 Save</button>
+  <button class="nav-btn" id="btn-techcheck" style="display:none" onclick="runTechCheck()">✅ Tech Check</button>
+  <button class="nav-btn primary" id="btn-export" style="display:none" onclick="showExportMenu()">Export ▾</button>
+</nav>
+
+<div id="app"></div>
+
+<!-- Export dropdown -->
+<div id="export-menu" style="display:none;position:fixed;z-index:150;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:6px 0;min-width:160px;">
+  <div onclick="exportPDF()"  style="padding:9px 16px;font-size:13px;cursor:pointer;" onmouseover="this.style.background='var(--bg-sec)'" onmouseout="this.style.background=''">📄 Export PDF</div>
+  <div onclick="exportPPTX()" style="padding:9px 16px;font-size:13px;cursor:pointer;" onmouseover="this.style.background='var(--bg-sec)'" onmouseout="this.style.background=''">📊 Export PowerPoint</div>
+  <div onclick="copyShareLink()" style="padding:9px 16px;font-size:13px;cursor:pointer;" onmouseover="this.style.background='var(--bg-sec)'" onmouseout="this.style.background=''">🔗 Copy Share Link</div>
+</div>
+
+<!-- Modals -->
+<div id="modal-techcheck" class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box">
+    <h3>Tech Check</h3>
+    <div id="modal-checks" class="modal-checks"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-techcheck').style.display='none'">Close</button>
+      <button class="btn btn-primary btn-sm" id="btn-export-modal" onclick="closeModal();showExportMenu()">Export</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-outcome" class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box">
+    <h3>Record Outcome</h3>
+    <div class="outcome-radios">
+      <input type="radio" name="outcome" id="o-win" value="win" class="outcome-radio">
+      <label for="o-win" class="outcome-label">🏆 Won</label>
+      <input type="radio" name="outcome" id="o-loss" value="loss" class="outcome-radio">
+      <label for="o-loss" class="outcome-label">❌ Lost</label>
+      <input type="radio" name="outcome" id="o-nd" value="no_decision" class="outcome-radio">
+      <label for="o-nd" class="outcome-label">⏸️ No Decision</label>
+    </div>
+    <div class="form-group">
+      <label>Notes (optional)</label>
+      <textarea id="outcome-notes" placeholder="What happened? What did you learn?" style="min-height:80px;"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-outcome').style.display='none'">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="submitOutcome()">Save Outcome</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Config ────────────────────────────────────────────────────────────────────
+const INTEL_BASE   = 'https://generate-prospect-intel-337108570573.us-east1.run.app';
+const INTEL_SECRET = 'b1a61348a178ff44d87aed225e6d716dc9783a8da7110eaffd69ee650dfc2983'; // fill in before deploy
+
+// ─── State ────────────────────────────────────────────────────────────────────
+const S = {
+  view:            'home',      // home | form:fresh | form:discovery | form:rfp | generating | workspace | library | share
+  proposalContext: null,
+  sections:        null,
+  proposalId:      null,
+  isDirty:         false,
+  techCheck:       null,
+  chatMessages:    [],
+  chatPending:     false,
+  competitors:     [],
+  productSelections: [],
+  proposals:       [],
+  shareId:         null,        // for share view
+};
+
+// Category list (mirrors Supabase library)
+const CATEGORIES = [
+  'Auto Dealers','Auto Repair','Attorney/Legal','Banks/Financial','Carpet/Flooring',
+  'Casual Dining','Cleaning Services','Contractors/Builders','Dentists','Doctors/Clinics',
+  'Employment/Recruiting','Eye Care','Furniture Stores','Gambling/Casinos','Health/Fitness',
+  'Home Repair/Hardware','Hospital','Hotel/Resort','HVAC','Insurance','Lawn/Garden',
+  'Med Spa','Plumbing','Real Estate','Recreational Vehicle','Salons/Personal Care',
+  'Senior Living','University/College',
+];
+
+const TSI_PRODUCTS = [
+  'SEM (Paid Search)','SEO','Demand Gen','SPARK AI','Targeted Display & Video','Retargeting',
+  'CRM Matching / Look-Alike','Native Advertising','Social Display','Facebook/Instagram',
+  'FB Lead Gen','TikTok','LinkedIn','Nextdoor','Pinterest','Streaming TV (STV)',
+  'Audience Targeted STV','Hulu','YouTube TV','Geofencing','Addressable Geofencing',
+  'DOOH','Email Marketing','Programmatic Audio','YouTube TrueView','SSM / Sponsored Social Mentions',
+  'First Impression Site Takeover','Listen Live 2.0','Direct Match',
+  'Site GrowthEngine Program','Seasonal Spotlight Program','Brick & Mortar Booster Program',
+  'Brand Builder Pro Program','1:1 Marketing Program',
+];
+
+// ─── API ───────────────────────────────────────────────────────────────────────
+async function api(path, body, method = 'POST') {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json', 'X-IGI-Auth': INTEL_SECRET },
+  };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const r = await fetch(INTEL_BASE + path, opts);
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || 'API error ' + r.status);
+  return j;
+}
+
+async function apiGet(path) {
+  const r = await fetch(INTEL_BASE + path);
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || 'API error ' + r.status);
+  return j;
+}
+
+// ─── Navigation ───────────────────────────────────────────────────────────────
+function setView(v) {
+  S.view = v;
+  const isWorkspace = v === 'workspace';
+  const isHome      = v === 'home';
+  document.getElementById('btn-new').style.display      = isWorkspace ? '' : 'none';
+  document.getElementById('btn-save').style.display     = isWorkspace ? '' : 'none';
+  document.getElementById('btn-techcheck').style.display= isWorkspace ? '' : 'none';
+  document.getElementById('btn-export').style.display   = isWorkspace ? '' : 'none';
+  render();
+}
+
+function goHome()      { setView('home'); }
+function showLibrary() { loadLibrary(); setView('library'); }
+
+// Check for share link on load
+function checkShareLink() {
+  const hash = window.location.hash;
+  if (hash.startsWith('#share/')) {
+    S.shareId = hash.replace('#share/', '');
+    setView('share');
+    loadShare(S.shareId);
+  }
+}
+
+// ─── Main render ──────────────────────────────────────────────────────────────
+function render() {
+  const app = document.getElementById('app');
+  switch (S.view) {
+    case 'home':              app.innerHTML = renderHome();       break;
+    case 'form:fresh':        app.innerHTML = renderFormFresh();  attachFormFresh();  break;
+    case 'form:discovery':    app.innerHTML = renderFormDisc();   attachFormDisc();   break;
+    case 'form:rfp':          app.innerHTML = renderFormRFP();    attachFormRFP();    break;
+    case 'generating':        app.innerHTML = renderGenerating(); break;
+    case 'workspace':         app.innerHTML = renderWorkspace();  attachWorkspace();  break;
+    case 'library':           app.innerHTML = renderLibrary();    break;
+    case 'share':             app.innerHTML = renderShare();      break;
+    default:                  app.innerHTML = renderHome();
+  }
+}
+
+// ─── Home ─────────────────────────────────────────────────────────────────────
+function renderHome() {
+  return `
+<div style="max-width:960px;margin:0 auto;">
+  <div class="home-hero">
+    <h1>IGI Proposal Builder</h1>
+    <p>Build client-ready advertising proposals powered by IGI intelligence</p>
+  </div>
+  <div class="entry-cards">
+    <div class="entry-card" onclick="setView('form:fresh')">
+      <div class="ec-icon">✏️</div>
+      <h3>Start Fresh</h3>
+      <p>Build a proposal from scratch. Enter what you know about the client — IGI does the rest from category intelligence.</p>
+      <span class="ec-badge">No prior data needed</span>
+    </div>
+    <div class="entry-card" onclick="setView('form:discovery')">
+      <div class="ec-icon">🔍</div>
+      <h3>From Discovery</h3>
+      <p>Turn a Discovery Brief into a proposal — pull from IGI Discovery automatically, or fill in what you learned on the call.</p>
+      <span class="ec-badge">Richest output</span>
+    </div>
+    <div class="entry-card" onclick="setView('form:rfp')">
+      <div class="ec-icon">📄</div>
+      <h3>From RFP</h3>
+      <p>Upload or paste an RFP document. IGI parses the requirements and builds a compliant proposal response.</p>
+      <span class="ec-badge">For formal RFP responses</span>
+    </div>
+  </div>
+</div>`;
+}
+
+// ─── Form: Start Fresh ────────────────────────────────────────────────────────
+function renderFormFresh() {
+  const cats = CATEGORIES.map(c => `<option>${c}</option>`).join('');
+  return `
+<div class="form-wrap">
+  <div class="form-header">
+    <h2>✏️ Start Fresh</h2>
+    <p>Enter what you know. If you have a domain, IGI will enrich it automatically.</p>
+  </div>
+  <div id="form-error"></div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Client Name <span>*</span></label>
+      <input id="f-name" type="text" placeholder="e.g. Riverside HVAC" />
+    </div>
+    <div class="form-group">
+      <label>Website / Domain</label>
+      <input id="f-domain" type="text" placeholder="e.g. riversidehvac.com" />
+      <div class="form-hint">Optional — unlocks site enrichment, pixel detection, and Places data</div>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Market / City <span>*</span></label>
+      <input id="f-market" type="text" placeholder="e.g. Albany, NY" />
+    </div>
+    <div class="form-group">
+      <label>Category <span>*</span></label>
+      <select id="f-category"><option value="">Select category…</option>${cats}</select>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Your Name <span>*</span></label>
+      <input id="f-aename" type="text" placeholder="AE name" />
+    </div>
+    <div class="form-group">
+      <label>Your Email</label>
+      <input id="f-aeemail" type="email" placeholder="your@email.com" />
+    </div>
+  </div>
+  <div class="form-group">
+    <label>Notes for AI (optional)</label>
+    <textarea id="f-notes" placeholder="Anything you want the AI to know: what you've heard about this client, their situation, goals, upcoming events, etc."></textarea>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-ghost" onclick="goHome()">← Back</button>
+    <button class="btn btn-primary" id="btn-generate-fresh" onclick="submitFresh()">Generate Proposal →</button>
+  </div>
+</div>`;
+}
+
+function attachFormFresh() {
+  document.getElementById('f-name').focus();
+}
+
+function submitFresh() {
+  const name     = v('f-name');
+  const domain   = v('f-domain').replace(/^https?:\/\//,'').replace(/\/.*$/,'').trim();
+  const market   = v('f-market');
+  const category = v('f-category');
+  const aeName   = v('f-aename');
+  const aeEmail  = v('f-aeemail');
+  const notes    = v('f-notes');
+
+  if (!name || !market || !category || !aeName) {
+    showFormError('Please fill in all required fields.');
+    return;
+  }
+  generate({ entryPoint: 'fresh', clientName: name, domain, market, category, aeName, aeEmail, notes });
+}
+
+// ─── Form: Discovery ──────────────────────────────────────────────────────────
+let discSubMode = 'auto'; // 'auto' | 'manual'
+
+function renderFormDisc() {
+  const cats = CATEGORIES.map(c => `<option>${c}</option>`).join('');
+  const products = TSI_PRODUCTS.map((p,i) => `
+    <label><input type="checkbox" value="${p}" onchange="toggleProduct(this)"> ${p}</label>
+  `).join('');
+  return `
+<div class="form-wrap">
+  <div class="form-header">
+    <h2>🔍 From Discovery</h2>
+    <p>Build a proposal from what was learned in a discovery session.</p>
+  </div>
+  <div class="sub-toggle">
+    <button id="tab-auto" class="active" onclick="switchDiscTab('auto')">Pull from IGI Discovery</button>
+    <button id="tab-manual" onclick="switchDiscTab('manual')">Fill in what I learned</button>
+  </div>
+  <div id="form-error"></div>
+
+  <!-- Auto: link to brief -->
+  <div id="disc-auto">
+    <div class="alert alert-info" style="margin-bottom:20px;">If you ran IGI Discovery on this prospect, paste the discovery brief domain or ID below — IGI will pull the context automatically.</div>
+    <div class="form-group">
+      <label>Prospect Domain (from IGI Discovery) <span>*</span></label>
+      <input id="da-domain" type="text" placeholder="e.g. riverhvac.com" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Client Name <span>*</span></label>
+        <input id="da-name" type="text" placeholder="Business name" />
+      </div>
+      <div class="form-group">
+        <label>Market <span>*</span></label>
+        <input id="da-market" type="text" placeholder="City, State" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Your Name <span>*</span></label>
+        <input id="da-aename" type="text" />
+      </div>
+      <div class="form-group">
+        <label>Your Email</label>
+        <input id="da-aeemail" type="email" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Additional Notes</label>
+      <textarea id="da-notes" placeholder="Anything extra for the AI to consider"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="goHome()">← Back</button>
+      <button class="btn btn-primary" onclick="submitDiscAuto()">Generate Proposal →</button>
+    </div>
+  </div>
+
+  <!-- Manual: post-call form -->
+  <div id="disc-manual" style="display:none;">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Client Name <span>*</span></label>
+        <input id="dm-name" type="text" placeholder="Business name" />
+      </div>
+      <div class="form-group">
+        <label>Domain (optional)</label>
+        <input id="dm-domain" type="text" placeholder="website.com" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Market <span>*</span></label>
+        <input id="dm-market" type="text" placeholder="City, State" />
+      </div>
+      <div class="form-group">
+        <label>Category <span>*</span></label>
+        <select id="dm-category"><option value="">Select…</option>${cats}</select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Current Marketing Activity</label>
+      <textarea id="dm-current" placeholder="What are they currently running? Platforms, channels, rough spend level…"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Stated Goals</label>
+      <textarea id="dm-goals" placeholder="What did they say they're trying to achieve?"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Pain Points / Challenges</label>
+      <textarea id="dm-pain" placeholder="What's not working? What problems came up?"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Competitors They Mentioned</label>
+      <div class="tag-input-wrap" id="comp-wrap" onclick="document.getElementById('comp-input').focus()">
+        <input id="comp-input" class="tag-input" placeholder="Type name, press Enter" onkeydown="addCompetitor(event)" />
+      </div>
+      <div class="form-hint">Press Enter after each competitor name</div>
+    </div>
+    <div class="form-group">
+      <label>Budget Signal</label>
+      <select id="dm-budget">
+        <option value="">They didn't say / unknown</option>
+        <option>Under $2,500/month</option>
+        <option>$2,500–$5,000/month</option>
+        <option>$5,000–$10,000/month</option>
+        <option>$10,000–$20,000/month</option>
+        <option>$20,000+/month</option>
+        <option>Project-based (not monthly)</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Timeline / Urgency</label>
+        <textarea id="dm-timeline" placeholder="When do they need to move? Any deadlines?"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Decision Maker</label>
+        <input id="dm-decision" type="text" placeholder="Name / title — who makes the call?" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Key Objections Raised</label>
+      <textarea id="dm-objections" placeholder="What pushback or hesitation came up?"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Products / Solutions That Came Up</label>
+      <div class="multi-check">${products}</div>
+    </div>
+    <div class="form-group">
+      <label>Additional Notes</label>
+      <textarea id="dm-notes" placeholder="Anything else the AI should know going into the proposal"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Your Name <span>*</span></label>
+        <input id="dm-aename" type="text" />
+      </div>
+      <div class="form-group">
+        <label>Your Email</label>
+        <input id="dm-aeemail" type="email" />
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="goHome()">← Back</button>
+      <button class="btn btn-primary" onclick="submitDiscManual()">Generate Proposal →</button>
+    </div>
+  </div>
+</div>`;
+}
+
+function attachFormDisc() {
+  renderCompetitorTags();
+}
+
+function switchDiscTab(mode) {
+  discSubMode = mode;
+  document.getElementById('tab-auto').classList.toggle('active', mode === 'auto');
+  document.getElementById('tab-manual').classList.toggle('active', mode === 'manual');
+  document.getElementById('disc-auto').style.display   = mode === 'auto'   ? '' : 'none';
+  document.getElementById('disc-manual').style.display = mode === 'manual' ? '' : 'none';
+}
+
+function addCompetitor(e) {
+  if (e.key !== 'Enter') return;
+  const inp = document.getElementById('comp-input');
+  const val = inp.value.trim();
+  if (val && !S.competitors.includes(val)) {
+    S.competitors.push(val);
+    renderCompetitorTags();
+  }
+  inp.value = '';
+  e.preventDefault();
+}
+
+function removeCompetitor(name) {
+  S.competitors = S.competitors.filter(c => c !== name);
+  renderCompetitorTags();
+}
+
+function renderCompetitorTags() {
+  const wrap = document.getElementById('comp-wrap');
+  if (!wrap) return;
+  const inp = document.getElementById('comp-input');
+  wrap.innerHTML = '';
+  S.competitors.forEach(c => {
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.innerHTML = c + ' <button onclick="removeCompetitor(\'' + c + '\')">×</button>';
+    wrap.appendChild(tag);
+  });
+  wrap.appendChild(inp);
+}
+
+function toggleProduct(cb) {
+  if (cb.checked) { if (!S.productSelections.includes(cb.value)) S.productSelections.push(cb.value); }
+  else { S.productSelections = S.productSelections.filter(p => p !== cb.value); }
+}
+
+async function submitDiscAuto() {
+  const domain = v('da-domain').replace(/^https?:\/\//,'').replace(/\/.*$/,'').trim();
+  const name   = v('da-name');
+  const market = v('da-market');
+  const aeName = v('da-aename');
+  if (!domain || !name || !market || !aeName) { showFormError('Please fill all required fields.'); return; }
+
+  // Fetch the discovery brief from Intel Engine
+  setView('generating');
+  updateGenStep(0, 'Fetching Discovery Brief…');
+  let discoveryBrief = null;
+  try {
+    discoveryBrief = await api('/discovery/brief', { domain, market, aeName });
+  } catch (e) {
+    console.warn('Discovery brief fetch failed, proceeding without:', e.message);
+  }
+
+  generate({
+    entryPoint: 'discovery_auto', clientName: name, domain, market,
+    aeName, aeEmail: v('da-aeemail'), notes: v('da-notes'), discoveryBrief,
+  });
+}
+
+function submitDiscManual() {
+  const name   = v('dm-name');
+  const market = v('dm-market');
+  const cat    = v('dm-category');
+  const aeName = v('dm-aename');
+  if (!name || !market || !cat || !aeName) { showFormError('Please fill all required fields.'); return; }
+
+  const manualDiscovery = {
+    currentMarketing:  v('dm-current'),
+    statedGoals:       v('dm-goals'),
+    painPoints:        v('dm-pain'),
+    competitors:       S.competitors,
+    budget:            v('dm-budget'),
+    timeline:          v('dm-timeline'),
+    decisionMaker:     v('dm-decision'),
+    objections:        v('dm-objections'),
+    productsDiscussed: S.productSelections,
+    additionalNotes:   v('dm-notes'),
+  };
+
+  const domain = v('dm-domain').replace(/^https?:\/\//,'').replace(/\/.*$/,'').trim();
+  generate({
+    entryPoint: 'discovery_manual', clientName: name, domain, market,
+    category: cat, aeName, aeEmail: v('dm-aeemail'), manualDiscovery,
+  });
+}
+
+// ─── Form: RFP ────────────────────────────────────────────────────────────────
+function renderFormRFP() {
+  const cats = CATEGORIES.map(c => `<option>${c}</option>`).join('');
+  return `
+<div class="form-wrap">
+  <div class="form-header">
+    <h2>📄 From RFP</h2>
+    <p>Paste or upload the RFP document. IGI will parse requirements and build a compliant proposal response.</p>
+  </div>
+  <div id="form-error"></div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Client / Issuing Organization <span>*</span></label>
+      <input id="r-name" type="text" placeholder="e.g. City of Albany" />
+    </div>
+    <div class="form-group">
+      <label>Market <span>*</span></label>
+      <input id="r-market" type="text" placeholder="City, State" />
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Category (if known)</label>
+      <select id="r-category"><option value="">Select…</option>${cats}</select>
+    </div>
+    <div class="form-group">
+      <label>Domain (if known)</label>
+      <input id="r-domain" type="text" placeholder="website.com" />
+    </div>
+  </div>
+  <div class="form-group">
+    <div class="dropzone" id="rfp-drop" onclick="document.getElementById('rfp-file').click()">
+      <div class="dz-icon">📎</div>
+      <p>Drag & drop RFP file here, or click to upload</p>
+      <p style="font-size:12px;margin-top:4px;">Supports .txt, .pdf (text-based)</p>
+      <input type="file" id="rfp-file" style="display:none" accept=".txt,.pdf" onchange="handleRFPFile(event)" />
+    </div>
+  </div>
+  <div class="form-group">
+    <label>Or paste RFP text directly <span>*</span></label>
+    <textarea id="r-rfp-text" placeholder="Paste the full RFP document text here…" style="min-height:200px;font-family:monospace;font-size:12px;"></textarea>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Your Name <span>*</span></label>
+      <input id="r-aename" type="text" />
+    </div>
+    <div class="form-group">
+      <label>Your Email</label>
+      <input id="r-aeemail" type="email" />
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-ghost" onclick="goHome()">← Back</button>
+    <button class="btn btn-primary" onclick="submitRFP()">Generate Proposal →</button>
+  </div>
+</div>`;
+}
+
+function attachFormRFP() {
+  const drop = document.getElementById('rfp-drop');
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('dragging'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('dragging'));
+  drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('dragging'); handleRFPFile({ target: { files: e.dataTransfer.files } }); });
+}
+
+function handleRFPFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('r-rfp-text').value = ev.target.result;
+  };
+  reader.readAsText(file);
+}
+
+function submitRFP() {
+  const name    = v('r-name');
+  const market  = v('r-market');
+  const rfpText = v('r-rfp-text');
+  const aeName  = v('r-aename');
+  const domain  = v('r-domain').replace(/^https?:\/\//,'').replace(/\/.*$/,'').trim();
+  if (!name || !market || !rfpText || !aeName) { showFormError('Please fill all required fields and paste the RFP text.'); return; }
+  generate({
+    entryPoint: 'rfp', clientName: name, domain, market,
+    category: v('r-category'), aeName, aeEmail: v('r-aeemail'), rfpText,
+  });
+}
+
+// ─── Generate ──────────────────────────────────────────────────────────────────
+let genSteps = [];
+
+function renderGenerating() {
+  return `
+<div class="generating-wrap">
+  <div class="spinner"></div>
+  <h3>Building your proposal…</h3>
+  <p>IGI is gathering intelligence and generating all proposal sections. This takes about 30–60 seconds.</p>
+  <div class="gen-steps" id="gen-steps">
+    <div class="gen-step active" id="gstep-0">⬡ Assembling context…</div>
+    <div class="gen-step" id="gstep-1">⬡ Enriching with Intel Engine…</div>
+    <div class="gen-step" id="gstep-2">⬡ Loading Library intelligence…</div>
+    <div class="gen-step" id="gstep-3">⬡ Generating proposal sections…</div>
+    <div class="gen-step" id="gstep-4">⬡ Finalizing…</div>
+  </div>
+</div>`;
+}
+
+function updateGenStep(index, label) {
+  for (let i = 0; i < index; i++) {
+    const el = document.getElementById('gstep-' + i);
+    if (el) { el.className = 'gen-step done'; el.textContent = '✓ ' + el.textContent.replace(/^[⬡✓] /, ''); }
+  }
+  const el = document.getElementById('gstep-' + index);
+  if (el) { el.className = 'gen-step active'; if (label) el.textContent = '⬡ ' + label; }
+}
+
+async function generate(payload) {
+  S.chatMessages = [];
+  S.competitors  = [];
+  S.productSelections = [];
+  setView('generating');
+
+  setTimeout(() => updateGenStep(1, 'Enriching with Intel Engine…'), 1500);
+  setTimeout(() => updateGenStep(2, 'Loading Library intelligence…'), 4000);
+  setTimeout(() => updateGenStep(3, 'Generating proposal sections…'), 7000);
+
+  try {
+    const result = await api('/proposal/generate', payload);
+    updateGenStep(4, 'Done!');
+    S.proposalContext = result.proposalContext;
+    S.sections        = result.sections;
+    S.proposalId      = null;
+    S.isDirty         = true;
+    S.techCheck       = null;
+    setTimeout(() => setView('workspace'), 400);
+  } catch (err) {
+    document.getElementById('app').innerHTML = `
+      <div class="form-wrap" style="margin-top:40px;">
+        <div class="alert alert-error">Generation failed: ${err.message}</div>
+        <button class="btn btn-ghost" onclick="goHome()">← Back to Home</button>
+      </div>`;
+  }
+}
+
+// ─── Workspace ────────────────────────────────────────────────────────────────
+const SECTION_DEFS = [
+  { key: 'executiveSummary',    label: 'Executive Summary',     icon: '📋', type: 'text' },
+  { key: 'aboutTheMarket',      label: 'About the Market',      icon: '🗺️',  type: 'text' },
+  { key: 'theOpportunity',      label: 'The Opportunity',       icon: '🎯',  type: 'text' },
+  { key: 'ourStrategy',         label: 'Our Strategy',          icon: '📐',  type: 'text' },
+  { key: 'productsAndSolutions',label: 'Products & Solutions',  icon: '⚡',  type: 'products' },
+  { key: 'audienceTargeting',   label: 'Audience Targeting',    icon: '👥',  type: 'text' },
+  { key: 'proofOfConcept',      label: 'Proof of Concept',      icon: '🏆',  type: 'casestudies' },
+  { key: 'investmentSummary',   label: 'Investment Summary',    icon: '💰',  type: 'investment' },
+  { key: 'whyIgnite',           label: 'Why Ignite',            icon: '🔥',  type: 'whyignite' },
+  { key: 'nextSteps',           label: 'Next Steps',            icon: '→',   type: 'text' },
+];
+
+function renderWorkspace() {
+  const ctx = S.proposalContext;
+  const c   = ctx.client;
+  const epLabel = { fresh: 'Start Fresh', discovery_auto: 'Discovery', discovery_manual: 'Discovery (Manual)', rfp: 'RFP' };
+  const epClass = { fresh: 'badge-fresh', discovery_auto: 'badge-discovery', discovery_manual: 'badge-discovery', rfp: 'badge-rfp' };
+
+  const sections = SECTION_DEFS.map((def, i) => renderSectionCard(def, i + 1)).join('');
+
+  return `
+<div class="workspace">
+  <div class="workspace-left">
+    <div class="proposal-header">
+      <div style="flex:1">
+        <h2>${esc(c.name)}</h2>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">${esc(c.market)}${c.category ? ' · ' + esc(c.category) : ''}</div>
+      </div>
+      <span class="badge ${epClass[ctx.entryPoint] || 'badge-draft'}">${epLabel[ctx.entryPoint] || ctx.entryPoint}</span>
+      ${S.techCheck ? `<span class="badge badge-${S.techCheck.status}">${S.techCheck.status === 'pass' ? '✓ Ready' : '⚠ Needs Review'}</span>` : ''}
+    </div>
+    ${sections}
+    <div class="workspace-bottom">
+      <button class="btn btn-ghost btn-sm" onclick="showOutcomeModal()">📊 Record Outcome</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-ghost btn-sm" onclick="runTechCheck()">✅ Tech Check</button>
+      <button class="btn btn-primary btn-sm" onclick="saveProposal()">💾 Save</button>
+    </div>
+  </div>
+
+  <div class="workspace-right">
+    <!-- AI Chatbot -->
+    <div class="panel-card">
+      <div class="panel-header">
+        <span class="panel-icon">🤖</span>
+        <h3>AI Assistant</h3>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-msg ai">
+          <div class="chat-bubble">Hi! I'm here to help you refine this proposal for ${esc(c.name)}. Ask me to rewrite any section, check RFP compliance, or improve specific language.</div>
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chat-input" placeholder="Ask me anything about this proposal…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){sendChat();event.preventDefault()}" />
+        <button class="chat-send" onclick="sendChat()">↑</button>
+      </div>
+    </div>
+
+    <!-- Tech Check summary -->
+    ${S.techCheck ? renderTechCheckPanel() : ''}
+  </div>
+</div>`;
+}
+
+function renderSectionCard(def, num) {
+  const content = S.sections ? S.sections[def.key] : null;
+  const hasValidate = content && JSON.stringify(content).includes('[Validate on Call]');
+  const confLabel   = hasValidate ? 'validate' : 'generated';
+  const confText    = { confirmed: 'Confirmed', generated: 'AI Generated', validate: 'Validate on Call' };
+  const confClass   = { confirmed: 'conf-confirmed', generated: 'conf-generated', validate: 'conf-validate' };
+
+  return `
+<div class="section-card" id="sc-${def.key}">
+  <div class="section-header" onclick="toggleSection('${def.key}')">
+    <span class="section-num">${num}</span>
+    <span style="margin-right:6px;">${def.icon}</span>
+    <span class="section-title">${def.label}</span>
+    <span class="section-confidence ${confClass[confLabel]}">${confText[confLabel]}</span>
+    <span class="section-chevron">▶</span>
+  </div>
+  <div class="section-body">
+    <div id="view-${def.key}">
+      ${renderSectionContent(def, content)}
+    </div>
+    <div id="edit-${def.key}" style="display:none">
+      <textarea class="section-edit-area" id="ta-${def.key}" rows="8">${editableText(def, content)}</textarea>
+    </div>
+    <div class="section-actions">
+      <button class="btn btn-ghost btn-sm" id="editbtn-${def.key}" onclick="toggleEdit('${def.key}', true)">✏️ Edit</button>
+      <button class="btn btn-ghost btn-sm" id="savebtn-${def.key}" style="display:none" onclick="saveEdit('${def.key}')">✓ Done</button>
+      <button class="btn btn-ghost btn-sm" onclick="regenSection('${def.key}')">↺ Regenerate</button>
+    </div>
+  </div>
+</div>`;
+}
+
+function renderSectionContent(def, content) {
+  if (!content) return '<p style="color:var(--text-muted);font-size:13px;">No content generated.</p>';
+
+  switch (def.type) {
+    case 'products':
+      if (!Array.isArray(content)) return `<div class="section-content">${esc(JSON.stringify(content, null, 2))}</div>`;
+      return `<div class="products-grid">${content.map(p => `
+        <div class="product-card">
+          <h4>${esc(p.productName || '')}</h4>
+          <div class="product-cat">${esc(p.category || '')}</div>
+          <p>${esc(p.rationale || '')}</p>
+          ${p.keyBenefit ? `<div class="product-benefit">✓ ${esc(p.keyBenefit)}</div>` : ''}
+        </div>`).join('')}</div>`;
+
+    case 'casestudies':
+      if (!Array.isArray(content)) return `<div class="section-content">${esc(JSON.stringify(content, null, 2))}</div>`;
+      return content.map(cs => `
+        <div class="case-study-card">
+          <h4>${esc(cs.clientName || '')}</h4>
+          <div class="case-study-ind">${esc(cs.industry || '')}</div>
+          <div class="case-study-row"><span class="case-study-label">Challenge:</span><span>${esc(cs.challenge || '')}</span></div>
+          <div class="case-study-row"><span class="case-study-label">Solution:</span><span>${esc(cs.solution || '')}</span></div>
+          <div class="case-study-row"><span class="case-study-label">Result:</span><span class="case-study-result">${esc(cs.result || '')}</span></div>
+        </div>`).join('');
+
+    case 'whyignite':
+      const icons = ['👥', '📊', '⚡'];
+      if (!Array.isArray(content)) return `<div class="section-content">${esc(String(content))}</div>`;
+      return `<div class="why-list">${content.map((item, i) => `
+        <div class="why-item">
+          <div class="why-icon">${icons[i] || '•'}</div>
+          <div class="why-text">${esc(item)}</div>
+        </div>`).join('')}</div>`;
+
+    case 'investment':
+      const inv = content || {};
+      return `
+        <div class="inv-narrative">${esc(inv.narrative || '')}</div>
+        <div class="inv-note">${esc(inv.investmentNote || 'Package details to be completed by your Ignite rep.')}</div>`;
+
+    default:
+      return `<div class="section-content">${esc(String(content)).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</div>`;
+  }
+}
+
+function editableText(def, content) {
+  if (!content) return '';
+  if (typeof content === 'string') return content;
+  return JSON.stringify(content, null, 2);
+}
+
+function toggleSection(key) {
+  const card = document.getElementById('sc-' + key);
+  if (card) card.classList.toggle('open');
+}
+
+function toggleEdit(key, editing) {
+  document.getElementById('view-' + key).style.display  = editing ? 'none' : '';
+  document.getElementById('edit-' + key).style.display  = editing ? '' : 'none';
+  document.getElementById('editbtn-' + key).style.display = editing ? 'none' : '';
+  document.getElementById('savebtn-' + key).style.display = editing ? '' : 'none';
+  if (editing) document.getElementById('ta-' + key).focus();
+}
+
+function saveEdit(key) {
+  const raw = document.getElementById('ta-' + key).value;
+  const def = SECTION_DEFS.find(d => d.key === key);
+  if (!def) return;
+  let parsed = raw;
+  if (def.type !== 'text') {
+    try { parsed = JSON.parse(raw); } catch { /* keep as string */ }
+  }
+  S.sections[key] = parsed;
+  S.isDirty = true;
+  // Re-render the view part
+  document.getElementById('view-' + key).innerHTML = renderSectionContent(def, S.sections[key]);
+  toggleEdit(key, false);
+}
+
+async function regenSection(key) {
+  const def = SECTION_DEFS.find(d => d.key === key);
+  if (!def) return;
+  const instruction = prompt('Optional: specific instruction for this section (leave blank for default regeneration)');
+  if (instruction === null) return; // cancelled
+  const card = document.getElementById('sc-' + key);
+  if (card) card.style.opacity = '.5';
+  try {
+    const result = await api('/proposal/section/regenerate', {
+      sectionKey: key,
+      proposalContext: S.proposalContext,
+      currentSections: S.sections,
+      instruction: instruction || '',
+    });
+    S.sections[key] = result.content;
+    S.isDirty = true;
+    document.getElementById('view-' + key).innerHTML = renderSectionContent(def, S.sections[key]);
+    document.getElementById('ta-' + key).value = editableText(def, S.sections[key]);
+  } catch (err) {
+    alert('Regeneration failed: ' + err.message);
+  } finally {
+    if (card) card.style.opacity = '1';
+  }
+}
+
+function attachWorkspace() {
+  // Open first section by default
+  const first = document.getElementById('sc-executiveSummary');
+  if (first) first.classList.add('open');
+}
+
+// ─── Chatbot ──────────────────────────────────────────────────────────────────
+async function sendChat() {
+  if (S.chatPending) return;
+  const inp = document.getElementById('chat-input');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  inp.value = '';
+
+  S.chatMessages.push({ role: 'user', content: msg });
+  S.chatPending = true;
+
+  const box = document.getElementById('chat-messages');
+  box.innerHTML += `<div class="chat-msg user"><div class="chat-bubble">${esc(msg)}</div></div>`;
+  box.innerHTML += `<div class="chat-msg ai" id="chat-pending"><div class="chat-bubble" style="color:var(--text-muted)">Thinking…</div></div>`;
+  box.scrollTop = box.scrollHeight;
+
+  try {
+    const result = await api('/proposal/chat', {
+      proposalContext: S.proposalContext,
+      sections: S.sections,
+      messages: S.chatMessages,
+    });
+
+    const pending = document.getElementById('chat-pending');
+    let html = `<div class="chat-bubble">${esc(result.response).replace(/\n/g, '<br>')}</div>`;
+
+    if (result.updateSection) {
+      const def = SECTION_DEFS.find(d => d.key === result.updateSection.key);
+      if (def) {
+        html += `<div class="chat-update-pill" onclick="applyUpdate('${result.updateSection.key}', ${JSON.stringify(result.updateSection.content)})">↑ Apply update to "${def.label}"</div>`;
+      }
+    }
+
+    if (pending) pending.innerHTML = html;
+    S.chatMessages.push({ role: 'assistant', content: result.response });
+    box.scrollTop = box.scrollHeight;
+  } catch (err) {
+    const pending = document.getElementById('chat-pending');
+    if (pending) pending.innerHTML = `<div class="chat-bubble" style="color:var(--red)">Error: ${esc(err.message)}</div>`;
+  } finally {
+    S.chatPending = false;
+  }
+}
+
+function applyUpdate(key, content) {
+  S.sections[key] = content;
+  S.isDirty = true;
+  const def = SECTION_DEFS.find(d => d.key === key);
+  const view = document.getElementById('view-' + key);
+  const ta   = document.getElementById('ta-' + key);
+  if (view && def) view.innerHTML = renderSectionContent(def, content);
+  if (ta) ta.value = editableText(def, content);
+  // Expand the updated section
+  const card = document.getElementById('sc-' + key);
+  if (card) card.classList.add('open');
+}
+
+// ─── Tech Check ───────────────────────────────────────────────────────────────
+async function runTechCheck() {
+  try {
+    const result = await api('/proposal/techcheck', {
+      sections: S.sections,
+      entryPoint: S.proposalContext?.entryPoint,
+    });
+    S.techCheck = result;
+    S.isDirty = true;
+
+    // Show modal
+    const checksHtml = result.checks.map(c => `
+      <div class="modal-check">
+        <div class="mc-icon">${c.pass ? '✅' : '❌'}</div>
+        <div>
+          <div class="mc-label">${esc(c.label)}</div>
+          ${c.detail ? `<div class="mc-detail">${esc(c.detail)}</div>` : ''}
+        </div>
+      </div>`).join('');
+
+    document.getElementById('modal-checks').innerHTML = checksHtml;
+    document.getElementById('btn-export-modal').disabled = result.status !== 'pass';
+    document.getElementById('btn-export-modal').style.opacity = result.status !== 'pass' ? '.4' : '1';
+    document.getElementById('modal-techcheck').style.display = '';
+
+    // Update proposal header badge
+    const ws = document.getElementById('app');
+    if (ws) render(); // re-render workspace with updated badge
+  } catch (err) {
+    alert('Tech Check error: ' + err.message);
+  }
+}
+
+function renderTechCheckPanel() {
+  const tc = S.techCheck;
+  if (!tc) return '';
+  const items = tc.checks.map(c => `
+    <div class="tc-item">
+      <div class="tc-icon">${c.pass ? '✅' : '❌'}</div>
+      <div>
+        <div class="tc-label">${esc(c.label)}</div>
+        ${c.detail ? `<div class="tc-detail">${esc(c.detail)}</div>` : ''}
+      </div>
+    </div>`).join('');
+  return `
+    <div class="panel-card">
+      <div class="panel-header">
+        <span class="panel-icon">${tc.status === 'pass' ? '✅' : '⚠️'}</span>
+        <h3>Tech Check — ${tc.status === 'pass' ? 'Ready to Export' : 'Needs Review'}</h3>
+      </div>
+      <div class="tc-list">${items}</div>
+    </div>`;
+}
+
+function closeModal() { document.getElementById('modal-techcheck').style.display = 'none'; }
+
+// ─── Save ────────────────────────────────────────────────────────────────────
+async function saveProposal() {
+  try {
+    const result = await api('/proposal/save', {
+      id: S.proposalId,
+      proposalContext: S.proposalContext,
+      sections: S.sections,
+      techCheck: S.techCheck,
+    });
+    S.proposalId = result.id;
+    S.isDirty    = false;
+    // Update URL hash for share link
+    window.location.hash = 'share/' + S.proposalId;
+    showToast('Proposal saved ✓');
+  } catch (err) {
+    alert('Save error: ' + err.message);
+  }
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:var(--green);color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;z-index:300;';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// ─── Export ───────────────────────────────────────────────────────────────────
+function showExportMenu() {
+  const btn  = document.getElementById('btn-export');
+  const menu = document.getElementById('export-menu');
+  const rect = btn.getBoundingClientRect();
+  menu.style.top   = rect.bottom + 4 + 'px';
+  menu.style.right = (window.innerWidth - rect.right) + 'px';
+  menu.style.display = '';
+  const close = () => { menu.style.display = 'none'; document.removeEventListener('click', close); };
+  setTimeout(() => document.addEventListener('click', close), 50);
+}
+
+function exportPDF() {
+  document.getElementById('export-menu').style.display = 'none';
+  // Open all sections for print
+  SECTION_DEFS.forEach(d => {
+    const card = document.getElementById('sc-' + d.key);
+    if (card) card.classList.add('open');
+  });
+  setTimeout(() => window.print(), 200);
+}
+
+function exportPPTX() {
+  document.getElementById('export-menu').style.display = 'none';
+  if (typeof PptxGenJS === 'undefined') { alert('PowerPoint library not loaded. Try refreshing the page.'); return; }
+
+  const prs  = new PptxGenJS();
+  const ctx  = S.proposalContext;
+  const c    = ctx.client;
+  const cyan = '00aebd';
+  const dark = '1a1a1a';
+  const white = 'FFFFFF';
+
+  prs.defineLayout({ name: 'PROPOSAL', width: 13.33, height: 7.5 });
+  prs.layout = 'PROPOSAL';
+
+  // Slide 1: Cover
+  const s1 = prs.addSlide();
+  s1.background = { color: dark };
+  s1.addText('IGNITE GROWTH INTELLIGENCE', { x: 0.5, y: 0.4, w: 12, h: 0.4, color: cyan, fontSize: 10, fontFace: 'Inter', bold: true, charSpacing: 3 });
+  s1.addText(c.name, { x: 0.5, y: 1.5, w: 12, h: 1.2, color: white, fontSize: 40, fontFace: 'Roboto', bold: true });
+  s1.addText('Digital Advertising Proposal', { x: 0.5, y: 2.9, w: 12, h: 0.5, color: 'AAAAAA', fontSize: 16, fontFace: 'Roboto' });
+  s1.addText(c.market + (c.category ? ' · ' + c.category : ''), { x: 0.5, y: 3.6, w: 12, h: 0.4, color: '666666', fontSize: 13, fontFace: 'Roboto' });
+  s1.addText('Prepared by ' + (c.aeName || 'Townsquare Ignite'), { x: 0.5, y: 6.8, w: 12, h: 0.3, color: '555555', fontSize: 11, fontFace: 'Roboto' });
+  s1.addShape(prs.ShapeType.rect, { x: 0.5, y: 4.2, w: 1.5, h: 0.04, fill: { color: cyan } });
+
+  // Slides for each section
+  SECTION_DEFS.forEach(def => {
+    const content = S.sections && S.sections[def.key];
+    if (!content) return;
+
+    const slide = prs.addSlide();
+    slide.background = { color: '121212' };
+
+    // Section label
+    slide.addText(def.label.toUpperCase(), { x: 0.5, y: 0.3, w: 12, h: 0.3, color: cyan, fontSize: 10, fontFace: 'Inter', bold: true, charSpacing: 3 });
+    slide.addShape(prs.ShapeType.rect, { x: 0.5, y: 0.65, w: 12.3, h: 0.02, fill: { color: '333333' } });
+
+    // Content
+    let bodyText = '';
+    if (typeof content === 'string') {
+      bodyText = content;
+    } else if (Array.isArray(content)) {
+      if (def.key === 'productsAndSolutions') {
+        bodyText = content.map(p => (p.productName || '') + ': ' + (p.rationale || '')).join('\n');
+      } else if (def.key === 'proofOfConcept') {
+        bodyText = content.map(cs => cs.clientName + ' (' + cs.industry + '): ' + cs.result).join('\n');
+      } else if (def.key === 'whyIgnite') {
+        bodyText = content.join('\n');
+      } else {
+        bodyText = content.join('\n');
+      }
+    } else if (def.key === 'investmentSummary') {
+      bodyText = (content.narrative || '') + '\n\n' + (content.investmentNote || '');
+    }
+
+    slide.addText(bodyText, {
+      x: 0.5, y: 0.9, w: 12.3, h: 6.2,
+      color: white, fontSize: 13, fontFace: 'Roboto',
+      valign: 'top', wrap: true, lineSpacingMultiple: 1.4,
+    });
+  });
+
+  prs.writeFile({ fileName: (c.name || 'IGI_Proposal').replace(/\s+/g, '_') + '_Proposal.pptx' });
+}
+
+function copyShareLink() {
+  document.getElementById('export-menu').style.display = 'none';
+  if (!S.proposalId) { alert('Save the proposal first to generate a share link.'); return; }
+  const url = window.location.origin + window.location.pathname + '#share/' + S.proposalId;
+  navigator.clipboard.writeText(url).then(() => showToast('Share link copied ✓'));
+}
+
+// ─── Proposals Library ────────────────────────────────────────────────────────
+async function loadLibrary() {
+  try {
+    const result = await api('/proposal/list', { limit: 50 });
+    S.proposals = result.proposals || [];
+  } catch (err) {
+    S.proposals = [];
+  }
+  if (S.view === 'library') render();
+}
+
+function renderLibrary() {
+  if (!S.proposals.length) {
+    return `
+<div>
+  <div class="library-header">
+    <h2>All Proposals</h2>
+    <button class="btn btn-primary btn-sm" onclick="goHome()">+ New Proposal</button>
+  </div>
+  <div class="empty-state">
+    <h3>No proposals yet</h3>
+    <p>Create your first proposal to get started.</p>
+  </div>
+</div>`;
+  }
+
+  const rows = S.proposals.map(p => {
+    const statusBadge = p.techCheck?.status === 'pass'
+      ? '<span class="badge badge-pass">Ready</span>'
+      : '<span class="badge badge-draft">Draft</span>';
+    const outcomeClass = { win: 'outcome-win', loss: 'outcome-loss', pending: 'outcome-pending', no_decision: 'outcome-pending' };
+    const outcomeLabel = { win: '🏆 Won', loss: '❌ Lost', pending: '—', no_decision: '⏸ No Decision' };
+    const outcome = p.outcome?.result || 'pending';
+    const typeLabel = { fresh: 'Start Fresh', discovery_auto: 'Discovery', discovery_manual: 'Discovery (Manual)', rfp: 'RFP' };
+    return `
+    <tr onclick="openProposal('${p.id}')">
+      <td><strong>${esc(p.client?.name || '—')}</strong><br><span style="font-size:12px;color:var(--text-muted)">${esc(p.client?.market || '')}</span></td>
+      <td>${esc(p.client?.category || '—')}</td>
+      <td><span style="font-size:12px;color:var(--text-muted)">${typeLabel[p.type] || p.type}</span></td>
+      <td>${statusBadge}</td>
+      <td class="${outcomeClass[outcome] || ''}">${outcomeLabel[outcome] || '—'}</td>
+      <td style="color:var(--text-muted);font-size:12px">${p.updatedAt ? p.updatedAt.slice(0, 10) : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  return `
+<div>
+  <div class="library-header">
+    <h2>All Proposals</h2>
+    <button class="btn btn-primary btn-sm" onclick="goHome()">+ New Proposal</button>
+  </div>
+  <table class="proposals-table">
+    <thead><tr>
+      <th>Client</th><th>Category</th><th>Type</th><th>Status</th><th>Outcome</th><th>Updated</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+</div>`;
+}
+
+async function openProposal(id) {
+  try {
+    const data = await apiGet('/proposal/' + id);
+    S.proposalContext = data.proposalContext;
+    S.sections        = data.sections;
+    S.proposalId      = data.id;
+    S.techCheck       = data.techCheck;
+    S.isDirty         = false;
+    S.chatMessages    = [];
+    setView('workspace');
+  } catch (err) {
+    alert('Could not load proposal: ' + err.message);
+  }
+}
+
+// ─── Share View ───────────────────────────────────────────────────────────────
+async function loadShare(id) {
+  try {
+    const data = await apiGet('/proposal/' + id);
+    S.proposalContext = data.proposalContext;
+    S.sections        = data.sections;
+    S.proposalId      = data.id;
+    render();
+  } catch (err) {
+    document.getElementById('app').innerHTML = `
+      <div class="empty-state" style="margin-top:60px;">
+        <h3>Proposal not found</h3>
+        <p>${esc(err.message)}</p>
+      </div>`;
+  }
+}
+
+function renderShare() {
+  if (!S.proposalContext || !S.sections) {
+    return `<div class="generating-wrap"><div class="spinner"></div><p>Loading proposal…</p></div>`;
+  }
+  const ctx = S.proposalContext;
+  const c   = ctx.client;
+  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const sectionHtml = SECTION_DEFS.map(def => {
+    const content = S.sections[def.key];
+    if (!content) return '';
+    return `
+    <div class="share-section">
+      <h2>${def.icon} ${def.label}</h2>
+      ${renderShareContent(def, content)}
+    </div>`;
+  }).join('');
+
+  return `
+<div class="share-proposal">
+  <div class="share-cover">
+    <h1>${esc(c.name)}</h1>
+    <div class="cover-sub">Digital Advertising Proposal</div>
+    <div class="cover-meta">
+      <span>📍 ${esc(c.market)}</span>
+      ${c.category ? `<span>🏷 ${esc(c.category)}</span>` : ''}
+      <span>📅 ${today}</span>
+      ${c.aeName ? `<span>👤 ${esc(c.aeName)}</span>` : ''}
+    </div>
+  </div>
+  ${sectionHtml}
+  <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:12px;">
+    Prepared by Townsquare Ignite · Powered by IGI Proposal Builder
+  </div>
+</div>`;
+}
+
+function renderShareContent(def, content) {
+  if (def.key === 'productsAndSolutions' && Array.isArray(content)) {
+    return content.map(p => `
+      <div class="share-text" style="padding:10px 0;border-bottom:1px solid var(--border)">
+        <strong>${esc(p.productName || '')}</strong> <span style="color:var(--cyan);font-size:12px">${esc(p.category || '')}</span><br>
+        ${esc(p.rationale || '')}<br>
+        ${p.keyBenefit ? `<span style="color:var(--green);font-size:13px">✓ ${esc(p.keyBenefit)}</span>` : ''}
+      </div>`).join('');
+  }
+  if (def.key === 'proofOfConcept' && Array.isArray(content)) {
+    return content.map(cs => `
+      <div style="padding:12px 0;border-bottom:1px solid var(--border)">
+        <strong class="share-text">${esc(cs.clientName || '')} · ${esc(cs.industry || '')}</strong>
+        <div class="share-text" style="margin-top:6px;font-size:13px;color:var(--text-muted)">Challenge: ${esc(cs.challenge || '')}</div>
+        <div class="share-text" style="font-size:13px;color:var(--text-muted)">Solution: ${esc(cs.solution || '')}</div>
+        <div class="share-text" style="font-size:13px;color:var(--green);margin-top:4px;">Result: ${esc(cs.result || '')}</div>
+      </div>`).join('');
+  }
+  if (def.key === 'whyIgnite' && Array.isArray(content)) {
+    const icons = ['👥', '📊', '⚡'];
+    return `<div>${content.map((item, i) => `
+      <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:20px">${icons[i] || '•'}</span>
+        <div class="share-text">${esc(item)}</div>
+      </div>`).join('')}</div>`;
+  }
+  if (def.key === 'investmentSummary') {
+    const inv = content || {};
+    return `<div class="share-text">${esc(inv.narrative || '')}</div>
+            <div style="margin-top:12px;padding:10px 14px;background:var(--bg-sec);border-radius:4px;font-size:13px;color:var(--text-muted);font-style:italic">${esc(inv.investmentNote || '')}</div>`;
+  }
+  return `<div class="share-text">${esc(String(content)).replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>')}</div>`;
+}
+
+// ─── Outcome modal ────────────────────────────────────────────────────────────
+function showOutcomeModal() {
+  document.getElementById('modal-outcome').style.display = '';
+}
+
+async function submitOutcome() {
+  if (!S.proposalId) { alert('Save the proposal first.'); return; }
+  const result = document.querySelector('input[name="outcome"]:checked')?.value;
+  if (!result) { alert('Select an outcome.'); return; }
+  const notes = document.getElementById('outcome-notes').value;
+  try {
+    await api('/proposal/outcome', { id: S.proposalId, result, notes });
+    document.getElementById('modal-outcome').style.display = 'none';
+    showToast('Outcome recorded ✓');
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+function v(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function esc(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function showFormError(msg) {
+  const el = document.getElementById('form-error');
+  if (el) { el.innerHTML = `<div class="alert alert-error">${esc(msg)}</div>`; el.scrollIntoView({ behavior: 'smooth' }); }
+}
+
+// ─── Boot ────────────────────────────────────────────────────────────────────
+checkShareLink();
+if (S.view === 'home') render();
+</script>
+</body>
+</html>
