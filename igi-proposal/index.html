@@ -351,8 +351,32 @@ const CATEGORIES = [
   'Employment/Recruiting','Eye Care','Furniture Stores','Gambling/Casinos','Health/Fitness',
   'Home Repair/Hardware','Hospital','Hotel/Resort','HVAC','Insurance','Lawn/Garden',
   'Med Spa','Plumbing','Real Estate','Recreational Vehicle','Salons/Personal Care',
-  'Senior Living','University/College',
+  'Senior Living','University/College','Other',
 ];
+
+function buildCategorySelect(id, withOtherField) {
+  const opts = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
+  const otherField = withOtherField ? `
+    <div class="form-group" id="${id}-other-wrap" style="display:none;margin-top:10px;">
+      <label>Describe the business type <span>*</span></label>
+      <input id="${id}-other-text" type="text" placeholder="e.g. Craft brewery, Tattoo studio, Indoor climbing gym…" />
+      <div class="form-hint">IGI will reason from first principles — no library benchmarks for custom categories, but site data and AI intelligence still apply.</div>
+    </div>` : '';
+  return `<select id="${id}" onchange="toggleOtherField('${id}')"><option value="">Select category…</option>${opts}</select>${otherField}`;
+}
+
+function toggleOtherField(selectId) {
+  const val  = document.getElementById(selectId)?.value;
+  const wrap = document.getElementById(selectId + '-other-wrap');
+  if (wrap) wrap.style.display = val === 'Other' ? '' : 'none';
+}
+
+function resolveCategory(selectId) {
+  const cat = v(selectId);
+  if (cat !== 'Other') return { category: cat, categoryDescription: null };
+  const desc = v(selectId + '-other-text').trim();
+  return { category: 'Other', categoryDescription: desc || null };
+}
 
 const TSI_PRODUCTS = [
   'SEM (Paid Search)','SEO','Demand Gen','SPARK AI','Targeted Display & Video','Retargeting',
@@ -369,7 +393,7 @@ const TSI_PRODUCTS = [
 async function api(path, body, method = 'POST') {
   const opts = {
     method,
-    headers: { 'Content-Type': 'application/json', 'X-IGI-Auth': INTEL_SECRET },
+    headers: { 'Content-Type': 'application/json', 'X-IGI-Auth': INTEL_SECRET, 'X-IGI-Source': 'proposal' },
   };
   if (body !== undefined) opts.body = JSON.stringify(body);
   const r = await fetch(INTEL_BASE + path, opts);
@@ -459,7 +483,6 @@ function renderHome() {
 
 // ─── Form: Start Fresh ────────────────────────────────────────────────────────
 function renderFormFresh() {
-  const cats = CATEGORIES.map(c => `<option>${c}</option>`).join('');
   return `
 <div class="form-wrap">
   <div class="form-header">
@@ -485,7 +508,7 @@ function renderFormFresh() {
     </div>
     <div class="form-group">
       <label>Category <span>*</span></label>
-      <select id="f-category"><option value="">Select category…</option>${cats}</select>
+      ${buildCategorySelect('f-category', true)}
     </div>
   </div>
   <div class="form-row">
@@ -514,26 +537,29 @@ function attachFormFresh() {
 }
 
 function submitFresh() {
-  const name     = v('f-name');
-  const domain   = v('f-domain').replace(/^https?:\/\//,'').replace(/\/.*$/,'').trim();
-  const market   = v('f-market');
-  const category = v('f-category');
-  const aeName   = v('f-aename');
-  const aeEmail  = v('f-aeemail');
-  const notes    = v('f-notes');
+  const name   = v('f-name');
+  const domain = v('f-domain').replace(/^https?:\/\//,'').replace(/\/.*$/,'').trim();
+  const market = v('f-market');
+  const aeName = v('f-aename');
+  const aeEmail= v('f-aeemail');
+  const notes  = v('f-notes');
+  const { category, categoryDescription } = resolveCategory('f-category');
 
   if (!name || !market || !category || !aeName) {
     showFormError('Please fill in all required fields.');
     return;
   }
-  generate({ entryPoint: 'fresh', clientName: name, domain, market, category, aeName, aeEmail, notes });
+  if (category === 'Other' && !categoryDescription) {
+    showFormError('Please describe the business type for "Other" category.');
+    return;
+  }
+  generate({ entryPoint: 'fresh', clientName: name, domain, market, category, categoryDescription, aeName, aeEmail, notes });
 }
 
 // ─── Form: Discovery ──────────────────────────────────────────────────────────
 let discSubMode = 'auto'; // 'auto' | 'manual'
 
 function renderFormDisc() {
-  const cats = CATEGORIES.map(c => `<option>${c}</option>`).join('');
   const products = TSI_PRODUCTS.map((p,i) => `
     <label><input type="checkbox" value="${p}" onchange="toggleProduct(this)"> ${p}</label>
   `).join('');
@@ -605,7 +631,7 @@ function renderFormDisc() {
       </div>
       <div class="form-group">
         <label>Category <span>*</span></label>
-        <select id="dm-category"><option value="">Select…</option>${cats}</select>
+        ${buildCategorySelect('dm-category', true)}
       </div>
     </div>
     <div class="form-group">
@@ -753,9 +779,10 @@ async function submitDiscAuto() {
 function submitDiscManual() {
   const name   = v('dm-name');
   const market = v('dm-market');
-  const cat    = v('dm-category');
   const aeName = v('dm-aename');
-  if (!name || !market || !cat || !aeName) { showFormError('Please fill all required fields.'); return; }
+  const { category, categoryDescription } = resolveCategory('dm-category');
+  if (!name || !market || !category || !aeName) { showFormError('Please fill all required fields.'); return; }
+  if (category === 'Other' && !categoryDescription) { showFormError('Please describe the business type for "Other" category.'); return; }
 
   const manualDiscovery = {
     currentMarketing:  v('dm-current'),
@@ -773,13 +800,12 @@ function submitDiscManual() {
   const domain = v('dm-domain').replace(/^https?:\/\//,'').replace(/\/.*$/,'').trim();
   generate({
     entryPoint: 'discovery_manual', clientName: name, domain, market,
-    category: cat, aeName, aeEmail: v('dm-aeemail'), manualDiscovery,
+    category, categoryDescription, aeName, aeEmail: v('dm-aeemail'), manualDiscovery,
   });
 }
 
 // ─── Form: RFP ────────────────────────────────────────────────────────────────
 function renderFormRFP() {
-  const cats = CATEGORIES.map(c => `<option>${c}</option>`).join('');
   return `
 <div class="form-wrap">
   <div class="form-header">
@@ -800,7 +826,7 @@ function renderFormRFP() {
   <div class="form-row">
     <div class="form-group">
       <label>Category (if known)</label>
-      <select id="r-category"><option value="">Select…</option>${cats}</select>
+      ${buildCategorySelect('r-category', true)}
     </div>
     <div class="form-group">
       <label>Domain (if known)</label>
@@ -859,10 +885,11 @@ function submitRFP() {
   const rfpText = v('r-rfp-text');
   const aeName  = v('r-aename');
   const domain  = v('r-domain').replace(/^https?:\/\//,'').replace(/\/.*$/,'').trim();
+  const { category, categoryDescription } = resolveCategory('r-category');
   if (!name || !market || !rfpText || !aeName) { showFormError('Please fill all required fields and paste the RFP text.'); return; }
   generate({
     entryPoint: 'rfp', clientName: name, domain, market,
-    category: v('r-category'), aeName, aeEmail: v('r-aeemail'), rfpText,
+    category, categoryDescription, aeName, aeEmail: v('r-aeemail'), rfpText,
   });
 }
 
@@ -1566,9 +1593,27 @@ function showFormError(msg) {
   if (el) { el.innerHTML = `<div class="alert alert-error">${esc(msg)}</div>`; el.scrollIntoView({ behavior: 'smooth' }); }
 }
 
-// ─── Boot ────────────────────────────────────────────────────────────────────
-checkShareLink();
-if (S.view === 'home') render();
+// ─── Expose all event handlers to window (needed for inline onclick in some browser contexts) ──
+Object.assign(window, {
+  goHome, showLibrary, setView, render,
+  runTechCheck, saveProposal, showExportMenu, closeModal,
+  exportPDF, exportPPTX, copyShareLink,
+  sendChat, applyUpdate,
+  toggleSection, toggleEdit, saveEdit, regenSection,
+  showOutcomeModal, submitOutcome,
+  switchDiscTab, addCompetitor, removeCompetitor, toggleProduct,
+  submitFresh, submitDiscAuto, submitDiscManual, submitRFP,
+  handleRFPFile, toggleOtherField,
+});
+
+// ─── Boot ────────────────────────────────────────────────────────────────────────────
+try {
+  checkShareLink();
+  if (S.view === 'home') render();
+} catch(e) {
+  console.error('[IGI Proposal] Boot error:', e);
+  document.getElementById('app').innerHTML = '<div class="empty-state" style="margin-top:60px;"><h3>Something went wrong</h3><p style="color:var(--red)">' + e.message + '</p></div>';
+}
 </script>
 </body>
 </html>
