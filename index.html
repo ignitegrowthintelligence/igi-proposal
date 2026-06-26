@@ -1560,4 +1560,43 @@ function showOutcomeModal() {
 
 async function submitOutcome() {
   if (!S.proposalId) { alert('Save the proposal first.'); return; }
-  const result = document.querySelector('input[name="outcome"]:checked')?.va
+  const result = document.querySelector('input[name="outcome"]:checked')?.value;
+  if (!result) { alert('Select an outcome.'); return; }
+  const notes = document.getElementById('outcome-notes').value;
+  try {
+    await api('/proposal/outcome', { id: S.proposalId, result, notes });
+    document.getElementById('modal-outcome').style.display = 'none';
+    showToast('Outcome recorded ✓');
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+function v(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function esc(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function showFormError(msg) {
+  const el = document.getElementById('form-error');
+  if (el) { el.innerHTML = `<div class="alert alert-error">${esc(msg)}</div>`; el.scrollIntoView({ behavior: 'smooth' }); }
+}
+
+// ─── Expose all event handlers to window (needed for inline onclick in some browser contexts) ──
+Object.assign(window, {
+  goHome, showLibrary, setView, render,
+  runTechCheck, saveProposal, showExportMenu, closeModal,
+  exportPDF, exportPPTX, copyShareLink,
+  sendChat, applyUpdate,
+  to
