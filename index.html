@@ -1599,4 +1599,21 @@ Object.assign(window, {
   runTechCheck, saveProposal, showExportMenu, closeModal,
   exportPDF, exportPPTX, copyShareLink,
   sendChat, applyUpdate,
-  to
+  toggleSection, toggleEdit, saveEdit, regenSection,
+  showOutcomeModal, submitOutcome,
+  switchDiscTab, addCompetitor, removeCompetitor, toggleProduct,
+  submitFresh, submitDiscAuto, submitDiscManual, submitRFP,
+  handleRFPFile, toggleOtherField,
+});
+
+// ─── Boot ────────────────────────────────────────────────────────────────────────────
+try {
+  checkShareLink();
+  if (S.view === 'home') render();
+} catch(e) {
+  console.error('[IGI Proposal] Boot error:', e);
+  document.getElementById('app').innerHTML = '<div class="empty-state" style="margin-top:60px;"><h3>Something went wrong</h3><p style="color:var(--red)">' + e.message + '</p></div>';
+}
+</script>
+</body>
+</html>
