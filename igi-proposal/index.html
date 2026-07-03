@@ -344,15 +344,24 @@ const S = {
   shareId:         null,        // for share view
 };
 
-// Category list (mirrors Supabase library)
+// Category list — FALLBACK ONLY. The canonical list is the Supabase categories table,
+// served by the Intel Engine at GET /library/categories and loaded below at startup (P2).
 const CATEGORIES = [
   'Auto Dealers','Auto Repair','Attorney/Legal','Banks/Financial','Carpet/Flooring',
   'Casual Dining','Cleaning Services','Contractors/Builders','Dentists','Doctors/Clinics',
-  'Employment/Recruiting','Eye Care','Furniture Stores','Gambling/Casinos','Health/Fitness',
+  'Employment/Recruiting','Eye Care','Farm/Equipment Dealer','Furniture Stores','Gambling/Casinos','Health/Fitness',
   'Home Repair/Hardware','Hospital','Hotel/Resort','HVAC','Insurance','Lawn/Garden',
   'Med Spa','Plumbing','Real Estate','Recreational Vehicle','Salons/Personal Care',
-  'Senior Living','University/College','Other',
+  'Self Storage','Senior Living','University/College','Other',
 ];
+// P2: sync with the canonical Library list ('Other' stays last — it's a UI concept, not a Library category).
+fetch(INTEL_BASE + '/library/categories').then(r => r.json()).then(j => {
+  if (j && Array.isArray(j.categories) && j.categories.length >= 20) {
+    CATEGORIES.length = 0;
+    j.categories.forEach(c => CATEGORIES.push(c));
+    CATEGORIES.push('Other');
+  }
+}).catch(() => {});
 
 function buildCategorySelect(id, withOtherField) {
   const opts = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -1220,6 +1229,7 @@ async function runTechCheck() {
     const result = await api('/proposal/techcheck', {
       sections: S.sections,
       entryPoint: S.proposalContext?.entryPoint,
+      rfpText: S.proposalContext?.rfpText || null,   // P5: RFP-coverage gate needs the source text
     });
     S.techCheck = result;
     S.isDirty = true;
