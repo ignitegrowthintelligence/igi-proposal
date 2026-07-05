@@ -326,7 +326,7 @@ nav { background: var(--bg-nav); height: 52px; display: flex; align-items: cente
 <script>
 // ─── Config ────────────────────────────────────────────────────────────────────
 const INTEL_BASE   = 'https://generate-prospect-intel-337108570573.us-east1.run.app';
-const INTEL_SECRET = 'b1a61348a178ff44d87aed225e6d716dc9783a8da7110eaffd69ee650dfc2983'; // fill in before deploy
+const INTEL_SECRET = '27f13a7fcad24e283421be25464d8517574212f93e605a6cf02fe40a415aec66'; // fill in before deploy
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const S = {
@@ -355,7 +355,7 @@ const CATEGORIES = [
   'Self Storage','Senior Living','University/College','Other',
 ];
 // P2: sync with the canonical Library list ('Other' stays last — it's a UI concept, not a Library category).
-fetch(INTEL_BASE + '/library/categories').then(r => r.json()).then(j => {
+fetch(INTEL_BASE + '/library/categories', { headers: { 'X-IGI-Auth': INTEL_SECRET } }).then(r => r.json()).then(j => {
   if (j && Array.isArray(j.categories) && j.categories.length >= 20) {
     CATEGORIES.length = 0;
     j.categories.forEach(c => CATEGORIES.push(c));
@@ -1626,7 +1626,7 @@ try {
 }
 </script>
   <!-- IGI Feedback Widget -->
-  <script>window.IGI_FEEDBACK_CONFIG = { tool: 'IGI Proposal', authToken: 'b1a61348a178ff44d87aed225e6d716dc9783a8da7110eaffd69ee650dfc2983' };</script>
+  <script>window.IGI_FEEDBACK_CONFIG = { tool: 'IGI Proposal', authToken: '27f13a7fcad24e283421be25464d8517574212f93e605a6cf02fe40a415aec66' };</script>
   <script src="https://ignitegrowthintelligence.github.io/igi-reignite-planner/igi-feedback.js"></script>
 </body>
 </html>
