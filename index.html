@@ -247,9 +247,22 @@ nav { background: var(--bg-nav); height: 52px; display: flex; align-items: cente
 .outcome-label { padding: 7px 16px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; cursor: pointer; transition: border-color .15s, background .15s; }
 .outcome-radio:checked + .outcome-label { border-color: var(--cyan); background: rgba(0,174,189,.12); color: var(--cyan); }
 
+/* ── Projected Outcomes (engine-computed budget model) ── */
+.bm-table { width: 100%; border-collapse: collapse; margin: 10px 0 4px; font-size: 13px; }
+.bm-table th { text-align: left; padding: 7px 10px; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--border); }
+.bm-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.bm-table tr.bm-rec td { background: rgba(0,174,189,.08); }
+.bm-table td:first-child { font-weight: 600; }
+.bm-tam { font-size: 14px; margin: 4px 0 10px; }
+.bm-tam strong { color: var(--cyan); font-size: 17px; }
+.bm-note { font-size: 12px; color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
+.bm-breakeven { font-size: 13px; color: var(--green); margin-top: 8px; }
+.bm-gap { font-size: 12px; border: 1px dashed var(--border); border-radius: var(--radius); padding: 8px 12px; margin-top: 10px; color: var(--text-muted); }
+
 /* ── Print styles for PDF export ── */
 @media print {
   nav, .workspace-right, .workspace-bottom, .section-actions, .proposal-header .badge, .nav-btn { display: none !important; }
+  .bm-gap { display: none !important; }
   body { background: #fff; color: #000; }
   .workspace { display: block; }
   .section-body { display: block !important; }
@@ -978,7 +991,9 @@ function renderWorkspace() {
   const epLabel = { fresh: 'Start Fresh', discovery_auto: 'Discovery', discovery_manual: 'Discovery (Manual)', rfp: 'RFP' };
   const epClass = { fresh: 'badge-fresh', discovery_auto: 'badge-discovery', discovery_manual: 'badge-discovery', rfp: 'badge-rfp' };
 
-  const sections = SECTION_DEFS.map((def, i) => renderSectionCard(def, i + 1)).join('');
+  const cards = SECTION_DEFS.map((def, i) => renderSectionCard(def, i + 1));
+  if (ctx.budgetModel) cards.splice(4, 0, renderBudgetModelCard(ctx.budgetModel));  // after Our Strategy
+  const sections = cards.join('');
 
   return `
 <div class="workspace">
@@ -1021,6 +1036,54 @@ function renderWorkspace() {
     <!-- Tech Check summary -->
     ${S.techCheck ? renderTechCheckPanel() : ''}
   </div>
+</div>`;
+}
+
+// ─── Projected Outcomes — deterministic, engine-computed (discovery entries only) ───
+function fmtMoney(n) { return n == null ? '—' : '$' + Number(n).toLocaleString(); }
+
+function renderBudgetModelBody(bm, forClient) {
+  const noteBlock = `<div class="bm-note">${(bm.assumptions || []).map(esc).join(' · ')}<br>Sources: ${(bm.sources || []).map(esc).join(' · ')}</div>`;
+  if (bm.mode === 'demand' && bm.tam) {
+    const tierRow = (t, cls, label) => `
+      <tr class="${cls}">
+        <td>${esc(label || t.name)}</td>
+        <td>${fmtMoney(t.monthlyBudget)}/mo</td>
+        <td>${(t.clicks || 0).toLocaleString()}</td>
+        <td>${t.sharePct != null ? t.sharePct + '%' : '—'}</td>
+        <td>${(t.leads || 0).toLocaleString()}</td>
+        <td>${t.monthlyRevenueOpportunity ? fmtMoney(t.monthlyRevenueOpportunity) + '/mo' : '—'}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${esc(t.kpiLine || t.why || '')}</td>
+      </tr>`;
+    const rows = (bm.tiers || []).map(t => tierRow(t, t.name === 'Recommended' ? 'bm-rec' : '')).join('')
+      + (bm.statedBudgetOutcome ? tierRow(bm.statedBudgetOutcome, '', 'Your stated budget') : '');
+    return `
+      <div class="bm-tam"><strong>${bm.tam.monthlySearches.toLocaleString()}</strong> tracked monthly searches — ${esc(bm.tam.locationUsed || 'market')}${bm.tam.competitorBrandExcluded ? ` <span style="font-size:12px;color:var(--text-muted)">(${bm.tam.competitorBrandExcluded} competitor-brand term${bm.tam.competitorBrandExcluded > 1 ? 's' : ''} excluded)</span>` : ''}</div>
+      <table class="bm-table">
+        <thead><tr><th>Tier</th><th>Investment</th><th>Est. Clicks</th><th>Share of Demand</th><th>Leads/mo</th><th>Est. Value</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      ${bm.breakeven ? `<div class="bm-breakeven">✓ ${esc(bm.breakeven.line)}</div>` : ''}
+      ${(!forClient && bm.budgetGap) ? `<div class="bm-gap">💡 AE note: ${esc(bm.budgetGap)}</div>` : ''}
+      ${noteBlock}`;
+  }
+  return `
+    ${bm.breakeven ? `<div class="bm-breakeven">✓ ${esc(bm.breakeven.line)}</div>` : ''}
+    ${bm.statedBudgetOutcome ? `<div class="bm-tam" style="margin-top:10px">At ${esc(bm.statedBudgetOutcome.label || fmtMoney(bm.statedBudgetOutcome.monthlyBudget) + '/mo')}: <strong>~${(bm.statedBudgetOutcome.leads || 0).toLocaleString()} leads/mo</strong>${bm.statedBudgetOutcome.monthlyRevenueOpportunity ? ' → ' + fmtMoney(bm.statedBudgetOutcome.monthlyRevenueOpportunity) + '/mo revenue opportunity' : ''}${bm.statedBudgetOutcome.kpiLine ? ' — ' + esc(bm.statedBudgetOutcome.kpiLine) : ''}</div>` : ''}
+    ${bm.tamPending ? `<div class="bm-note">${esc(bm.tamPending)}</div>` : ''}
+    ${noteBlock}`;
+}
+
+function renderBudgetModelCard(bm) {
+  return `
+<div class="section-card open" id="sc-budgetModel">
+  <div class="section-header" onclick="toggleSection('budgetModel')">
+    <span class="section-num">📈</span>
+    <span class="section-title">Projected Outcomes</span>
+    <span class="section-confidence conf-confirmed">Engine-Computed</span>
+    <span class="section-chevron">▶</span>
+  </div>
+  <div class="section-body">${renderBudgetModelBody(bm, false)}</div>
 </div>`;
 }
 
@@ -1326,6 +1389,8 @@ function exportPDF() {
     const card = document.getElementById('sc-' + d.key);
     if (card) card.classList.add('open');
   });
+  const bmCard = document.getElementById('sc-budgetModel');
+  if (bmCard) bmCard.classList.add('open');
   setTimeout(() => window.print(), 200);
 }
 
@@ -1388,6 +1453,29 @@ function exportPPTX() {
       color: white, fontSize: 13, fontFace: 'Roboto',
       valign: 'top', wrap: true, lineSpacingMultiple: 1.4,
     });
+
+    // Engine-computed Projected Outcomes slide, right after Our Strategy
+    if (def.key === 'ourStrategy' && ctx.budgetModel && ctx.budgetModel.mode === 'demand' && ctx.budgetModel.tiers && ctx.budgetModel.tiers.length) {
+      const bm = ctx.budgetModel;
+      const so = prs.addSlide();
+      so.background = { color: '121212' };
+      so.addText('PROJECTED OUTCOMES', { x: 0.5, y: 0.3, w: 12, h: 0.3, color: cyan, fontSize: 10, fontFace: 'Inter', bold: true, charSpacing: 3 });
+      so.addShape(prs.ShapeType.rect, { x: 0.5, y: 0.65, w: 12.3, h: 0.02, fill: { color: '333333' } });
+      so.addText(bm.tam.monthlySearches.toLocaleString() + ' tracked monthly searches — ' + (bm.tam.locationUsed || ''), { x: 0.5, y: 0.85, w: 12.3, h: 0.45, color: white, fontSize: 16, fontFace: 'Roboto', bold: true });
+      const hd = (t) => ({ text: t, options: { bold: true, color: cyan, fontSize: 11, fill: { color: '1a1a1a' } } });
+      const cell = (t) => ({ text: String(t), options: { color: white, fontSize: 12, fill: { color: '181818' } } });
+      const tRows = [['Tier', 'Investment', 'Est. Clicks', 'Share', 'Leads/mo', 'Est. Value'].map(hd)];
+      const pushRow = (t, label) => tRows.push([
+        label || t.name, fmtMoney(t.monthlyBudget) + '/mo', (t.clicks || 0).toLocaleString(),
+        (t.sharePct != null ? t.sharePct + '%' : '—'), (t.leads || 0).toLocaleString(),
+        t.monthlyRevenueOpportunity ? fmtMoney(t.monthlyRevenueOpportunity) + '/mo' : '—',
+      ].map(cell));
+      bm.tiers.forEach(t => pushRow(t));
+      if (bm.statedBudgetOutcome) pushRow(bm.statedBudgetOutcome, 'Your stated budget');
+      so.addTable(tRows, { x: 0.5, y: 1.5, w: 12.3, border: { pt: 0.5, color: '333333' }, rowH: 0.45 });
+      if (bm.breakeven) so.addText('✓ ' + bm.breakeven.line, { x: 0.5, y: 5.7, w: 12.3, h: 0.4, color: '4CAF50', fontSize: 12, fontFace: 'Roboto' });
+      so.addText((bm.sources || []).join(' · '), { x: 0.5, y: 6.9, w: 12.3, h: 0.3, color: '666666', fontSize: 9, fontFace: 'Roboto' });
+    }
   });
 
   prs.writeFile({ fileName: (c.name || 'IGI_Proposal').replace(/\s+/g, '_') + '_Proposal.pptx' });
@@ -1500,7 +1588,7 @@ function renderShare() {
   const c   = ctx.client;
   const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-  const sectionHtml = SECTION_DEFS.map(def => {
+  const shareCards = SECTION_DEFS.map(def => {
     const content = S.sections[def.key];
     if (!content) return '';
     return `
@@ -1508,7 +1596,13 @@ function renderShare() {
       <h2>${def.icon} ${def.label}</h2>
       ${renderShareContent(def, content)}
     </div>`;
-  }).join('');
+  });
+  if (ctx.budgetModel) shareCards.splice(4, 0, `
+    <div class="share-section">
+      <h2>📈 Projected Outcomes</h2>
+      ${renderBudgetModelBody(ctx.budgetModel, true)}
+    </div>`);
+  const sectionHtml = shareCards.join('');
 
   return `
 <div class="share-proposal">
