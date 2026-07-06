@@ -579,6 +579,61 @@ function submitFresh() {
 }
 
 // ─── Form: Discovery ──────────────────────────────────────────────────────────
+// P2 — 7-Element Discovery Core: objective taxonomy drives the KPI options,
+// and the KPI target drives the engine's Recommended-tier solver.
+const IGI_OBJECTIVES = [
+  { v: 'leads',        label: 'Lead Generation',        kpis: ['Leads per month', 'Phone calls per month', 'Form fills per month', 'Appointments per month'] },
+  { v: 'foot_traffic', label: 'Foot Traffic / Visits',  kpis: ['Store visits per month', 'Walk-ins per month'] },
+  { v: 'online_sales', label: 'Online Sales',           kpis: ['Orders per month', 'Monthly revenue ($)', 'ROAS'] },
+  { v: 'awareness',    label: 'Brand Awareness',        kpis: ['Brand searches per month', 'Impressions per month', 'Social reach'] },
+  { v: 'recruiting',   label: 'Recruiting / Hiring',    kpis: ['Applications per month', 'Hires per quarter'] },
+  { v: 'events',       label: 'Events / Attendance',    kpis: ['Registrations', 'Event attendance'] },
+];
+function objectiveOptions() {
+  return '<option value="">Select objective…</option>' + IGI_OBJECTIVES.map(o => `<option value="${o.v}">${o.label}</option>`).join('');
+}
+function kpiOptionsFor(objV) {
+  const o = IGI_OBJECTIVES.find(x => x.v === objV);
+  const list = o ? o.kpis : IGI_OBJECTIVES.flatMap(x => x.kpis);
+  return '<option value="">Select KPI…</option>' + list.map(k => `<option>${k}</option>`).join('');
+}
+function syncKpiOptions(prefix) {
+  const sel = document.getElementById(prefix + '-kpi-metric');
+  if (sel) sel.innerHTML = kpiOptionsFor(v(prefix + '-objective'));
+}
+function kpiFieldsHtml(prefix) {
+  return `
+    <div class="form-row">
+      <div class="form-group">
+        <label>Marketing Objective</label>
+        <select id="${prefix}-objective" onchange="syncKpiOptions('${prefix}')">${objectiveOptions()}</select>
+      </div>
+      <div class="form-group">
+        <label>Measurable KPI</label>
+        <div style="display:flex;gap:8px;">
+          <select id="${prefix}-kpi-metric" style="flex:2">${kpiOptionsFor('')}</select>
+          <input id="${prefix}-kpi-target" type="number" min="1" placeholder="Target #" style="flex:1" />
+        </div>
+        <div class="form-hint">The engine sizes the Recommended tier to hit this target</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>USP / Core Message</label>
+      <textarea id="${prefix}-usp" rows="2" placeholder="What makes them different? The one thing their customers should remember…"></textarea>
+    </div>`;
+}
+function collectDiscoveryCore(prefix, extras) {
+  const core = {};
+  const obj = v(prefix + '-objective'); if (obj) core.objective = obj;
+  const usp = v(prefix + '-usp'); if (usp) core.usp = usp;
+  const audEl = document.getElementById(prefix + '-audience');
+  if (audEl && audEl.value.trim()) core.audience = audEl.value.trim();
+  const km = v(prefix + '-kpi-metric'); const kt = parseFloat(v(prefix + '-kpi-target'));
+  if (km || kt > 0) core.kpi = { metric: km || 'leads', target: kt > 0 ? kt : null };
+  Object.entries(extras || {}).forEach(([k, val]) => { if (val) core[k] = val; });
+  return Object.keys(core).length ? core : null;
+}
+
 let discSubMode = 'auto'; // 'auto' | 'manual'
 
 function renderFormDisc() {
@@ -613,6 +668,20 @@ function renderFormDisc() {
         <label>Market <span>*</span></label>
         <input id="da-market" type="text" placeholder="City, State" />
       </div>
+    </div>
+    <div class="alert alert-info" style="margin:4px 0 16px;">The brief covers the data. Confirm the four things only the call can surface:</div>
+    ${kpiFieldsHtml('da')}
+    <div class="form-group">
+      <label>Established Budget</label>
+      <select id="da-budget">
+        <option value="">They didn't say / unknown</option>
+        <option>Under $2,500/month</option>
+        <option>$2,500–$5,000/month</option>
+        <option>$5,000–$10,000/month</option>
+        <option>$10,000–$20,000/month</option>
+        <option>$20,000+/month</option>
+        <option>Project-based (not monthly)</option>
+      </select>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -667,6 +736,11 @@ function renderFormDisc() {
     <div class="form-group">
       <label>Pain Points / Challenges</label>
       <textarea id="dm-pain" placeholder="What's not working? What problems came up?"></textarea>
+    </div>
+    ${kpiFieldsHtml('dm')}
+    <div class="form-group">
+      <label>Target Audience</label>
+      <textarea id="dm-audience" rows="2" placeholder="Who are they trying to reach? Geography, demographics, buyer type…"></textarea>
     </div>
     <div class="form-group">
       <label>Competitors They Mentioned</label>
@@ -795,6 +869,7 @@ async function submitDiscAuto() {
   generate({
     entryPoint: 'discovery_auto', clientName: name, domain, market,
     aeName, aeEmail: v('da-aeemail'), notes: v('da-notes'), discoveryBrief,
+    discoveryCore: collectDiscoveryCore('da', { budget: v('da-budget') }),
   });
 }
 
@@ -823,6 +898,11 @@ function submitDiscManual() {
   generate({
     entryPoint: 'discovery_manual', clientName: name, domain, market,
     category, categoryDescription, aeName, aeEmail: v('dm-aeemail'), manualDiscovery,
+    discoveryCore: collectDiscoveryCore('dm', {
+      currentMarketing: manualDiscovery.currentMarketing,
+      timing:           manualDiscovery.timeline,
+      budget:           manualDiscovery.budget,
+    }),
   });
 }
 
