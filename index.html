@@ -6,6 +6,11 @@
 <title>IGI Proposal Builder</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.min.js"></script>
+<!-- Multi-file RFP intake parsers (Phase 1): PDF, Word, Excel -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 <style>
 :root {
   --cyan:       #00aebd;
@@ -312,6 +317,19 @@ nav { background: var(--bg-nav); height: 52px; display: flex; align-items: cente
 .q-kv { font-size: 13px; line-height: 1.7; }
 .q-kv .q-k { color: var(--text-muted); font-family: 'Inter', sans-serif; margin-right: 6px; }
 .q-scaffold-flag { font-size: 11px; color: var(--orange); margin-bottom: 8px; }
+.q-tldr { font-size: 14px; font-weight: 600; line-height: 1.5; margin-top: 10px; color: var(--text); }
+.q-rationale-details { margin-top: 8px; }
+.q-rationale-details summary { font-size: 12px; color: var(--cyan); cursor: pointer; font-family: 'Inter', sans-serif; }
+.q-rationale-details .q-rationale { margin-top: 8px; }
+.q-gaps { background: rgba(239,152,9,.1); border: 1px solid rgba(239,152,9,.35); border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; line-height: 1.5; }
+.q-gaps strong { color: var(--orange); }
+.grade-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 22px; }
+.grade-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.grade-row:last-child { border-bottom: none; }
+.grade-crit { flex: 1; }
+.grade-pts { font-family: 'Inter', sans-serif; font-size: 12px; background: var(--bg-sec); color: var(--cyan); padding: 3px 10px; border-radius: 10px; white-space: nowrap; }
+.grade-total { font-weight: 700; padding-top: 14px; }
+.grade-total .grade-pts, .grade-total span:last-child { background: none; color: var(--text); font-family: 'Roboto', sans-serif; font-size: 14px; }
 
 /* ── Misc ── */
 .empty-state { text-align: center; padding: 60px 24px; color: var(--text-muted); }
@@ -511,6 +529,7 @@ function render() {
     case 'form:rfp':          app.innerHTML = renderFormRFP();    attachFormRFP();    break;
     case 'analyzing':         app.innerHTML = renderAnalyzing();  break;
     case 'qualify':           app.innerHTML = renderQualify();    attachQualify();    break;
+    case 'grading':           app.innerHTML = renderGrading();    break;
     case 'generating':        app.innerHTML = renderGenerating(); break;
     case 'workspace':         app.innerHTML = renderWorkspace();  attachWorkspace();  break;
     case 'library':           app.innerHTML = renderLibrary();    break;
@@ -985,10 +1004,11 @@ function renderFormRFP() {
   <div class="form-group">
     <div class="dropzone" id="rfp-drop" onclick="document.getElementById('rfp-file').click()">
       <div class="dz-icon">📎</div>
-      <p>Drag & drop RFP file here, or click to upload</p>
-      <p style="font-size:12px;margin-top:4px;">Supports .txt, .pdf (text-based)</p>
-      <input type="file" id="rfp-file" style="display:none" accept=".txt,.pdf" onchange="handleRFPFile(event)" />
+      <p>Drag &amp; drop RFP files here, or click to upload</p>
+      <p style="font-size:12px;margin-top:4px;">Multiple files OK — PDF, Word (.docx), Excel (.xlsx), .txt</p>
+      <input type="file" id="rfp-file" style="display:none" accept=".txt,.pdf,.docx,.xlsx,.xls" multiple onchange="handleRFPFile(event)" />
     </div>
+    <div id="rfp-file-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;"></div>
   </div>
   <div class="form-group">
     <label>Or paste RFP text directly <span>*</span></label>
@@ -1018,14 +1038,65 @@ function attachFormRFP() {
   drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('dragging'); handleRFPFile({ target: { files: e.dataTransfer.files } }); });
 }
 
-function handleRFPFile(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    document.getElementById('r-rfp-text').value = ev.target.result;
-  };
-  reader.readAsText(file);
+// Phase 1: multi-file intake — parse PDF / Word / Excel / txt, concatenate into a labeled
+// corpus in the RFP text box. Each file shows a status chip. Paste box stays the fallback.
+async function handleRFPFile(e) {
+  const files = Array.from(e.target.files || []);
+  if (!files.length) return;
+  const chipsWrap = document.getElementById('rfp-file-chips');
+  const ta = document.getElementById('r-rfp-text');
+  for (const file of files) {
+    const chip = document.createElement('span');
+    chip.style.cssText = 'background:var(--bg-sec);border-radius:10px;padding:3px 10px;font-size:12px;color:var(--text-muted);';
+    chip.textContent = '⏳ ' + file.name;
+    if (chipsWrap) chipsWrap.appendChild(chip);
+    try {
+      const clean = (await parseRFPFile(file) || '').trim();
+      if (!clean) {
+        chip.textContent = '⚠ ' + file.name + ' — no readable text (paste it)';
+        chip.style.color = 'var(--orange)';
+        continue;
+      }
+      const block = '===FILE: ' + file.name + '===\n' + clean + '\n===END FILE: ' + file.name + '===\n';
+      ta.value = (ta.value.trim() ? ta.value.replace(/\s+$/, '') + '\n\n' : '') + block;
+      const words = clean.split(/\s+/).filter(Boolean).length;
+      chip.textContent = '✓ ' + file.name + ' — ' + words.toLocaleString() + ' words';
+      chip.style.color = 'var(--green)';
+    } catch (err) {
+      chip.textContent = '✗ ' + file.name + ' — ' + (err.message || 'could not read');
+      chip.style.color = 'var(--red)';
+    }
+  }
+  e.target.value = ''; // allow re-selecting the same filename
+}
+
+async function parseRFPFile(file) {
+  const name = (file.name || '').toLowerCase();
+  if (name.endsWith('.pdf')) {
+    if (!window.pdfjsLib) throw new Error('PDF reader not loaded');
+    const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+    const out = [];
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const content = await (await pdf.getPage(p)).getTextContent();
+      out.push(content.items.map(i => i.str).join(' '));
+    }
+    const text = out.join('\n');
+    if (!text.trim()) throw new Error('image-only PDF — paste text');
+    return text;
+  }
+  if (name.endsWith('.docx')) {
+    if (!window.mammoth) throw new Error('Word reader not loaded');
+    return (await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() })).value;
+  }
+  if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+    if (!window.XLSX) throw new Error('Excel reader not loaded');
+    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+    return wb.SheetNames
+      .map(sn => { const csv = XLSX.utils.sheet_to_csv(wb.Sheets[sn]); return csv.trim() ? '--- Sheet: ' + sn + ' ---\n' + csv : ''; })
+      .filter(Boolean).join('\n\n');
+  }
+  // .txt and anything else → plain text
+  return await file.text();
 }
 
 // RFP entry no longer generates directly — it must pass through qualification (the GATE).
@@ -1114,18 +1185,24 @@ function renderQualify() {
       💰 ${budget.statedFee ? `Stated fee: <strong>${esc(budget.statedFee)}</strong>. ` : ''}${budget.mediaBudget ? `Media budget: <strong>${esc(budget.mediaBudget)}</strong>. ` : ''}${budget.notes ? esc(budget.notes) : ''}
     </div>` : '';
 
-  // Recommendation banner.
+  // Recommendation banner — TL;DR headline + collapsible full rationale (Erin: keep the long case, lead with a one-liner).
   const factors = qual.factors || {};
   const factorRows = Object.entries(factors).filter(([, v]) => v).map(([k, v]) =>
     `<div class="q-kv"><span class="q-k">${esc(k.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase()))}:</span>${esc(v)}</div>`).join('');
+  const tldr = qual.tldr || (qual.rationale ? (qual.rationale.match(/^.*?[.!?](\s|$)/) || [qual.rationale])[0].trim() : '');
   const banner = `
     <div class="q-banner ${color}">
       <div class="q-rec">
         <h2>${esc(rec)}</h2>
         ${qual.fitScore ? `<span class="q-fit">Fit: ${esc(qual.fitScore)}</span>` : ''}
       </div>
-      ${qual.rationale ? `<div class="q-rationale">${esc(qual.rationale)}</div>` : ''}
+      ${tldr ? `<div class="q-tldr">${esc(tldr)}</div>` : ''}
+      ${qual.rationale && qual.rationale.trim() !== tldr ? `<details class="q-rationale-details"><summary>Full rationale</summary><div class="q-rationale">${esc(qual.rationale)}</div></details>` : ''}
     </div>`;
+
+  // Capability gaps (Erin: tag-driven next action) — services we can't cover internally.
+  const gaps = (q.capabilityMatrix || []).filter(c => c.subcontractorNeeded || c.supported === false);
+  const doNotPursueRec = /do not/i.test(rec);
 
   // §0 — Response classification & deliverables map.
   const typeChips = (q.responseType || []).map(t => `<span class="q-chip">${esc(t)}</span>`).join('') || '<span class="q-chip">Unclassified</span>';
@@ -1185,7 +1262,7 @@ function renderQualify() {
   const tlRows = (q.timeline || []).map(t => `
     <div class="q-timeline-item">
       <span style="min-width:150px;font-weight:500">${esc(t.event || '')}</span>
-      <span style="color:var(--text-muted)">${esc(t.date || 'TBD')}</span>
+      <span style="color:var(--text-muted)">${fmtDate(t.date)}</span>
       <span class="q-countdown q-pri-${t.priority === 'high' ? 'high' : t.priority === 'med' ? 'med' : 'low'}">${t.countdownDays != null ? (t.countdownDays >= 0 ? 'in ' + t.countdownDays + 'd' : Math.abs(t.countdownDays) + 'd ago') : ''}</span>
     </div>`).join('');
   const tlBody = tlRows || '<p style="color:var(--text-muted);font-size:13px">No dates found.</p>';
@@ -1199,7 +1276,7 @@ function renderQualify() {
     ${sp.fileFormats ? `<div class="q-kv"><span class="q-k">File formats:</span>${esc(sp.fileFormats)}</div>` : ''}
     ${sp.portalRegistration ? `<div class="q-kv"><span class="q-k">Registration:</span>${esc(sp.portalRegistration)}</div>` : ''}
     ${sp.deliveryInstructions ? `<div class="q-kv"><span class="q-k">Delivery:</span>${esc(sp.deliveryInstructions)}</div>` : ''}
-    ${sp.confirmationRequired ? `<div class="q-kv"><span class="q-k">Confirmation:</span>${esc(sp.confirmationRequired)}</div>` : ''}
+    ${sp.confirmationRequired != null && sp.confirmationRequired !== false ? `<div class="q-kv"><span class="q-k">Confirmation:</span>${sp.confirmationRequired === true ? 'Required' : esc(sp.confirmationRequired)}</div>` : ''}
     ${spSteps}` : '<p style="color:var(--text-muted);font-size:13px">No submission process details found.</p>';
 
   // §3.6 — Clarifications (draft email — never auto-sent).
@@ -1213,38 +1290,79 @@ function renderQualify() {
     ${cl.questionsDeadline ? `<div class="q-kv"><span class="q-k">Questions due:</span>${esc(cl.questionsDeadline)}${cl.countdownDays != null ? ` (in ${cl.countdownDays}d)` : ''}</div>` : ''}
     ${cl.draftEmail ? `<div class="q-email">${esc(cl.draftEmail)}</div><div class="q-email-note">✎ Draft only — review and send this yourself. IGI never sends it for you.</div>` : ''}`;
 
-  // Proceed button — de-emphasized (not blocked) when Do Not Pursue.
-  const doNotPursue = /do not/i.test(rec);
-  const proceedBtn = `
-    <button class="btn ${doNotPursue ? 'btn-ghost' : 'btn-primary'}" onclick="proceedToBuild()">Proceed to Build →</button>
-    ${doNotPursue ? '<span style="font-size:12px;color:var(--text-muted)">Recommendation is <strong>Do Not Pursue</strong> — you can override with a reason.</span>' : ''}`;
+  // Tag-driven next action (Erin, slide 2): gaps → Connect partner; good fit → Log a pitch; poor fit → Log a pass.
+  const gapNote = gaps.length ? `
+    <div class="q-gaps">
+      <strong>${gaps.length} capability gap${gaps.length > 1 ? 's' : ''}:</strong> ${esc(gaps.map(g => g.service).filter(Boolean).slice(0, 4).join(', '))}${gaps.length > 4 ? '…' : ''} — a partner can cover these.
+    </div>` : '';
+  const cta = [];
+  if (gaps.length) cta.push(`<button class="btn btn-ghost" onclick="connectPartner()">🤝 Connect partner</button>`);
+  if (doNotPursueRec) {
+    cta.push(`<button class="btn btn-danger" onclick="logPass()">Log as a Pass</button>`);
+    cta.push(`<button class="btn btn-ghost" onclick="logPitchAndBuild()">Override &amp; Build →</button>`);
+  } else {
+    cta.push(`<button class="btn btn-ghost" onclick="logPass()">Log as a Pass</button>`);
+    cta.push(`<button class="btn btn-primary" onclick="logPitchAndBuild()">Log as a Pitch → Build</button>`);
+  }
 
+  const nb = (n) => n ? `<span class="section-confidence conf-generated">${n}</span>` : '';
   return `
 <div class="workspace-left" style="max-width:960px;margin:0 auto">
   <div class="form-header" style="margin-bottom:16px">
     <h2>📋 RFP Qualification — ${esc(clientName)}</h2>
-    <p>Review before building. The Workspace stays locked until you Proceed.</p>
+    <p>Review before building. The Workspace stays locked until you log a decision.</p>
   </div>
   ${conflictHtml}
   ${banner}
+  ${gapNote}
   ${budgetHtml}
   ${factorRows ? qCard('q-factors', 'Qualification Factors', '', factorRows, false) : ''}
-  ${qCard('q-deliverables', 'Response Type &amp; Deliverables Map', '', deliverablesBody, true)}
-  ${qCard('q-reqs', 'Submission Requirements', '', reqBody, false)}
-  ${qCard('q-sections', 'Required Proposal Sections', '', secBody, false)}
-  ${qCard('q-capability', 'Capability Matrix', '', capBody, false)}
-  ${qCard('q-timeline', 'Timeline &amp; Critical Dates', '', tlBody, false)}
+  ${qCard('q-deliverables', 'Response Type &amp; Deliverables Map', nb((q.deliverables || []).length), deliverablesBody, false)}
+  ${qCard('q-reqs', 'Submission Requirements', nb((q.submissionRequirements || []).length), reqBody, false)}
+  ${qCard('q-sections', 'Required Proposal Sections', nb((q.requiredProposalSections || []).length), secBody, false)}
+  ${qCard('q-capability', 'Capability Matrix', nb((q.capabilityMatrix || []).length), capBody, false)}
+  ${qCard('q-timeline', 'Timeline &amp; Critical Dates', nb((q.timeline || []).length), tlBody, false)}
   ${qCard('q-process', 'Submission Process', '', spBody, false)}
-  ${qCard('q-clarify', 'Client Questions &amp; Clarifications', '', clBody, false)}
+  ${qCard('q-clarify', 'Client Questions &amp; Clarifications', nb((cl.questions || []).length), clBody, false)}
   <div class="q-proceed-bar">
     <button class="btn btn-ghost" onclick="setView('form:rfp')">← Back</button>
     <div style="flex:1"></div>
-    ${proceedBtn}
+    ${cta.join('')}
   </div>
 </div>`;
 }
 
 function attachQualify() { /* first card rendered open via qCard */ }
+
+// ─── Phase 3: "How you'll be graded" checkpoint (between pursue decision and build) ──
+function renderGrading() {
+  const q = S.qualification || {};
+  const crit = q.evaluationCriteria || [];
+  const intake = S.rfpIntake || {};
+  const total = crit.reduce((s, c) => s + (Number(c.points) || 0), 0);
+  const rows = crit.map(c => `
+    <div class="grade-row">
+      <span class="grade-crit">${esc(c.criterion || '')}${c.note ? `<br><span style="font-size:12px;color:var(--text-muted)">${esc(c.note)}</span>` : ''}</span>
+      <span class="grade-pts">${c.points != null ? esc(c.points) + ' pts' : (c.weightPct != null ? esc(c.weightPct) + '%' : '—')}</span>
+    </div>`).join('');
+  return `
+<div class="form-wrap" style="max-width:680px">
+  <div style="text-align:center;margin-bottom:8px">
+    <h2 style="font-size:22px;font-weight:700">You ready? Let's do this.</h2>
+    <p style="color:var(--text-muted);font-size:13px">${esc(intake.clientName || 'This RFP')}${q.rfpHash ? ' · RFP ' + esc(String(q.rfpHash).slice(0, 6)) : ''}</p>
+  </div>
+  <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--cyan);font-family:'Inter',sans-serif;margin:20px 0 10px">Step 1 — How you'll be graded</div>
+  <div class="grade-card">
+    ${crit.length ? `<div style="font-size:13px;color:var(--text-muted);margin-bottom:6px">Proposals are scored on:</div>${rows}
+    <div class="grade-row grade-total"><span>Total</span><span>${total ? total + ' pts' : '—'}</span></div>`
+      : `<div style="font-size:13px;color:var(--text-muted)">This RFP doesn't state an explicit scoring rubric. Focus the response on directly and completely answering every required section and submission requirement.</div>`}
+  </div>
+  <div class="form-actions" style="justify-content:space-between">
+    <button class="btn btn-ghost" onclick="setView('qualify')">← Back</button>
+    <button class="btn btn-primary" onclick="proceedToBuild()">Start building →</button>
+  </div>
+</div>`;
+}
 
 function updateReqStatus(i, val) {
   if (S.qualification && S.qualification.submissionRequirements && S.qualification.submissionRequirements[i]) {
@@ -1274,6 +1392,55 @@ function proceedToBuild() {
     budgetConstraint:         q.budgetConstraint || null,
     qualificationOverrideReason: overrideReason,
   });
+}
+
+// ─── Phase 2: pipeline logging + tag-driven CTAs ────────────────────────────────
+function fmtDate(d) {
+  if (!d) return 'TBD';
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return esc(String(d));
+  const hasTime = /\d{2}:\d{2}/.test(String(d));
+  const opts = hasTime
+    ? { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }
+    : { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+  return esc(dt.toLocaleString('en-US', opts));
+}
+
+async function logPipeline(status, reason) {
+  const q = S.qualification || {}, qual = q.qualification || {}, intake = S.rfpIntake || {};
+  try {
+    await api('/proposal/pipeline', {
+      clientName: intake.clientName, market: intake.market, category: intake.category || null,
+      recommendation: qual.recommendation || null, fitScore: qual.fitScore || null,
+      pipelineStatus: status, reason: reason || null,
+      responseType: q.responseType || [], aeName: intake.aeName || null, aeEmail: intake.aeEmail || null,
+      timeline: q.timeline || [], budgetConstraint: q.budgetConstraint || null,
+    });
+    return true;
+  } catch (e) {
+    console.warn('[IGI Proposal] pipeline log failed:', e.message);
+    return false;
+  }
+}
+
+async function logPitchAndBuild() {
+  await logPipeline('pitch');           // record intent; non-blocking on failure
+  showToast('Logged as a pitch ✓');
+  setView('grading');                   // Phase 3: "how you'll be graded" checkpoint → then build
+}
+
+async function logPass() {
+  const reason = prompt('Log this RFP as a pass. Optional — why are we passing?');
+  if (reason === null) return;          // cancelled
+  await logPipeline('pass', reason || 'No reason given');
+  showToast('Logged as a pass ✓');
+  setView('home');
+}
+
+async function connectPartner() {
+  const gaps = (S.qualification?.capabilityMatrix || []).filter(c => c.subcontractorNeeded || c.supported === false);
+  await logPipeline('partner_referral', 'Gaps: ' + gaps.map(g => g.service).filter(Boolean).join(', '));
+  openPartnerDirectory(gaps);           // Phase 8 stub
 }
 
 // ─── Generate ──────────────────────────────────────────────────────────────────
@@ -2223,6 +2390,7 @@ Object.assign(window, {
   submitFresh, submitDiscAuto, submitDiscManual, submitRFP,
   handleRFPFile, toggleOtherField,
   proceedToBuild, updateReqStatus, toggleRfpEdit, saveRfpEdit,
+  logPitchAndBuild, logPass, connectPartner, fmtDate,
 });
 
 // ─── Boot ────────────────────────────────────────────────────────────────────────────
