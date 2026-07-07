@@ -271,6 +271,48 @@ nav { background: var(--bg-nav); height: 52px; display: flex; align-items: cente
   .section-content { color: #000; }
 }
 
+/* ── Qualification (RFP gate) ── */
+.q-banner { border-radius: 8px; padding: 18px 22px; margin-bottom: 16px; border: 1px solid; }
+.q-banner.green { background: rgba(117,190,25,.1); border-color: rgba(117,190,25,.45); }
+.q-banner.amber { background: rgba(239,152,9,.1); border-color: rgba(239,152,9,.45); }
+.q-banner.red   { background: rgba(229,57,53,.1); border-color: rgba(229,57,53,.45); }
+.q-banner .q-rec { display: flex; align-items: center; gap: 12px; }
+.q-banner h2 { font-size: 19px; font-weight: 700; }
+.q-banner.green h2 { color: var(--green); }
+.q-banner.amber h2 { color: var(--orange); }
+.q-banner.red h2   { color: var(--red); }
+.q-fit { font-size: 12px; font-family: 'Inter', sans-serif; padding: 3px 10px; border-radius: 12px; background: var(--bg-sec); color: var(--text); }
+.q-rationale { font-size: 13px; line-height: 1.65; margin-top: 12px; color: var(--text); }
+.q-chip { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 12px; background: var(--bg-sec); margin: 0 6px 6px 0; font-family: 'Inter', sans-serif; color: var(--cyan); }
+.q-conflict { background: rgba(229,57,53,.12); border: 1px solid rgba(229,57,53,.45); border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; }
+.q-conflict-title { color: var(--red); font-weight: 700; font-size: 13px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.q-conflict p { font-size: 13px; line-height: 1.55; color: var(--text); }
+.q-budget { background: var(--bg-sec); border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; line-height: 1.6; }
+.q-budget strong { color: var(--cyan); }
+.q-status { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-family: 'Inter', sans-serif; }
+.qs-notstarted { background: var(--bg-sec); color: var(--text-muted); }
+.qs-progress   { background: rgba(239,152,9,.15); color: var(--orange); }
+.qs-complete   { background: rgba(117,190,25,.15); color: var(--green); }
+.q-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.q-table th { text-align: left; padding: 7px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); border-bottom: 1px solid var(--border); font-family: 'Inter', sans-serif; }
+.q-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.q-select { background: var(--bg-sec); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-size: 12px; padding: 3px 6px; font-family: 'Roboto', sans-serif; }
+.q-owner { font-size: 11px; color: var(--orange); }
+.q-yes { color: var(--green); font-weight: 600; }
+.q-no  { color: var(--red); font-weight: 600; }
+.q-timeline-item { display: flex; gap: 12px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.q-timeline-item:last-child { border-bottom: none; }
+.q-countdown { font-weight: 700; margin-left: auto; }
+.q-pri-high { color: var(--red); }
+.q-pri-med  { color: var(--orange); }
+.q-pri-low  { color: var(--text-muted); }
+.q-email { background: var(--bg-sec); border-radius: 6px; padding: 14px 16px; font-size: 13px; line-height: 1.65; white-space: pre-wrap; margin-top: 10px; border: 1px dashed var(--border); }
+.q-email-note { font-size: 11px; color: var(--orange); margin-top: 6px; }
+.q-proceed-bar { display: flex; gap: 12px; align-items: center; padding: 20px 0 8px; }
+.q-kv { font-size: 13px; line-height: 1.7; }
+.q-kv .q-k { color: var(--text-muted); font-family: 'Inter', sans-serif; margin-right: 6px; }
+.q-scaffold-flag { font-size: 11px; color: var(--orange); margin-bottom: 8px; }
+
 /* ── Misc ── */
 .empty-state { text-align: center; padding: 60px 24px; color: var(--text-muted); }
 .empty-state h3 { font-size: 16px; margin-bottom: 8px; color: var(--text); }
@@ -343,9 +385,12 @@ const INTEL_SECRET = '27f13a7fcad24e283421be25464d8517574212f93e605a6cf02fe40a41
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const S = {
-  view:            'home',      // home | form:fresh | form:discovery | form:rfp | generating | workspace | library | share
+  view:            'home',      // home | form:fresh | form:discovery | form:rfp | analyzing | qualify | generating | workspace | library | share
   proposalContext: null,
   sections:        null,
+  rfpSections:     null,        // RFP entry: engine-returned per-RFP section list
+  qualification:   null,        // /proposal/qualify result (RFP gate)
+  rfpIntake:       null,        // stored RFP form payload, replayed into generate() on Proceed
   proposalId:      null,
   isDirty:         false,
   techCheck:       null,
@@ -464,6 +509,8 @@ function render() {
     case 'form:fresh':        app.innerHTML = renderFormFresh();  attachFormFresh();  break;
     case 'form:discovery':    app.innerHTML = renderFormDisc();   attachFormDisc();   break;
     case 'form:rfp':          app.innerHTML = renderFormRFP();    attachFormRFP();    break;
+    case 'analyzing':         app.innerHTML = renderAnalyzing();  break;
+    case 'qualify':           app.innerHTML = renderQualify();    attachQualify();    break;
     case 'generating':        app.innerHTML = renderGenerating(); break;
     case 'workspace':         app.innerHTML = renderWorkspace();  attachWorkspace();  break;
     case 'library':           app.innerHTML = renderLibrary();    break;
@@ -959,7 +1006,7 @@ function renderFormRFP() {
   </div>
   <div class="form-actions">
     <button class="btn btn-ghost" onclick="goHome()">← Back</button>
-    <button class="btn btn-primary" onclick="submitRFP()">Generate Proposal →</button>
+    <button class="btn btn-primary" onclick="submitRFP()">Analyze RFP →</button>
   </div>
 </div>`;
 }
@@ -981,7 +1028,8 @@ function handleRFPFile(e) {
   reader.readAsText(file);
 }
 
-function submitRFP() {
+// RFP entry no longer generates directly — it must pass through qualification (the GATE).
+async function submitRFP() {
   const name    = v('r-name');
   const market  = v('r-market');
   const rfpText = v('r-rfp-text');
@@ -989,9 +1037,242 @@ function submitRFP() {
   const domain  = v('r-domain').replace(/^https?:\/\//,'').replace(/\/.*$/,'').trim();
   const { category, categoryDescription } = resolveCategory('r-category');
   if (!name || !market || !rfpText || !aeName) { showFormError('Please fill all required fields and paste the RFP text.'); return; }
-  generate({
+
+  // Stash the intake so Proceed-to-Build can replay it into /proposal/generate.
+  S.rfpIntake = {
     entryPoint: 'rfp', clientName: name, domain, market,
     category, categoryDescription, aeName, aeEmail: v('r-aeemail'), rfpText,
+  };
+
+  setView('analyzing');
+  try {
+    const result = await api('/proposal/qualify', { clientName: name, market, category, domain, rfpText });
+    S.qualification = result;
+    setView('qualify');
+  } catch (err) {
+    document.getElementById('app').innerHTML = `
+      <div class="form-wrap" style="margin-top:40px;">
+        <div class="alert alert-error">RFP analysis failed: ${esc(err.message)}</div>
+        <button class="btn btn-ghost" onclick="setView('form:rfp')">← Back to RFP intake</button>
+      </div>`;
+  }
+}
+
+function renderAnalyzing() {
+  return `
+<div class="generating-wrap">
+  <div class="spinner"></div>
+  <h3>Analyzing the RFP…</h3>
+  <p>IGI is classifying the response type, extracting every submission requirement and required section, checking capability fit, and building your qualification checklist. This takes about 20–40 seconds.</p>
+</div>`;
+}
+
+// ─── Qualification checklist (the GATE) ─────────────────────────────────────────
+function recColor(rec) {
+  if (/do not/i.test(rec || '')) return 'red';
+  if (/caution/i.test(rec || '')) return 'amber';
+  return 'green';
+}
+function statusPill(status) {
+  const s = status || 'Not Started';
+  const cls = s === 'Complete' ? 'qs-complete' : s === 'In Progress' ? 'qs-progress' : 'qs-notstarted';
+  return `<span class="q-status ${cls}">${esc(s)}</span>`;
+}
+function qCard(key, title, badge, bodyHtml, open) {
+  return `
+<div class="section-card ${open ? 'open' : ''}" id="sc-${key}">
+  <div class="section-header" onclick="toggleSection('${key}')">
+    <span class="section-title">${title}</span>
+    ${badge || ''}
+    <span class="section-chevron">▶</span>
+  </div>
+  <div class="section-body">${bodyHtml}</div>
+</div>`;
+}
+
+function renderQualify() {
+  const q = S.qualification;
+  if (!q) return `<div class="empty-state" style="margin-top:60px;"><h3>No qualification available</h3><p>Analyze an RFP first.</p></div>`;
+  const intake = S.rfpIntake || {};
+  const qual   = q.qualification || {};
+  const rec    = qual.recommendation || 'Pursue with Caution';
+  const color  = recColor(rec);
+  const conflict = qual.conflictFlag || {};
+  const budget   = q.budgetConstraint || {};
+  const clientName = intake.clientName || q.client || 'This RFP';
+
+  // Conflict flag (H3) — surfaced prominently.
+  const conflictHtml = conflict.isConflict ? `
+    <div class="q-conflict">
+      <div class="q-conflict-title">⚠ Conflict / Fit Warning</div>
+      <p>${esc(conflict.reason || 'This RFP may not be a fit for a media seller to respond to (e.g. agency-of-record, buy-side, or media-neutral ask).')}</p>
+    </div>` : '';
+
+  // Budget constraint (H2).
+  const budgetHtml = (budget.statedFee || budget.mediaBudget || budget.notes) ? `
+    <div class="q-budget">
+      💰 ${budget.statedFee ? `Stated fee: <strong>${esc(budget.statedFee)}</strong>. ` : ''}${budget.mediaBudget ? `Media budget: <strong>${esc(budget.mediaBudget)}</strong>. ` : ''}${budget.notes ? esc(budget.notes) : ''}
+    </div>` : '';
+
+  // Recommendation banner.
+  const factors = qual.factors || {};
+  const factorRows = Object.entries(factors).filter(([, v]) => v).map(([k, v]) =>
+    `<div class="q-kv"><span class="q-k">${esc(k.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase()))}:</span>${esc(v)}</div>`).join('');
+  const banner = `
+    <div class="q-banner ${color}">
+      <div class="q-rec">
+        <h2>${esc(rec)}</h2>
+        ${qual.fitScore ? `<span class="q-fit">Fit: ${esc(qual.fitScore)}</span>` : ''}
+      </div>
+      ${qual.rationale ? `<div class="q-rationale">${esc(qual.rationale)}</div>` : ''}
+    </div>`;
+
+  // §0 — Response classification & deliverables map.
+  const typeChips = (q.responseType || []).map(t => `<span class="q-chip">${esc(t)}</span>`).join('') || '<span class="q-chip">Unclassified</span>';
+  const deliverRows = (q.deliverables || []).map(d => `
+    <tr>
+      <td><strong>${esc(d.name || '')}</strong>${d.kind ? `<br><span style="font-size:11px;color:var(--text-muted)">${esc(d.kind)}</span>` : ''}</td>
+      <td>${esc(d.format || '—')}${d.pageLimit ? `<br><span style="font-size:11px;color:var(--text-muted)">${esc(d.pageLimit)}</span>` : ''}</td>
+      <td>${esc(d.owner || d.producedBy || '—')}</td>
+      <td>${d.igiCanProduce === 'full' ? '<span class="q-yes">Full</span>' : d.igiCanProduce === 'partial' ? '<span style="color:var(--orange)">Partial</span>' : '<span class="q-no">Routed out</span>'}</td>
+      <td>${statusPill(d.status)}</td>
+    </tr>`).join('');
+  const buildPlanRows = (q.buildPlan || []).map(b => `
+    <div class="q-kv"><span class="q-k">${esc(b.deliverableId || '')}</span>${esc(b.action || 'generate')} · owner ${esc(b.owner || '—')}${b.dueCheckpoint ? ` · due ${esc(b.dueCheckpoint)}` : ''}</div>`).join('');
+  const deliverablesBody = `
+    <div style="margin-bottom:12px">${typeChips}</div>
+    ${deliverRows ? `<table class="q-table"><thead><tr><th>Deliverable</th><th>Format</th><th>Owner</th><th>IGI</th><th>Status</th></tr></thead><tbody>${deliverRows}</tbody></table>` : '<p style="color:var(--text-muted);font-size:13px">No distinct deliverables enumerated.</p>'}
+    ${buildPlanRows ? `<div style="margin-top:14px"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:6px">Build Plan / Roadmap</div>${buildPlanRows}</div>` : ''}`;
+
+  // §3.2 — Submission requirements (typed, per-item status).
+  const reqRows = (q.submissionRequirements || []).map((r, i) => `
+    <tr>
+      <td><strong>${esc(r.name || '')}</strong>${r.type ? `<br><span style="font-size:11px;color:var(--text-muted)">${esc(r.type)}</span>` : ''}</td>
+      <td>${r.sourcePage ? 'p.' + esc(r.sourcePage) : '—'}</td>
+      <td>${r.aiCanComplete ? '<span class="q-yes">AI can complete</span>' : '<span class="q-owner">Needs user</span>'}</td>
+      <td><select class="q-select" onchange="updateReqStatus(${i}, this.value)">
+        ${['Not Started', 'In Progress', 'Complete'].map(s => `<option ${(r.status || 'Not Started') === s ? 'selected' : ''}>${s}</option>`).join('')}
+      </select></td>
+    </tr>`).join('');
+  const reqBody = reqRows
+    ? `<table class="q-table"><thead><tr><th>Requirement</th><th>Source</th><th>Owner</th><th>Status</th></tr></thead><tbody>${reqRows}</tbody></table>`
+    : '<p style="color:var(--text-muted);font-size:13px">No submission requirements extracted.</p>';
+
+  // §5 — Required proposal sections.
+  const secRows = (q.requiredProposalSections || []).map(s => `
+    <tr>
+      <td><strong>${esc(s.title || '')}</strong></td>
+      <td>${s.sourcePage ? 'p.' + esc(s.sourcePage) : '—'}</td>
+      <td>${s.aiCanDraft ? '<span class="q-yes">AI can draft</span>' : '<span class="q-owner">Needs input</span>'}</td>
+    </tr>`).join('');
+  const secBody = secRows
+    ? `<table class="q-table"><thead><tr><th>Required Section</th><th>Source</th><th>Drafting</th></tr></thead><tbody>${secRows}</tbody></table>`
+    : '<p style="color:var(--text-muted);font-size:13px">No required sections identified.</p>';
+
+  // §3.3 — Capability matrix.
+  const capRows = (q.capabilityMatrix || []).map(c => `
+    <tr>
+      <td>${esc(c.service || '')}</td>
+      <td>${c.supported ? '<span class="q-yes">✅ Supported</span>' : '<span class="q-no">❌ Not offered</span>'}</td>
+      <td>${c.subcontractorNeeded ? '<span class="q-owner">Subcontractor</span>' : '—'}</td>
+      <td style="font-size:12px;color:var(--text-muted)">${esc(c.note || '')}</td>
+    </tr>`).join('');
+  const capBody = capRows
+    ? `<table class="q-table"><thead><tr><th>Service</th><th>Fit</th><th>Sub?</th><th>Note</th></tr></thead><tbody>${capRows}</tbody></table>`
+    : '<p style="color:var(--text-muted);font-size:13px">No capability matrix generated.</p>';
+
+  // §3.4 — Timeline & critical dates.
+  const tlRows = (q.timeline || []).map(t => `
+    <div class="q-timeline-item">
+      <span style="min-width:150px;font-weight:500">${esc(t.event || '')}</span>
+      <span style="color:var(--text-muted)">${esc(t.date || 'TBD')}</span>
+      <span class="q-countdown q-pri-${t.priority === 'high' ? 'high' : t.priority === 'med' ? 'med' : 'low'}">${t.countdownDays != null ? (t.countdownDays >= 0 ? 'in ' + t.countdownDays + 'd' : Math.abs(t.countdownDays) + 'd ago') : ''}</span>
+    </div>`).join('');
+  const tlBody = tlRows || '<p style="color:var(--text-muted);font-size:13px">No dates found.</p>';
+
+  // §3.5 — Submission process.
+  const sp = q.submissionProcess || {};
+  const spSteps = Array.isArray(sp.steps) && sp.steps.length ? `<ol style="margin:8px 0 0 18px;font-size:13px;line-height:1.7">${sp.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>` : '';
+  const spBody = (sp.portalOrEmail || sp.fileFormats || spSteps) ? `
+    ${sp.portalOrEmail ? `<div class="q-kv"><span class="q-k">Submit via:</span>${esc(sp.portalOrEmail)}</div>` : ''}
+    ${sp.physicalCopies ? `<div class="q-kv"><span class="q-k">Physical copies:</span>${esc(sp.physicalCopies)}</div>` : ''}
+    ${sp.fileFormats ? `<div class="q-kv"><span class="q-k">File formats:</span>${esc(sp.fileFormats)}</div>` : ''}
+    ${sp.portalRegistration ? `<div class="q-kv"><span class="q-k">Registration:</span>${esc(sp.portalRegistration)}</div>` : ''}
+    ${sp.deliveryInstructions ? `<div class="q-kv"><span class="q-k">Delivery:</span>${esc(sp.deliveryInstructions)}</div>` : ''}
+    ${sp.confirmationRequired ? `<div class="q-kv"><span class="q-k">Confirmation:</span>${esc(sp.confirmationRequired)}</div>` : ''}
+    ${spSteps}` : '<p style="color:var(--text-muted);font-size:13px">No submission process details found.</p>';
+
+  // §3.6 — Clarifications (draft email — never auto-sent).
+  const cl = q.clarifications || {};
+  const clQ = Array.isArray(cl.questions) && cl.questions.length
+    ? `<ul style="margin:0 0 0 18px;font-size:13px;line-height:1.7">${cl.questions.map(x => `<li>${esc(x.question || x)}${x.reason ? ` <span style="color:var(--text-muted)">— ${esc(x.reason)}</span>` : ''}</li>`).join('')}</ul>` : '';
+  const contact = cl.contact || {};
+  const clBody = `
+    ${clQ ? `<div style="margin-bottom:10px"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:6px">Suggested Questions</div>${clQ}</div>` : ''}
+    ${(contact.name || contact.email || contact.phone) ? `<div class="q-kv"><span class="q-k">Contact:</span>${esc([contact.name, contact.email, contact.phone].filter(Boolean).join(' · '))}</div>` : ''}
+    ${cl.questionsDeadline ? `<div class="q-kv"><span class="q-k">Questions due:</span>${esc(cl.questionsDeadline)}${cl.countdownDays != null ? ` (in ${cl.countdownDays}d)` : ''}</div>` : ''}
+    ${cl.draftEmail ? `<div class="q-email">${esc(cl.draftEmail)}</div><div class="q-email-note">✎ Draft only — review and send this yourself. IGI never sends it for you.</div>` : ''}`;
+
+  // Proceed button — de-emphasized (not blocked) when Do Not Pursue.
+  const doNotPursue = /do not/i.test(rec);
+  const proceedBtn = `
+    <button class="btn ${doNotPursue ? 'btn-ghost' : 'btn-primary'}" onclick="proceedToBuild()">Proceed to Build →</button>
+    ${doNotPursue ? '<span style="font-size:12px;color:var(--text-muted)">Recommendation is <strong>Do Not Pursue</strong> — you can override with a reason.</span>' : ''}`;
+
+  return `
+<div class="workspace-left" style="max-width:960px;margin:0 auto">
+  <div class="form-header" style="margin-bottom:16px">
+    <h2>📋 RFP Qualification — ${esc(clientName)}</h2>
+    <p>Review before building. The Workspace stays locked until you Proceed.</p>
+  </div>
+  ${conflictHtml}
+  ${banner}
+  ${budgetHtml}
+  ${factorRows ? qCard('q-factors', 'Qualification Factors', '', factorRows, false) : ''}
+  ${qCard('q-deliverables', 'Response Type &amp; Deliverables Map', '', deliverablesBody, true)}
+  ${qCard('q-reqs', 'Submission Requirements', '', reqBody, false)}
+  ${qCard('q-sections', 'Required Proposal Sections', '', secBody, false)}
+  ${qCard('q-capability', 'Capability Matrix', '', capBody, false)}
+  ${qCard('q-timeline', 'Timeline &amp; Critical Dates', '', tlBody, false)}
+  ${qCard('q-process', 'Submission Process', '', spBody, false)}
+  ${qCard('q-clarify', 'Client Questions &amp; Clarifications', '', clBody, false)}
+  <div class="q-proceed-bar">
+    <button class="btn btn-ghost" onclick="setView('form:rfp')">← Back</button>
+    <div style="flex:1"></div>
+    ${proceedBtn}
+  </div>
+</div>`;
+}
+
+function attachQualify() { /* first card rendered open via qCard */ }
+
+function updateReqStatus(i, val) {
+  if (S.qualification && S.qualification.submissionRequirements && S.qualification.submissionRequirements[i]) {
+    S.qualification.submissionRequirements[i].status = val;
+  }
+  const pin = document.getElementById('qual-pin-inner');
+  if (pin) pin.innerHTML = renderQualPinInner();
+}
+
+// The GATE: RFP entry only reaches the Workspace through here.
+function proceedToBuild() {
+  const q = S.qualification;
+  if (!q) { setView('form:rfp'); return; }
+  const rec = (q.qualification && q.qualification.recommendation) || '';
+  let overrideReason = null;
+  if (/do not/i.test(rec)) {
+    overrideReason = prompt('This RFP is flagged "Do Not Pursue". Enter a reason to override and proceed anyway:');
+    if (overrideReason === null) return;            // cancelled — stay on the gate
+    console.log('[IGI Proposal] Qualification override:', overrideReason);
+  }
+  const intake = S.rfpIntake || {};
+  generate({
+    ...intake,
+    entryPoint: 'rfp',
+    requiredProposalSections: q.requiredProposalSections || [],
+    submissionRequirements:   q.submissionRequirements || [],
+    budgetConstraint:         q.budgetConstraint || null,
+    qualificationOverrideReason: overrideReason,
   });
 }
 
@@ -1027,6 +1308,10 @@ async function generate(payload) {
   S.chatMessages = [];
   S.competitors  = [];
   S.productSelections = [];
+  // Non-RFP entries start with a clean qualification/rfpSections slate.
+  // RFP entries keep S.qualification (set by the qualify gate) so the checklist pins in the Workspace.
+  if (payload.entryPoint !== 'rfp') { S.qualification = null; S.rfpIntake = null; }
+  S.rfpSections = null;
   setView('generating');
 
   setTimeout(() => updateGenStep(1, 'Enriching with Intel Engine…'), 1500);
@@ -1038,6 +1323,7 @@ async function generate(payload) {
     updateGenStep(4, 'Done!');
     S.proposalContext = result.proposalContext;
     S.sections        = result.sections;
+    S.rfpSections     = result.rfpSections || null;   // RFP entry: engine-built per-RFP sections
     S.proposalId      = null;
     S.isDirty         = true;
     S.techCheck       = null;
@@ -1071,9 +1357,16 @@ function renderWorkspace() {
   const epLabel = { fresh: 'Start Fresh', discovery_auto: 'Discovery', discovery_manual: 'Discovery (Manual)', rfp: 'RFP' };
   const epClass = { fresh: 'badge-fresh', discovery_auto: 'badge-discovery', discovery_manual: 'badge-discovery', rfp: 'badge-rfp' };
 
-  const cards = SECTION_DEFS.map((def, i) => renderSectionCard(def, i + 1));
-  if (ctx.budgetModel) cards.splice(4, 0, renderBudgetModelCard(ctx.budgetModel));  // after Our Strategy
-  const sections = cards.join('');
+  let sections;
+  const isRfp = ctx.entryPoint === 'rfp' && Array.isArray(S.rfpSections) && S.rfpSections.length;
+  if (isRfp) {
+    // RFP proposals render the engine-returned per-RFP section list (scaffolds flagged with their owner).
+    sections = S.rfpSections.map((s, i) => renderRfpSectionCard(s, i)).join('');
+  } else {
+    const cards = SECTION_DEFS.map((def, i) => renderSectionCard(def, i + 1));
+    if (ctx.budgetModel) cards.splice(4, 0, renderBudgetModelCard(ctx.budgetModel));  // after Our Strategy
+    sections = cards.join('');
+  }
 
   // P2 guard: category mismatch warning banner
   const catWarn = ctx.categoryWarning ? `
@@ -1125,10 +1418,108 @@ function renderWorkspace() {
       </div>
     </div>
 
+    <!-- Pinned RFP qualification checklist -->
+    ${(ctx.entryPoint === 'rfp' && S.qualification) ? renderQualPin() : ''}
+
     <!-- Tech Check summary -->
     ${S.techCheck ? renderTechCheckPanel() : ''}
   </div>
 </div>`;
+}
+
+// ─── RFP section cards (Workspace) ──────────────────────────────────────────────
+function renderRfpSectionCard(s, i) {
+  const full = s.coverage === 'full';
+  const covClass = full ? 'conf-confirmed' : 'conf-validate';
+  const covText  = full ? 'Full' : 'Scaffold';
+  const flag = !full ? `<div class="q-scaffold-flag">⚑ Scaffold — needs input${s.owner ? ': ' + esc(s.owner) : (s.needsInput ? '' : '')}</div>` : '';
+  const body = esc(String(s.content || '')).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
+  return `
+<div class="section-card" id="sc-rfp-${i}">
+  <div class="section-header" onclick="toggleSection('rfp-${i}')">
+    <span class="section-num">${i + 1}</span>
+    <span class="section-title">${esc(s.title || 'Section')}</span>
+    <span class="section-confidence ${covClass}">${covText}</span>
+    <span class="section-chevron">▶</span>
+  </div>
+  <div class="section-body">
+    ${flag}
+    <div id="view-rfp-${i}"><div class="section-content"><p>${body}</p></div></div>
+    <div id="edit-rfp-${i}" style="display:none">
+      <textarea class="section-edit-area" id="ta-rfp-${i}" rows="8">${esc(String(s.content || ''))}</textarea>
+    </div>
+    <div class="section-actions">
+      <button class="btn btn-ghost btn-sm" id="editbtn-rfp-${i}" onclick="toggleRfpEdit(${i}, true)">✏️ Edit</button>
+      <button class="btn btn-ghost btn-sm" id="savebtn-rfp-${i}" style="display:none" onclick="saveRfpEdit(${i})">✓ Done</button>
+    </div>
+  </div>
+</div>`;
+}
+
+function toggleRfpEdit(i, editing) {
+  document.getElementById('view-rfp-' + i).style.display   = editing ? 'none' : '';
+  document.getElementById('edit-rfp-' + i).style.display   = editing ? '' : 'none';
+  document.getElementById('editbtn-rfp-' + i).style.display = editing ? 'none' : '';
+  document.getElementById('savebtn-rfp-' + i).style.display = editing ? '' : 'none';
+  if (editing) document.getElementById('ta-rfp-' + i).focus();
+}
+
+function saveRfpEdit(i) {
+  const val = document.getElementById('ta-rfp-' + i).value;
+  if (!S.rfpSections || !S.rfpSections[i]) return;
+  S.rfpSections[i].content = val;
+  if (val.trim()) { S.rfpSections[i].needsInput = false; S.rfpSections[i].coverage = 'full'; }
+  S.isDirty = true;
+  const body = esc(val).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
+  document.getElementById('view-rfp-' + i).innerHTML = `<div class="section-content"><p>${body}</p></div>`;
+  toggleRfpEdit(i, false);
+  syncQualFromSections();   // flip matching checklist items toward Complete
+}
+
+// Pinned qualification checklist — updates as sections are drafted / statuses change.
+function renderQualPin() {
+  return `
+<div class="panel-card">
+  <div class="panel-header"><span class="panel-icon">📋</span><h3>RFP Checklist</h3></div>
+  <div id="qual-pin-inner" class="tc-list">${renderQualPinInner()}</div>
+</div>`;
+}
+
+function renderQualPinInner() {
+  const q = S.qualification;
+  if (!q) return '';
+  const reqs = (q.submissionRequirements || []).map((r, i) => `
+    <div class="tc-item">
+      <div class="tc-icon">${r.status === 'Complete' ? '✅' : r.status === 'In Progress' ? '🔸' : '⬜'}</div>
+      <div style="flex:1">
+        <div class="tc-label">${esc(r.name || '')}</div>
+        <select class="q-select" style="margin-top:4px" onchange="updateReqStatus(${i}, this.value)">
+          ${['Not Started', 'In Progress', 'Complete'].map(s => `<option ${(r.status || 'Not Started') === s ? 'selected' : ''}>${s}</option>`).join('')}
+        </select>
+      </div>
+    </div>`).join('') || '<div style="font-size:12px;color:var(--text-muted)">None</div>';
+  const secs = (q.requiredProposalSections || []).map(s => `
+    <div class="tc-item">
+      <div class="tc-icon">${s._drafted ? '✅' : '⬜'}</div>
+      <div class="tc-label">${esc(s.title || '')}</div>
+    </div>`).join('') || '<div style="font-size:12px;color:var(--text-muted)">None</div>';
+  return `
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:6px">Submission Requirements</div>${reqs}
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin:12px 0 6px">Required Sections</div>${secs}`;
+}
+
+// When a Workspace section is drafted, flip its matching required-section checklist item.
+function syncQualFromSections() {
+  if (!S.qualification || !Array.isArray(S.rfpSections)) return;
+  const drafted = new Set(
+    S.rfpSections.filter(s => s.content && s.content.trim() && !s.needsInput)
+      .map(s => (s.title || '').toLowerCase().trim())
+  );
+  (S.qualification.requiredProposalSections || []).forEach(rs => {
+    if (drafted.has((rs.title || '').toLowerCase().trim())) rs._drafted = true;
+  });
+  const pin = document.getElementById('qual-pin-inner');
+  if (pin) pin.innerHTML = renderQualPinInner();
 }
 
 // ─── Projected Outcomes — deterministic, engine-computed (discovery entries only) ───
@@ -1317,7 +1708,8 @@ async function regenSection(key) {
 
 function attachWorkspace() {
   // Open first section by default
-  const first = document.getElementById('sc-executiveSummary');
+  const isRfp = S.proposalContext?.entryPoint === 'rfp' && Array.isArray(S.rfpSections) && S.rfpSections.length;
+  const first = document.getElementById(isRfp ? 'sc-rfp-0' : 'sc-executiveSummary');
   if (first) first.classList.add('open');
 }
 
@@ -1381,25 +1773,22 @@ function applyUpdate(key, content) {
 // ─── Tech Check ───────────────────────────────────────────────────────────────
 async function runTechCheck() {
   try {
+    const q = S.qualification || {};
     const result = await api('/proposal/techcheck', {
       sections: S.sections,
       entryPoint: S.proposalContext?.entryPoint,
       rfpText: S.proposalContext?.rfpText || null,   // P5: RFP-coverage gate needs the source text
+      // Qualification-seeded compliance panel (fixes C2/C3): the source of truth is what qualify extracted.
+      submissionRequirements:   q.submissionRequirements || null,
+      requiredProposalSections: q.requiredProposalSections || null,
+      budgetConstraint:         q.budgetConstraint || null,
+      rfpSections:              S.rfpSections || null,
     });
     S.techCheck = result;
     S.isDirty = true;
 
-    // Show modal
-    const checksHtml = result.checks.map(c => `
-      <div class="modal-check">
-        <div class="mc-icon">${c.pass ? '✅' : '❌'}</div>
-        <div>
-          <div class="mc-label">${esc(c.label)}</div>
-          ${c.detail ? `<div class="mc-detail">${esc(c.detail)}</div>` : ''}
-        </div>
-      </div>`).join('');
-
-    document.getElementById('modal-checks').innerHTML = checksHtml;
+    // Show modal — checks grouped into Draft Quality vs RFP Compliance panels.
+    document.getElementById('modal-checks').innerHTML = renderTechCheckModal(result);
     document.getElementById('btn-export-modal').disabled = result.status !== 'pass';
     document.getElementById('btn-export-modal').style.opacity = result.status !== 'pass' ? '.4' : '1';
     document.getElementById('modal-techcheck').style.display = '';
@@ -1412,25 +1801,58 @@ async function runTechCheck() {
   }
 }
 
+// Group checks by their `panel` field (draft vs compliance). Older responses w/o the
+// field fall back into the Draft panel so nothing is lost.
+function techCheckGroups(tc) {
+  const groups = { draft: [], compliance: [] };
+  (tc.checks || []).forEach(c => {
+    const p = c.panel === 'compliance' ? 'compliance' : 'draft';
+    groups[p].push(c);
+  });
+  return groups;
+}
+
 function renderTechCheckPanel() {
   const tc = S.techCheck;
   if (!tc) return '';
-  const items = tc.checks.map(c => `
-    <div class="tc-item">
-      <div class="tc-icon">${c.pass ? '✅' : '❌'}</div>
-      <div>
-        <div class="tc-label">${esc(c.label)}</div>
-        ${c.detail ? `<div class="tc-detail">${esc(c.detail)}</div>` : ''}
-      </div>
-    </div>`).join('');
-  return `
+  const groups = techCheckGroups(tc);
+  const meta = tc.panels || {};
+  const renderGroup = (name, label, checks) => {
+    if (!checks.length) return '';
+    const gStatus = (meta[name] && meta[name].status) || (checks.every(c => c.pass) ? 'pass' : 'fail');
+    const items = checks.map(c => `
+      <div class="tc-item">
+        <div class="tc-icon">${c.pass ? '✅' : '❌'}</div>
+        <div>
+          <div class="tc-label">${esc(c.label)}</div>
+          ${c.detail ? `<div class="tc-detail">${esc(c.detail)}</div>` : ''}
+        </div>
+      </div>`).join('');
+    return `
     <div class="panel-card">
       <div class="panel-header">
-        <span class="panel-icon">${tc.status === 'pass' ? '✅' : '⚠️'}</span>
-        <h3>Tech Check — ${tc.status === 'pass' ? 'Ready to Export' : 'Needs Review'}</h3>
+        <span class="panel-icon">${gStatus === 'pass' ? '✅' : '⚠️'}</span>
+        <h3>${label} — ${gStatus === 'pass' ? 'Pass' : 'Needs Review'}</h3>
       </div>
       <div class="tc-list">${items}</div>
     </div>`;
+  };
+  return renderGroup('draft', 'Draft Quality', groups.draft) + renderGroup('compliance', 'RFP Compliance', groups.compliance);
+}
+
+function renderTechCheckModal(tc) {
+  const groups = techCheckGroups(tc);
+  const section = (name, label, checks) => !checks.length ? '' : `
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin:6px 0 8px">${label}</div>
+    ${checks.map(c => `
+      <div class="modal-check">
+        <div class="mc-icon">${c.pass ? '✅' : '❌'}</div>
+        <div>
+          <div class="mc-label">${esc(c.label)}</div>
+          ${c.detail ? `<div class="mc-detail">${esc(c.detail)}</div>` : ''}
+        </div>
+      </div>`).join('')}`;
+  return section('draft', 'Draft Quality', groups.draft) + section('compliance', 'RFP Compliance', groups.compliance);
 }
 
 function closeModal() { document.getElementById('modal-techcheck').style.display = 'none'; }
@@ -1800,6 +2222,7 @@ Object.assign(window, {
   switchDiscTab, addCompetitor, removeCompetitor, toggleProduct,
   submitFresh, submitDiscAuto, submitDiscManual, submitRFP,
   handleRFPFile, toggleOtherField,
+  proceedToBuild, updateReqStatus, toggleRfpEdit, saveRfpEdit,
 });
 
 // ─── Boot ────────────────────────────────────────────────────────────────────────────
