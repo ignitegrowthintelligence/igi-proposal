@@ -331,6 +331,40 @@ nav { background: var(--bg-nav); height: 52px; display: flex; align-items: cente
 .grade-total { font-weight: 700; padding-top: 14px; }
 .grade-total .grade-pts, .grade-total span:last-child { background: none; color: var(--text); font-family: 'Roboto', sans-serif; font-size: 14px; }
 
+/* ── Phase 4: guided Build Workspace (checklist-left / work-pane-right) ── */
+.bw { display: grid; grid-template-columns: 340px 1fr; gap: 16px; align-items: start; }
+.bw-left { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; position: sticky; top: 68px; overflow: hidden; }
+.bw-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.bw-progress { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.bw-bar { height: 7px; background: var(--bg-sec); border-radius: 4px; overflow: hidden; }
+.bw-bar-fill { height: 100%; background: var(--cyan); border-radius: 4px; transition: width .3s; }
+.bw-list { max-height: 46vh; overflow-y: auto; padding: 6px 0; }
+.bw-group { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); font-family: 'Inter', sans-serif; padding: 12px 16px 5px; }
+.bw-item { display: flex; align-items: center; gap: 9px; padding: 9px 16px; cursor: pointer; font-size: 13px; border-left: 2px solid transparent; }
+.bw-item:hover { background: rgba(255,255,255,.03); }
+.bw-item.sel { background: rgba(0,174,189,.1); border-left-color: var(--cyan); }
+.bw-ic { font-size: 13px; width: 16px; text-align: center; flex-shrink: 0; }
+.bw-item-title { flex: 1; line-height: 1.35; }
+.bw-pct { font-size: 11px; color: var(--text-muted); font-family: 'Inter', sans-serif; flex-shrink: 0; }
+.bw-left-foot { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); }
+.bw-pane { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 22px 24px; min-height: 400px; }
+.bw-pane-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.bw-pane-head h3 { font-size: 16px; font-weight: 600; flex: 1; }
+.bw-note { font-size: 13px; line-height: 1.6; color: var(--text-muted); background: var(--bg-sec); border-radius: 6px; padding: 12px 14px; }
+.bw-note code { color: var(--cyan); font-size: 12px; }
+.bw-editor { width: 100%; min-height: 300px; background: var(--bg-sec); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 13px; line-height: 1.65; padding: 12px 14px; resize: vertical; outline: none; font-family: 'Roboto', sans-serif; }
+.bw-editor:focus { border-color: var(--cyan); }
+.bw-actions { display: flex; gap: 10px; margin-top: 14px; }
+.bw-doc { background: var(--bg-sec); border-radius: 6px; padding: 16px 18px; }
+.bw-qs { display: flex; flex-direction: column; gap: 16px; }
+.bw-q-prompt { font-size: 14px; line-height: 1.5; margin-bottom: 8px; }
+.bw-q-opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.bw-opt { padding: 7px 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-sec); color: var(--text); font-size: 13px; cursor: pointer; font-family: 'Inter', sans-serif; transition: border-color .15s, background .15s; }
+.bw-opt:hover { border-color: var(--cyan); }
+.bw-opt.sel { border-color: var(--cyan); background: rgba(0,174,189,.15); color: var(--cyan); font-weight: 500; }
+.bw-draft { margin-top: 18px; padding: 14px 16px; background: var(--bg-sec); border-radius: 6px; border-left: 3px solid var(--green); }
+@media (max-width: 860px) { .bw { grid-template-columns: 1fr; } .bw-left { position: static; } }
+
 /* ── Misc ── */
 .empty-state { text-align: center; padding: 60px 24px; color: var(--text-muted); }
 .empty-state h3 { font-size: 16px; margin-bottom: 8px; color: var(--text); }
@@ -1524,12 +1558,11 @@ function renderWorkspace() {
   const epLabel = { fresh: 'Start Fresh', discovery_auto: 'Discovery', discovery_manual: 'Discovery (Manual)', rfp: 'RFP' };
   const epClass = { fresh: 'badge-fresh', discovery_auto: 'badge-discovery', discovery_manual: 'badge-discovery', rfp: 'badge-rfp' };
 
+  // Phase 4: RFP entry uses the guided two-pane Build Workspace (checklist-left / work-pane-right).
+  if (ctx.entryPoint === 'rfp' && Array.isArray(S.rfpSections) && S.rfpSections.length) return renderRfpWorkspace();
+
   let sections;
-  const isRfp = ctx.entryPoint === 'rfp' && Array.isArray(S.rfpSections) && S.rfpSections.length;
-  if (isRfp) {
-    // RFP proposals render the engine-returned per-RFP section list (scaffolds flagged with their owner).
-    sections = S.rfpSections.map((s, i) => renderRfpSectionCard(s, i)).join('');
-  } else {
+  {
     const cards = SECTION_DEFS.map((def, i) => renderSectionCard(def, i + 1));
     if (ctx.budgetModel) cards.splice(4, 0, renderBudgetModelCard(ctx.budgetModel));  // after Our Strategy
     sections = cards.join('');
@@ -1592,6 +1625,280 @@ function renderWorkspace() {
     ${S.techCheck ? renderTechCheckPanel() : ''}
   </div>
 </div>`;
+}
+
+// ═══ Phase 4–8: Guided Build Workspace (checklist ⟷ work pane) ═══════════════════
+// Build items unify RFP required sections (Type B AI-draft / Type C guided Q&A) and
+// submission requirements (Type A fixed library doc / Type C guided Q&A).
+
+function docTypeForRequirement(r) {
+  const n = ((r.name || '') + ' ' + (r.type || '')).toLowerCase();
+  if (/insurance|liability|certificate of insurance/.test(n)) return 'insurance';
+  if (/financial condition|financial statement|audited financial|balance sheet/.test(n)) return 'financial_condition';
+  if (/w-?9\b/.test(n)) return 'w9';
+  if (/non-?collusion/.test(n)) return 'non_collusion';
+  if (/sanctions|ukraine|russia|iran/.test(n)) return 'sanctions_cert';
+  if (/swam|dbe|\bmbe\b|\bwbe\b|minority|women-?owned|small business/.test(n)) return 'swam_cert';
+  return null; // no standing doc → needs input (Type C)
+}
+
+function buildItems() {
+  const q = S.qualification || {};
+  const items = [];
+  (S.rfpSections || []).forEach((s, i) => {
+    items.push({ id: 'sec-' + i, group: 'Proposal sections', title: s.title || ('Section ' + (i + 1)),
+      type: (s.coverage === 'full') ? 'B' : 'C', ref: { kind: 'section', idx: i } });
+  });
+  (q.submissionRequirements || []).forEach((r, i) => {
+    const dt = docTypeForRequirement(r);
+    items.push({ id: 'req-' + i, group: 'Submission requirements', title: r.name || ('Requirement ' + (i + 1)),
+      type: dt ? 'A' : 'C', docType: dt, ref: { kind: 'requirement', idx: i } });
+  });
+  return items;
+}
+
+function itemObj(item) {
+  return item.ref.kind === 'section'
+    ? (S.rfpSections || [])[item.ref.idx]
+    : ((S.qualification && S.qualification.submissionRequirements) || [])[item.ref.idx];
+}
+
+function itemProgress(item) {
+  const o = itemObj(item); if (!o) return 0;
+  if (item.ref.kind === 'requirement' && item.type === 'A') return (o._attached || o._manual) ? 100 : 0;
+  if (o._reviewed || o._done) return 100;
+  if (item.type === 'C') {
+    const g = o._guided; if (!g) return 0;
+    if (o._draft) return 100;
+    const answered = (o._answers || []).filter(a => a != null).length;
+    return (g.questions && g.questions.length) ? Math.round(60 * answered / g.questions.length) : 0;
+  }
+  // Type B section: drafted by the engine but not yet reviewed
+  return (o.content && String(o.content).trim()) ? 70 : 0;
+}
+
+function overallProgress() {
+  const items = buildItems(); if (!items.length) return 0;
+  return Math.round(items.reduce((s, it) => s + itemProgress(it), 0) / items.length);
+}
+
+function renderRfpWorkspace() {
+  const ctx = S.proposalContext, c = ctx.client;
+  const items = buildItems();
+  if (!S.buildSel || !items.find(it => it.id === S.buildSel)) S.buildSel = items[0] && items[0].id;
+  const overall = overallProgress();
+  const groups = {};
+  items.forEach(it => { (groups[it.group] = groups[it.group] || []).push(it); });
+  const typeIcon = { A: '📎', B: '✍️', C: '❓' };
+  const leftRows = Object.entries(groups).map(([g, its]) => `
+    <div class="bw-group">${esc(g)}</div>
+    ${its.map(it => { const p = itemProgress(it); const s = it.id === S.buildSel;
+      return `<div class="bw-item${s ? ' sel' : ''}" onclick="selectBuildItem('${it.id}')">
+        <span class="bw-ic">${p >= 100 ? '✅' : typeIcon[it.type]}</span>
+        <span class="bw-item-title">${esc(it.title)}</span>
+        <span class="bw-pct">${p}%</span>
+      </div>`; }).join('')}`).join('');
+  const sel = items.find(it => it.id === S.buildSel);
+  return `
+<div class="bw">
+  <div class="bw-left">
+    <div class="bw-head">
+      <div style="flex:1"><h2 style="font-size:15px;font-weight:600">${esc(c.name)}</h2>
+      <div style="font-size:11px;color:var(--text-muted)">${esc(c.market)}${c.category ? ' · ' + esc(c.category) : ''}</div></div>
+      <span class="badge badge-rfp">RFP</span>
+    </div>
+    <div class="bw-progress">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span>Overall progress</span><strong>${overall}%</strong></div>
+      <div class="bw-bar"><div class="bw-bar-fill" style="width:${overall}%"></div></div>
+      ${overall >= 100
+        ? '<button class="btn btn-primary btn-sm" style="width:100%;margin-top:12px" onclick="finalizeProposal()">✨ Finalize &amp; prose proposal</button>'
+        : '<div style="font-size:11px;color:var(--text-muted);margin-top:8px">Everything lives here — progress tracked as you go. Complete every item to finalize.</div>'}
+    </div>
+    <div class="bw-list">${leftRows}</div>
+    <div class="bw-left-foot">
+      <button class="btn btn-ghost btn-sm" onclick="runTechCheck()">✅ Tech Check</button>
+      <button class="btn btn-ghost btn-sm" onclick="saveProposal()">💾 Save</button>
+    </div>
+  </div>
+  <div class="bw-pane" id="bw-pane">${sel ? renderBuildPane(sel) : '<div class="empty-state"><p>No checklist items.</p></div>'}</div>
+</div>`;
+}
+
+function refreshBuild() { if (S.view === 'workspace') render(); }
+
+function selectBuildItem(id) { S.buildSel = id; refreshBuild(); }
+
+function renderBuildPane(item) {
+  const o = itemObj(item);
+  if (item.ref.kind === 'section') {
+    return item.type === 'B' ? renderPaneSection(item, o) : renderPaneGuided(item, o);
+  }
+  if (item.type === 'A') return renderPaneFixedDoc(item, o);
+  return renderPaneGuided(item, o);
+}
+
+// Type B — AI-drafted section (editable, review to 100%)
+function renderPaneSection(item, s) {
+  const reviewed = !!s._reviewed;
+  return `
+  <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence ${reviewed ? 'conf-confirmed' : 'conf-generated'}">${reviewed ? 'Reviewed' : 'AI Draft'}</span></div>
+  <textarea class="bw-editor" id="bw-ed-${item.ref.idx}" oninput="editRfpSection(${item.ref.idx}, this.value)">${esc(String(s.content || ''))}</textarea>
+  <div class="bw-actions">
+    <button class="btn btn-ghost btn-sm" onclick="regenRfpSection(${item.ref.idx})">↺ Regenerate</button>
+    <button class="btn btn-primary btn-sm" onclick="markSectionReviewed(${item.ref.idx})">✓ Mark reviewed</button>
+  </div>`;
+}
+
+function editRfpSection(i, val) { if (S.rfpSections[i]) { S.rfpSections[i].content = val; S.isDirty = true; } }
+function markSectionReviewed(i) { if (S.rfpSections[i]) { S.rfpSections[i]._reviewed = true; S.isDirty = true; } refreshBuild(); }
+
+async function regenRfpSection(i) {
+  const s = S.rfpSections[i]; if (!s) return;
+  const instruction = prompt('Optional instruction for regenerating "' + (s.title || 'section') + '":') || '';
+  const pane = document.getElementById('bw-pane'); if (pane) pane.style.opacity = '.5';
+  try {
+    const r = await api('/proposal/rfp-regenerate', { title: s.title, rfpText: S.rfpIntake?.rfpText || S.proposalContext?.rfpText || '', instruction, clientName: S.proposalContext?.client?.name, market: S.proposalContext?.client?.market });
+    if (r.content) { s.content = r.content; s._reviewed = false; S.isDirty = true; }
+  } catch (e) { alert('Regenerate failed: ' + e.message); }
+  refreshBuild();
+}
+
+// Type A — fixed library document (Phase 5)
+function renderPaneFixedDoc(item, r) {
+  const doc = (S.libraryDocs || []).find(d => d.doc_type === item.docType);
+  if (!doc) {
+    return `<div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence conf-validate">No file on record</span></div>
+      <div class="bw-note">This is a standing document (<code>${esc(item.docType || 'certification')}</code>). No matching file is in your document library yet — add one to the library so it auto-attaches next time, or mark it handled manually.</div>
+      <div class="bw-actions"><button class="btn btn-primary btn-sm" onclick="markReqManual(${item.ref.idx})">Mark handled manually</button></div>`;
+  }
+  const expired = doc.expires_on && new Date(doc.expires_on) < new Date();
+  const attached = !!r._attached;
+  return `
+  <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence conf-confirmed">On file</span></div>
+  <div class="bw-doc">
+    <div style="font-weight:600">${esc(doc.name)}</div>
+    ${doc.note ? `<div style="font-size:13px;color:var(--text-muted);margin-top:4px">${esc(doc.note)}</div>` : ''}
+    ${expired ? `<div style="color:var(--red);font-size:12px;margin-top:8px">⚠ On file but expired ${esc(doc.expires_on)} — update before submitting.</div>`
+      : (doc.expires_on ? `<div style="font-size:12px;color:var(--text-muted);margin-top:8px">Valid through ${esc(doc.expires_on)}</div>` : '')}
+    <div style="margin-top:14px;display:flex;gap:12px;align-items:center">
+      ${doc.file_url ? `<a href="${esc(doc.file_url)}" target="_blank" rel="noopener" style="color:var(--cyan);font-size:13px">📄 ${esc(doc.name)} ↗</a>` : ''}
+      <div style="flex:1"></div>
+      <button class="btn ${attached ? 'btn-ghost' : 'btn-primary'} btn-sm" onclick="attachLibraryDoc(${item.ref.idx})">${attached ? '✓ Attached' : 'Attach to proposal'}</button>
+    </div>
+  </div>`;
+}
+
+function attachLibraryDoc(i) {
+  const r = S.qualification.submissionRequirements[i]; if (!r) return;
+  const item = buildItems().find(it => it.ref.kind === 'requirement' && it.ref.idx === i);
+  const doc = (S.libraryDocs || []).find(d => d.doc_type === (item && item.docType));
+  r._attached = doc ? doc.id : true; r.status = 'Complete'; S.isDirty = true;
+  refreshBuild();
+}
+function markReqManual(i) { const r = S.qualification.submissionRequirements[i]; if (r) { r._manual = true; r.status = 'Complete'; S.isDirty = true; } refreshBuild(); }
+
+// Type C — guided button-click Q&A (Phase 6)
+function renderPaneGuided(item, o) {
+  const g = o._guided;
+  if (!g) {
+    return `<div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence conf-validate">Needs input</span></div>
+      <div class="bw-note">This response needs specifics only your team can confirm. IGI turns the RFP's language into a few quick questions and drafts the written response from your answers — no chasing down leaders.</div>
+      <div class="bw-actions"><button class="btn btn-primary btn-sm" id="bw-genq" onclick="generateGuided('${item.id}')">Generate guided questions →</button></div>`;
+  }
+  const answers = o._answers || [];
+  const qs = g.questions.map((qq, qi) => `
+    <div class="bw-q">
+      <div class="bw-q-prompt">${qi + 1}. ${esc(qq.prompt)}</div>
+      <div class="bw-q-opts">${(qq.options && qq.options.length ? qq.options : ['Yes', 'No']).map((opt, oi) =>
+        `<button class="bw-opt${answers[qi] === opt ? ' sel' : ''}" onclick="answerGuided('${item.id}',${qi},${oi})">${esc(opt)}</button>`).join('')}</div>
+    </div>`).join('');
+  const allAnswered = g.questions.length && g.questions.every((_, qi) => answers[qi] != null);
+  const draft = o._draft;
+  return `
+  <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence ${draft ? 'conf-confirmed' : 'conf-validate'}">${draft ? 'Drafted' : 'Answer to draft'}</span></div>
+  <div class="bw-qs">${qs}</div>
+  <div class="bw-actions">
+    <button class="btn btn-primary btn-sm"${allAnswered ? '' : ' disabled style="opacity:.5"'} onclick="composeGuided('${item.id}')">${draft ? '↺ Re-draft response' : 'Draft response from answers'}</button>
+  </div>
+  ${draft ? `<div class="bw-draft"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:6px">Drafted response — saved to proposal</div><div class="section-content"><p>${esc(draft).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p></div></div>` : ''}`;
+}
+
+async function generateGuided(id) {
+  const item = buildItems().find(it => it.id === id); if (!item) return;
+  const o = itemObj(item);
+  const btn = document.getElementById('bw-genq'); if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+  try {
+    const r = await api('/proposal/guided-questions', { itemTitle: item.title, rfpText: S.rfpIntake?.rfpText || S.proposalContext?.rfpText || '' });
+    o._guided = { questions: Array.isArray(r.questions) ? r.questions : [] };
+    o._answers = [];
+  } catch (e) { alert('Could not generate questions: ' + e.message); }
+  refreshBuild();
+}
+
+function answerGuided(id, qi, oi) {
+  const item = buildItems().find(it => it.id === id); if (!item) return;
+  const o = itemObj(item); const g = o._guided; if (!g) return;
+  const opts = (g.questions[qi].options && g.questions[qi].options.length) ? g.questions[qi].options : ['Yes', 'No'];
+  o._answers = o._answers || []; o._answers[qi] = opts[oi];
+  S.isDirty = true; refreshBuild();
+}
+
+async function composeGuided(id) {
+  const item = buildItems().find(it => it.id === id); if (!item) return;
+  const o = itemObj(item); const g = o._guided; if (!g) return;
+  const qa = g.questions.map((qq, qi) => ({ prompt: qq.prompt, answer: (o._answers || [])[qi] || '' }));
+  const pane = document.getElementById('bw-pane'); if (pane) pane.style.opacity = '.5';
+  try {
+    const r = await api('/proposal/guided-compose', { itemTitle: item.title, qa, rfpText: S.rfpIntake?.rfpText || '' });
+    o._draft = r.draft || ''; o._done = true;
+    o._answeredBy = S.rfpIntake?.aeEmail || S.rfpIntake?.aeName || 'user';
+    o._answeredAt = new Date().toISOString();
+    if (item.ref.kind === 'requirement') o.status = 'Complete';
+    S.isDirty = true;
+  } catch (e) { alert('Draft failed: ' + e.message); }
+  refreshBuild();
+}
+
+// Phase 7 — Finalize / prose assembler
+function assembleFinalItems() {
+  return buildItems().map(it => {
+    const o = itemObj(it); let content = '';
+    if (it.ref.kind === 'section') content = o._draft || o.content || '[To be completed]';
+    else if (it.type === 'A') content = o._attached ? 'Standing document attached (on file in the library).' : (o._manual ? 'Handled manually.' : '[To be completed]');
+    else content = o._draft || '[To be completed]';
+    return { title: it.title, content };
+  });
+}
+
+function finalizeProposal() {
+  const c = S.proposalContext.client;
+  const body = assembleFinalItems().map(s =>
+    `<section><h2>${esc(s.title)}</h2><div>${esc(s.content).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</div></section>`).join('');
+  const w = window.open('', '_blank');
+  if (!w) { alert('Please allow pop-ups to open the finalized proposal.'); return; }
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(c.name)} — Proposal</title>
+    <style>body{font-family:Georgia,serif;max-width:820px;margin:40px auto;padding:0 24px;color:#111;line-height:1.6}
+    h1{font-size:26px;border-bottom:3px solid #00aebd;padding-bottom:10px}h2{font-size:17px;color:#00757f;margin-top:28px}
+    section{page-break-inside:avoid}</style></head><body>
+    <h1>${esc(c.name)}</h1><p style="color:#666">${esc(c.market || '')} · Prepared by ${esc(c.aeName || 'Townsquare Ignite')}</p>
+    ${body}</body></html>`);
+  w.document.close();
+  showToast('Proposal assembled ✓ — print or save as PDF from the new tab');
+}
+
+// Phase 8 — Partner ecosystem (stub directory + referral logging)
+const IGI_PARTNERS = [
+  { name: 'Creative & content studio (brand, copy, production)', tag: 'creative' },
+  { name: 'Public-sector / transit co-bid agency', tag: 'public_sector' },
+  { name: 'Independent market-research vendor', tag: 'research' },
+  { name: 'Full-service media-buying agency (neutral AOR)', tag: 'media_buying' },
+];
+function openPartnerDirectory(gaps) {
+  showToast('Partner referral logged ✓');
+  const gapNames = (gaps || []).map(g => g.service).filter(Boolean).join(', ');
+  alert('Capability gaps: ' + (gapNames || 'general') + '\n\nSuggested partners to co-bid or subcontract:\n\n' +
+    IGI_PARTNERS.map(p => '• ' + p.name).join('\n') +
+    '\n\n(Partner directory is a starter stub — smart matching + warm handoff come in a later phase. The referral has been logged to pipeline.)');
 }
 
 // ─── RFP section cards (Workspace) ──────────────────────────────────────────────
@@ -1874,9 +2181,18 @@ async function regenSection(key) {
 }
 
 function attachWorkspace() {
-  // Open first section by default
   const isRfp = S.proposalContext?.entryPoint === 'rfp' && Array.isArray(S.rfpSections) && S.rfpSections.length;
-  const first = document.getElementById(isRfp ? 'sc-rfp-0' : 'sc-executiveSummary');
+  if (isRfp) {
+    // Guided Build Workspace (Phase 4) — load the document library once for Type-A auto-attach (Phase 5).
+    if (S.libraryDocs == null) {
+      S.libraryDocs = [];
+      api('/proposal/library/docs', undefined, 'GET').then(r => {
+        if (r && Array.isArray(r.docs)) { S.libraryDocs = r.docs; if (S.view === 'workspace') render(); }
+      }).catch(() => {});
+    }
+    return;
+  }
+  const first = document.getElementById('sc-executiveSummary');
   if (first) first.classList.add('open');
 }
 
@@ -2391,6 +2707,9 @@ Object.assign(window, {
   handleRFPFile, toggleOtherField,
   proceedToBuild, updateReqStatus, toggleRfpEdit, saveRfpEdit,
   logPitchAndBuild, logPass, connectPartner, fmtDate,
+  selectBuildItem, editRfpSection, markSectionReviewed, regenRfpSection,
+  attachLibraryDoc, markReqManual, generateGuided, answerGuided, composeGuided,
+  finalizeProposal, openPartnerDirectory,
 });
 
 // ─── Boot ────────────────────────────────────────────────────────────────────────────
