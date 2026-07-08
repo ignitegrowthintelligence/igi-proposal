@@ -53,6 +53,9 @@ nav { background: var(--bg-nav); height: 52px; display: flex; align-items: cente
 .home-hero h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
 .home-hero p { color: var(--text-muted); font-size: 15px; }
 .entry-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 32px; }
+.rfp-list { display: flex; flex-direction: column; gap: 8px; }
+.rfp-row { display: flex; align-items: center; gap: 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 12px 16px; cursor: pointer; transition: border-color .15s; }
+.rfp-row:hover { border-color: var(--cyan); }
 .entry-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 28px 24px; cursor: pointer; transition: border-color .2s, transform .15s; text-align: left; }
 .entry-card:hover { border-color: var(--cyan); transform: translateY(-2px); }
 .entry-card .ec-icon { font-size: 28px; margin-bottom: 12px; }
@@ -443,6 +446,8 @@ const S = {
   rfpSections:     null,        // RFP entry: engine-returned per-RFP section list
   qualification:   null,        // /proposal/qualify result (RFP gate)
   rfpIntake:       null,        // stored RFP form payload, replayed into generate() on Proceed
+  rfpId:           null,        // rfpWorkspaces id — auto-saved so an in-progress RFP can be resumed
+  rfps:            [],          // in-progress RFP list for the home "Resume an RFP" section
   proposalId:      null,
   isDirty:         false,
   techCheck:       null,
@@ -557,7 +562,7 @@ function checkShareLink() {
 function render() {
   const app = document.getElementById('app');
   switch (S.view) {
-    case 'home':              app.innerHTML = renderHome();       break;
+    case 'home':              app.innerHTML = renderHome();       loadRfps();         break;
     case 'form:fresh':        app.innerHTML = renderFormFresh();  attachFormFresh();  break;
     case 'form:discovery':    app.innerHTML = renderFormDisc();   attachFormDisc();   break;
     case 'form:rfp':          app.innerHTML = renderFormRFP();    attachFormRFP();    break;
@@ -600,6 +605,7 @@ function renderHome() {
       <span class="ec-badge">For formal RFP responses</span>
     </div>
   </div>
+  <div id="resume-rfps">${renderResumeRfps()}</div>
 </div>`;
 }
 
@@ -1148,12 +1154,14 @@ async function submitRFP() {
     entryPoint: 'rfp', clientName: name, domain, market,
     category, categoryDescription, aeName, aeEmail: v('r-aeemail'), rfpText,
   };
+  S.rfpId = null; S.rfpSections = null;   // fresh RFP → new saved workspace
 
   setView('analyzing');
   try {
     const result = await api('/proposal/qualify', { clientName: name, market, category, domain, rfpText });
     S.qualification = result;
     setView('qualify');
+    saveRfpState('analyzed');             // auto-save so this RFP is resumable from home
   } catch (err) {
     document.getElementById('app').innerHTML = `
       <div class="form-wrap" style="margin-top:40px;">
@@ -1467,6 +1475,7 @@ async function logPass() {
   const reason = prompt('Log this RFP as a pass. Optional — why are we passing?');
   if (reason === null) return;          // cancelled
   await logPipeline('pass', reason || 'No reason given');
+  await saveRfpState('passed');
   showToast('Logged as a pass ✓');
   setView('home');
 }
@@ -1475,6 +1484,84 @@ async function connectPartner() {
   const gaps = (S.qualification?.capabilityMatrix || []).filter(c => c.subcontractorNeeded || c.supported === false);
   await logPipeline('partner_referral', 'Gaps: ' + gaps.map(g => g.service).filter(Boolean).join(', '));
   openPartnerDirectory(gaps);           // Phase 8 stub
+}
+
+// ─── RFP working-state auto-save + resume ───────────────────────────────────────
+let _rfpSaveTimer = null;
+async function saveRfpState(status) {
+  const intake = S.rfpIntake;
+  if (!intake || !intake.clientName) return;
+  const prog = (Array.isArray(S.rfpSections) && S.rfpSections.length) ? overallProgress() : 0;
+  try {
+    const r = await api('/proposal/rfp/save', {
+      id: S.rfpId, intake, qualification: S.qualification, rfpSections: S.rfpSections,
+      status: status || 'analyzed', overallProgress: prog,
+    });
+    if (r && r.id) S.rfpId = r.id;
+  } catch (e) { console.warn('[IGI Proposal] rfp save failed:', e.message); }
+}
+function autoSaveRfp(status) {
+  clearTimeout(_rfpSaveTimer);
+  _rfpSaveTimer = setTimeout(() => saveRfpState(status), 900);
+}
+
+async function loadRfps() {
+  try {
+    const r = await api('/proposal/rfp/list', undefined, 'GET');
+    S.rfps = (r && Array.isArray(r.rfps)) ? r.rfps : [];
+  } catch (e) { S.rfps = []; }
+  const wrap = document.getElementById('resume-rfps');
+  if (wrap) wrap.innerHTML = renderResumeRfps();
+}
+
+function renderResumeRfps() {
+  if (!S.rfps.length) return '';
+  const statusMeta = {
+    analyzed:  { label: 'Analyzed',  cls: 'badge-rfp' },
+    building:  { label: 'Building',  cls: 'badge-discovery' },
+    pitched:   { label: 'Pitched',   cls: 'badge-fresh' },
+    passed:    { label: 'Passed',    cls: 'badge-draft' },
+  };
+  const rows = S.rfps.map(r => {
+    const m = statusMeta[r.status] || { label: r.status || '—', cls: 'badge-draft' };
+    const due = r.proposalDue ? fmtDate(r.proposalDue) : '';
+    const prog = (typeof r.overallProgress === 'number') ? r.overallProgress + '%' : '';
+    return `
+    <div class="rfp-row" onclick="resumeRfp('${r.id}')">
+      <div style="flex:1">
+        <div style="font-weight:500">${esc(r.client?.name || 'Untitled RFP')}</div>
+        <div style="font-size:12px;color:var(--text-muted)">${esc(r.client?.market || '')}${r.recommendation ? ' · ' + esc(r.recommendation) : ''}${due ? ' · due ' + due : ''}</div>
+      </div>
+      ${prog ? `<span style="font-size:12px;color:var(--text-muted)">${prog}</span>` : ''}
+      <span class="badge ${m.cls}">${m.label}</span>
+      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();resumeRfp('${r.id}')">Resume →</button>
+    </div>`;
+  }).join('');
+  return `
+  <div style="max-width:960px;margin:28px auto 0">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-family:'Inter',sans-serif;margin-bottom:10px">Resume an RFP</div>
+    <div class="rfp-list">${rows}</div>
+  </div>`;
+}
+
+async function resumeRfp(id) {
+  try {
+    const d = await api('/proposal/rfp/' + id, undefined, 'GET');
+    S.rfpId         = d.id;
+    S.rfpIntake     = d.intake || null;
+    S.qualification = d.qualification || null;
+    S.rfpSections   = d.rfpSections || null;
+    S.buildSel      = null; S.libraryDocs = null; S.techCheck = null;
+    if (d.status === 'building' && Array.isArray(d.rfpSections) && d.rfpSections.length) {
+      const ik = d.intake || {};
+      S.proposalContext = { entryPoint: 'rfp', client: { name: ik.clientName, market: ik.market, category: ik.category || '', aeName: ik.aeName || '' }, rfpText: ik.rfpText };
+      setView('workspace');
+    } else {
+      setView('qualify');
+    }
+  } catch (e) {
+    alert('Could not resume RFP: ' + e.message);
+  }
 }
 
 // ─── Generate ──────────────────────────────────────────────────────────────────
@@ -1528,6 +1615,7 @@ async function generate(payload) {
     S.proposalId      = null;
     S.isDirty         = true;
     S.techCheck       = null;
+    if (payload.entryPoint === 'rfp') saveRfpState('building');   // persist so the build is resumable
     setTimeout(() => setView('workspace'), 400);
   } catch (err) {
     document.getElementById('app').innerHTML = `
@@ -1724,7 +1812,7 @@ function renderRfpWorkspace() {
 </div>`;
 }
 
-function refreshBuild() { if (S.view === 'workspace') render(); }
+function refreshBuild() { if (S.view === 'workspace') render(); autoSaveRfp('building'); }
 
 function selectBuildItem(id) { S.buildSel = id; refreshBuild(); }
 
@@ -1749,7 +1837,7 @@ function renderPaneSection(item, s) {
   </div>`;
 }
 
-function editRfpSection(i, val) { if (S.rfpSections[i]) { S.rfpSections[i].content = val; S.isDirty = true; } }
+function editRfpSection(i, val) { if (S.rfpSections[i]) { S.rfpSections[i].content = val; S.isDirty = true; autoSaveRfp('building'); } }
 function markSectionReviewed(i) { if (S.rfpSections[i]) { S.rfpSections[i]._reviewed = true; S.isDirty = true; } refreshBuild(); }
 
 async function regenRfpSection(i) {
@@ -2710,6 +2798,7 @@ Object.assign(window, {
   selectBuildItem, editRfpSection, markSectionReviewed, regenRfpSection,
   attachLibraryDoc, markReqManual, generateGuided, answerGuided, composeGuided,
   finalizeProposal, openPartnerDirectory,
+  loadRfps, resumeRfp, saveRfpState,
 });
 
 // ─── Boot ────────────────────────────────────────────────────────────────────────────
