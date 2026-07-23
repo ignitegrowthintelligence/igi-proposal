@@ -326,6 +326,18 @@ nav { background: var(--bg-nav); height: 52px; display: flex; align-items: cente
 .q-rationale-details .q-rationale { margin-top: 8px; }
 .q-gaps { background: rgba(239,152,9,.1); border: 1px solid rgba(239,152,9,.35); border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; line-height: 1.5; }
 .q-gaps strong { color: var(--orange); }
+.q-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+.q-stat { background: var(--bg-card); padding: 16px 20px; }
+.q-stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); font-family: 'Inter', sans-serif; margin-bottom: 6px; }
+.q-stat-val { font-size: 22px; font-weight: 700; line-height: 1.2; }
+.q-budget-note { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px; padding: 0 2px; }
+.q-subhead { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--cyan); font-family: 'Inter', sans-serif; font-weight: 600; margin-bottom: 8px; }
+.q-tl-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.q-tl-row:last-child { border-bottom: none; }
+.q-tl-ic { width: 20px; text-align: center; flex-shrink: 0; }
+.q-tl-ev { flex: 1; font-weight: 500; }
+.q-tl-date { color: var(--text-muted); min-width: 120px; text-align: right; }
+.q-qhead { background: rgba(0,174,189,.1); border: 1px solid rgba(0,174,189,.3); border-radius: 6px; padding: 9px 14px; font-size: 13px; color: var(--cyan); margin-bottom: 8px; }
 .grade-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 22px; }
 .grade-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
 .grade-row:last-child { border-bottom: none; }
@@ -1203,113 +1215,116 @@ function qCard(key, title, badge, bodyHtml, open) {
 </div>`;
 }
 
+const LIBRARY_URL = 'https://ignitegrowthintelligence.github.io/igi-journey-library/';
+const KEY_PLAYER_ROLES = ['RISD', 'DSM', 'DNA', 'DCM', 'Ops Manager', 'KAM', 'Buyers', 'Creative Director'];
+
+function buildQuestionsMailto(cl, clientName) {
+  const to = (cl.contact && cl.contact.email) || '';
+  const subject = 'Clarification questions — ' + (clientName || 'RFP');
+  const body = cl.draftEmail || (Array.isArray(cl.questions) ? cl.questions.map((x, i) => (i + 1) + '. ' + (x.question || x)).join('\n\n') : '');
+  return 'mailto:' + to + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+}
+
+// Erin round-2: qualify screen restructured into Road Map → Strategy → Submission Requirements → Submission Process.
 function renderQualify() {
   const q = S.qualification;
   if (!q) return `<div class="empty-state" style="margin-top:60px;"><h3>No qualification available</h3><p>Analyze an RFP first.</p></div>`;
   const intake = S.rfpIntake || {};
   const qual   = q.qualification || {};
+  const factors = qual.factors || {};
   const rec    = qual.recommendation || 'Pursue with Caution';
   const color  = recColor(rec);
   const conflict = qual.conflictFlag || {};
   const budget   = q.budgetConstraint || {};
+  const cl       = q.clarifications || {};
+  const contact  = cl.contact || {};
   const clientName = intake.clientName || q.client || 'This RFP';
+  const doNotPursueRec = /do not/i.test(rec);
 
-  // Conflict flag (H3) — surfaced prominently.
-  const conflictHtml = conflict.isConflict ? `
-    <div class="q-conflict">
-      <div class="q-conflict-title">⚠ Conflict / Fit Warning</div>
-      <p>${esc(conflict.reason || 'This RFP may not be a fit for a media seller to respond to (e.g. agency-of-record, buy-side, or media-neutral ask).')}</p>
-    </div>` : '';
-
-  // Budget constraint (H2).
-  const budgetHtml = (budget.statedFee || budget.mediaBudget || budget.notes) ? `
-    <div class="q-budget">
-      💰 ${budget.statedFee ? `Stated fee: <strong>${esc(budget.statedFee)}</strong>. ` : ''}${budget.mediaBudget ? `Media budget: <strong>${esc(budget.mediaBudget)}</strong>. ` : ''}${budget.notes ? esc(budget.notes) : ''}
-    </div>` : '';
-
-  // Recommendation banner — TL;DR headline + collapsible full rationale (Erin: keep the long case, lead with a one-liner).
-  const factors = qual.factors || {};
-  const factorRows = Object.entries(factors).filter(([, v]) => v).map(([k, v]) =>
-    `<div class="q-kv"><span class="q-k">${esc(k.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase()))}:</span>${esc(v)}</div>`).join('');
+  // ── Banner (condensed) + conflict + gaps ──
   const tldr = qual.tldr || (qual.rationale ? (qual.rationale.match(/^.*?[.!?](\s|$)/) || [qual.rationale])[0].trim() : '');
   const banner = `
     <div class="q-banner ${color}">
-      <div class="q-rec">
-        <h2>${esc(rec)}</h2>
-        ${qual.fitScore ? `<span class="q-fit">Fit: ${esc(qual.fitScore)}</span>` : ''}
-      </div>
+      <div class="q-rec"><h2>${esc(rec)}</h2>${qual.fitScore ? `<span class="q-fit">Fit: ${esc(qual.fitScore)}</span>` : ''}</div>
       ${tldr ? `<div class="q-tldr">${esc(tldr)}</div>` : ''}
       ${qual.rationale && qual.rationale.trim() !== tldr ? `<details class="q-rationale-details"><summary>Full rationale</summary><div class="q-rationale">${esc(qual.rationale)}</div></details>` : ''}
     </div>`;
-
-  // Capability gaps (Erin: tag-driven next action) — services we can't cover internally.
+  const conflictHtml = conflict.isConflict ? `
+    <div class="q-conflict"><div class="q-conflict-title">⚠ Conflict / Fit Warning</div><p>${esc(conflict.reason || 'Potential conflict of interest — review before pursuing.')}</p></div>` : '';
   const gaps = (q.capabilityMatrix || []).filter(c => c.subcontractorNeeded || c.supported === false);
-  const doNotPursueRec = /do not/i.test(rec);
+  const gapNote = gaps.length ? `
+    <div class="q-gaps"><strong>${gaps.length} capability gap${gaps.length > 1 ? 's' : ''}:</strong> ${esc(gaps.map(g => g.service).filter(Boolean).slice(0, 4).join(', '))}${gaps.length > 4 ? '…' : ''} — a partner can cover these.</div>` : '';
 
-  // §0 — Response classification & deliverables map.
-  const typeChips = (q.responseType || []).map(t => `<span class="q-chip">${esc(t)}</span>`).join('') || '<span class="q-chip">Unclassified</span>';
-  const deliverRows = (q.deliverables || []).map(d => `
-    <tr>
-      <td><strong>${esc(d.name || '')}</strong>${d.kind ? `<br><span style="font-size:11px;color:var(--text-muted)">${esc(d.kind)}</span>` : ''}</td>
-      <td>${esc(d.format || '—')}${d.pageLimit ? `<br><span style="font-size:11px;color:var(--text-muted)">${esc(d.pageLimit)}</span>` : ''}</td>
-      <td>${esc(d.owner || d.producedBy || '—')}</td>
-      <td>${d.igiCanProduce === 'full' ? '<span class="q-yes">Full</span>' : d.igiCanProduce === 'partial' ? '<span style="color:var(--orange)">Partial</span>' : '<span class="q-no">Routed out</span>'}</td>
-      <td>${statusPill(d.status)}</td>
-    </tr>`).join('');
-  const buildPlanRows = (q.buildPlan || []).map(b => `
-    <div class="q-kv"><span class="q-k">${esc(b.deliverableId || '')}</span>${esc(b.action || 'generate')} · owner ${esc(b.owner || '—')}${b.dueCheckpoint ? ` · due ${esc(b.dueCheckpoint)}` : ''}</div>`).join('');
-  const deliverablesBody = `
-    <div style="margin-bottom:12px">${typeChips}</div>
-    ${deliverRows ? `<table class="q-table"><thead><tr><th>Deliverable</th><th>Format</th><th>Owner</th><th>IGI</th><th>Status</th></tr></thead><tbody>${deliverRows}</tbody></table>` : '<p style="color:var(--text-muted);font-size:13px">No distinct deliverables enumerated.</p>'}
-    ${buildPlanRows ? `<div style="margin-top:14px"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:6px">Build Plan / Roadmap</div>${buildPlanRows}</div>` : ''}`;
+  // ── Budget + Campaign flight stats (Erin slide 5): just give the budget ──
+  const flight = q.campaignFlight || {};
+  const flightHtml = flight.label ? esc(flight.label) : ((flight.start || flight.end) ? [flight.start, flight.end].filter(Boolean).map(fmtDate).join(' – ') : '');
+  const budgetVal = budget.mediaBudget || budget.statedFee || '';
+  const statsHtml = `
+    <div class="q-stats">
+      <div class="q-stat"><div class="q-stat-label">Media budget</div><div class="q-stat-val">${budgetVal ? esc(budgetVal) : 'Not provided'}</div></div>
+      <div class="q-stat"><div class="q-stat-label">Campaign flight</div><div class="q-stat-val">${flightHtml || 'Not provided'}</div></div>
+    </div>
+    ${budget.notes ? `<div class="q-budget-note">${esc(budget.notes)}</div>` : ''}`;
 
-  // §3.2 — Submission requirements (typed, per-item status).
-  const reqRows = (q.submissionRequirements || []).map((r, i) => `
-    <tr>
-      <td><strong>${esc(r.name || '')}</strong>${r.type ? `<br><span style="font-size:11px;color:var(--text-muted)">${esc(r.type)}</span>` : ''}</td>
-      <td>${r.sourcePage ? 'p.' + esc(r.sourcePage) : '—'}</td>
-      <td>${r.aiCanComplete ? '<span class="q-yes">AI can complete</span>' : '<span class="q-owner">Needs user</span>'}</td>
-      <td><select class="q-select" onchange="updateReqStatus(${i}, this.value)">
-        ${['Not Started', 'In Progress', 'Complete'].map(s => `<option ${(r.status || 'Not Started') === s ? 'selected' : ''}>${s}</option>`).join('')}
-      </select></td>
-    </tr>`).join('');
-  const reqBody = reqRows
-    ? `<table class="q-table"><thead><tr><th>Requirement</th><th>Source</th><th>Owner</th><th>Status</th></tr></thead><tbody>${reqRows}</tbody></table>`
-    : '<p style="color:var(--text-muted);font-size:13px">No submission requirements extracted.</p>';
-
-  // §5 — Required proposal sections.
-  const secRows = (q.requiredProposalSections || []).map(s => `
-    <tr>
-      <td><strong>${esc(s.title || '')}</strong></td>
-      <td>${s.sourcePage ? 'p.' + esc(s.sourcePage) : '—'}</td>
-      <td>${s.aiCanDraft ? '<span class="q-yes">AI can draft</span>' : '<span class="q-owner">Needs input</span>'}</td>
-    </tr>`).join('');
-  const secBody = secRows
-    ? `<table class="q-table"><thead><tr><th>Required Section</th><th>Source</th><th>Drafting</th></tr></thead><tbody>${secRows}</tbody></table>`
-    : '<p style="color:var(--text-muted);font-size:13px">No required sections identified.</p>';
-
-  // §3.3 — Capability matrix.
-  const capRows = (q.capabilityMatrix || []).map(c => `
-    <tr>
-      <td>${esc(c.service || '')}</td>
-      <td>${c.supported ? '<span class="q-yes">✅ Supported</span>' : '<span class="q-no">❌ Not offered</span>'}</td>
-      <td>${c.subcontractorNeeded ? '<span class="q-owner">Subcontractor</span>' : '—'}</td>
-      <td style="font-size:12px;color:var(--text-muted)">${esc(c.note || '')}</td>
-    </tr>`).join('');
-  const capBody = capRows
-    ? `<table class="q-table"><thead><tr><th>Service</th><th>Fit</th><th>Sub?</th><th>Note</th></tr></thead><tbody>${capRows}</tbody></table>`
-    : '<p style="color:var(--text-muted);font-size:13px">No capability matrix generated.</p>';
-
-  // §3.4 — Timeline & critical dates.
+  // ── SECTION 1 — ROAD MAP: contacts (key players) + timeline w/ icons ──
+  const contactsHtml = `
+    <div class="q-subhead">Key Players${intake.market ? ' — ' + esc(intake.market) : ''}</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Internal team for this market — populates from the roster once connected.</div>
+    ${KEY_PLAYER_ROLES.map(role => `<div class="q-kv"><span class="q-k" style="display:inline-block;min-width:130px">${role}</span><span style="color:var(--text-muted)">— roster pending</span></div>`).join('')}`;
+  const tlIcon = (ev) => { const e = (ev || '').toLowerCase();
+    if (/question/.test(e)) return '🕐'; if (/proposal due/.test(e)) return '📅'; if (/intent/.test(e)) return '🏳';
+    if (/pre-?bid/.test(e)) return '👥'; if (/oral|presentation/.test(e)) return '🖥️'; if (/award/.test(e)) return '🏆';
+    if (/contract/.test(e)) return '📝'; return '•'; };
   const tlRows = (q.timeline || []).map(t => `
-    <div class="q-timeline-item">
-      <span style="min-width:150px;font-weight:500">${esc(t.event || '')}</span>
-      <span style="color:var(--text-muted)">${fmtDate(t.date)}</span>
+    <div class="q-tl-row">
+      <span class="q-tl-ic">${tlIcon(t.event)}</span>
+      <span class="q-tl-ev">${esc(t.event || '')}</span>
+      <span class="q-tl-date"${t.date ? '' : ' style="color:var(--text-muted)"'}>${t.date ? fmtDate(t.date) : 'Not provided'}</span>
       <span class="q-countdown q-pri-${t.priority === 'high' ? 'high' : t.priority === 'med' ? 'med' : 'low'}">${t.countdownDays != null ? (t.countdownDays >= 0 ? 'in ' + t.countdownDays + 'd' : Math.abs(t.countdownDays) + 'd ago') : ''}</span>
     </div>`).join('');
-  const tlBody = tlRows || '<p style="color:var(--text-muted);font-size:13px">No dates found.</p>';
+  const roadMapBody = contactsHtml + '<div class="q-subhead" style="margin-top:18px">Timeline &amp; Critical Dates</div>' + (tlRows || '<p style="color:var(--text-muted);font-size:13px">No dates found.</p>');
 
-  // §3.5 — Submission process.
+  // ── SECTION 2 — STRATEGY: required + suggested tactics, risks, approvals, competitive advantage, questions ──
+  const capRows = (q.capabilityMatrix || []).map(c => `
+    <tr><td>${esc(c.service || '')}</td>
+      <td>${c.supported ? '<span class="q-yes">✅ Supported</span>' : '<span class="q-no">❌ Not offered</span>'}</td>
+      <td>${c.subcontractorNeeded ? '<span class="q-owner">Partner</span>' : '—'}</td>
+      <td style="font-size:12px">${esc(c.note || '')}</td></tr>`).join('');
+  const requiredTacticsHtml = capRows ? `<div class="q-subhead">Required Tactics</div><table class="q-table"><thead><tr><th>Tactic</th><th>Fit</th><th>Partner?</th><th>How to apply</th></tr></thead><tbody>${capRows}</tbody></table>` : '';
+  const suggested = q.suggestedTactics || [];
+  const suggestedHtml = suggested.length ? `<div class="q-subhead" style="margin-top:18px">Suggested Tactics</div>${suggested.map(s => `<div class="q-kv"><span class="q-k">${esc(s.tactic || '')}</span>${esc(s.rationale || '')}</div>`).join('')}` : '';
+  const risksHtml = factors.risks ? `<div class="q-subhead" style="margin-top:18px">Risks</div><div style="font-size:13px;line-height:1.6">${esc(factors.risks)}</div>` : '';
+  const approvals = q.approvalsNeeded || [];
+  const approvalsHtml = approvals.length ? `<div class="q-subhead" style="margin-top:18px">Approvals that may be needed</div><ul style="margin:0 0 0 18px;font-size:13px;line-height:1.7">${approvals.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : '';
+  const compAdvHtml = factors.competitiveAdvantages ? `<div class="q-subhead" style="margin-top:18px">Competitive Advantage</div><div style="font-size:13px;line-height:1.6">${esc(factors.competitiveAdvantages)}</div>` : '';
+  const clQ = Array.isArray(cl.questions) && cl.questions.length
+    ? `<ul style="margin:6px 0 0 18px;font-size:13px;line-height:1.7">${cl.questions.map(x => `<li>${esc(x.question || x)}${x.reason ? ` <span style="color:var(--text-muted)">— ${esc(x.reason)}</span>` : ''}</li>`).join('')}</ul>` : '';
+  const dueHead = cl.questionsDeadline ? `<div class="q-qhead">🕐 Questions due ${fmtDate(cl.questionsDeadline)}${cl.countdownDays != null ? ` · in ${cl.countdownDays}d` : ''}${contact.email ? ` · to ${esc(contact.email)}` : ''}</div>` : '';
+  const questionsHtml = (clQ || cl.draftEmail || cl.questionsDeadline) ? `
+    <div class="q-subhead" style="margin-top:18px">Questions &amp; Clarifications</div>
+    ${dueHead}${clQ}
+    ${(cl.draftEmail || clQ) ? `<a class="btn btn-primary btn-sm" style="margin-top:12px;display:inline-block;text-decoration:none" href="${buildQuestionsMailto(cl, clientName)}">✉ Email your questions</a>` : ''}` : '';
+  const strategyBody = [requiredTacticsHtml, suggestedHtml, risksHtml, approvalsHtml, compAdvHtml, questionsHtml].filter(Boolean).join('') || '<p style="color:var(--text-muted);font-size:13px">No strategy details.</p>';
+
+  // ── SECTION 3 — SUBMISSION REQUIREMENTS (tracker: link a library doc or upload) ──
+  const trackerRows = (q.submissionRequirements || []).map((r, i) => {
+    const dt = docTypeForRequirement(r);
+    const doc = dt && (S.libraryDocs || []).find(d => d.doc_type === dt);
+    const linkCell = doc
+      ? `<a href="${doc.file_url ? esc(doc.file_url) : LIBRARY_URL}" target="_blank" rel="noopener" style="color:var(--cyan);font-size:12px">🔗 ${esc(String(doc.name || 'prepared doc').slice(0, 28))}</a>`
+      : `<button class="btn btn-ghost btn-sm" onclick="uploadReqDoc(${i})">⬆ Upload</button>`;
+    return `<tr>
+      <td><strong>${esc(r.name || '')}</strong></td>
+      <td>${r.sourcePage ? 'p.' + esc(r.sourcePage) : 'TBD'}</td>
+      <td>${linkCell}</td>
+      <td><select class="q-select" onchange="updateReqStatus(${i}, this.value)">${['Not Started', 'In Progress', 'Complete'].map(s => `<option ${(r.status || 'Not Started') === s ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
+    </tr>`;
+  }).join('');
+  const submissionReqBody = trackerRows
+    ? `<table class="q-table"><thead><tr><th>Requirement</th><th>Reference</th><th>Link / Upload</th><th>Status</th></tr></thead><tbody>${trackerRows}</tbody></table>`
+    : '<p style="color:var(--text-muted);font-size:13px">No submission requirements extracted.</p>';
+
+  // ── SECTION 4 — SUBMISSION PROCESS (Erin: this one's fine) ──
   const sp = q.submissionProcess || {};
   const spSteps = Array.isArray(sp.steps) && sp.steps.length ? `<ol style="margin:8px 0 0 18px;font-size:13px;line-height:1.7">${sp.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>` : '';
   const spBody = (sp.portalOrEmail || sp.fileFormats || spSteps) ? `
@@ -1321,33 +1336,13 @@ function renderQualify() {
     ${sp.confirmationRequired != null && sp.confirmationRequired !== false ? `<div class="q-kv"><span class="q-k">Confirmation:</span>${sp.confirmationRequired === true ? 'Required' : esc(sp.confirmationRequired)}</div>` : ''}
     ${spSteps}` : '<p style="color:var(--text-muted);font-size:13px">No submission process details found.</p>';
 
-  // §3.6 — Clarifications (draft email — never auto-sent).
-  const cl = q.clarifications || {};
-  const clQ = Array.isArray(cl.questions) && cl.questions.length
-    ? `<ul style="margin:0 0 0 18px;font-size:13px;line-height:1.7">${cl.questions.map(x => `<li>${esc(x.question || x)}${x.reason ? ` <span style="color:var(--text-muted)">— ${esc(x.reason)}</span>` : ''}</li>`).join('')}</ul>` : '';
-  const contact = cl.contact || {};
-  const clBody = `
-    ${clQ ? `<div style="margin-bottom:10px"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:6px">Suggested Questions</div>${clQ}</div>` : ''}
-    ${(contact.name || contact.email || contact.phone) ? `<div class="q-kv"><span class="q-k">Contact:</span>${esc([contact.name, contact.email, contact.phone].filter(Boolean).join(' · '))}</div>` : ''}
-    ${cl.questionsDeadline ? `<div class="q-kv"><span class="q-k">Questions due:</span>${esc(cl.questionsDeadline)}${cl.countdownDays != null ? ` (in ${cl.countdownDays}d)` : ''}</div>` : ''}
-    ${cl.draftEmail ? `<div class="q-email">${esc(cl.draftEmail)}</div><div class="q-email-note">✎ Draft only — review and send this yourself. IGI never sends it for you.</div>` : ''}`;
-
-  // Tag-driven next action (Erin, slide 2): gaps → Connect partner; good fit → Log a pitch; poor fit → Log a pass.
-  const gapNote = gaps.length ? `
-    <div class="q-gaps">
-      <strong>${gaps.length} capability gap${gaps.length > 1 ? 's' : ''}:</strong> ${esc(gaps.map(g => g.service).filter(Boolean).slice(0, 4).join(', '))}${gaps.length > 4 ? '…' : ''} — a partner can cover these.
-    </div>` : '';
+  // ── CTA ──
   const cta = [];
   if (gaps.length) cta.push(`<button class="btn btn-ghost" onclick="connectPartner()">🤝 Connect partner</button>`);
-  if (doNotPursueRec) {
-    cta.push(`<button class="btn btn-danger" onclick="logPass()">Log as a Pass</button>`);
-    cta.push(`<button class="btn btn-ghost" onclick="logPitchAndBuild()">Override &amp; Build →</button>`);
-  } else {
-    cta.push(`<button class="btn btn-ghost" onclick="logPass()">Log as a Pass</button>`);
-    cta.push(`<button class="btn btn-primary" onclick="logPitchAndBuild()">Log as a Pitch → Build</button>`);
-  }
-
+  if (doNotPursueRec) { cta.push(`<button class="btn btn-danger" onclick="logPass()">Log as a Pass</button>`); cta.push(`<button class="btn btn-ghost" onclick="logPitchAndBuild()">Override &amp; Build →</button>`); }
+  else { cta.push(`<button class="btn btn-ghost" onclick="logPass()">Log as a Pass</button>`); cta.push(`<button class="btn btn-primary" onclick="logPitchAndBuild()">Log as a Pitch → Build</button>`); }
   const nb = (n) => n ? `<span class="section-confidence conf-generated">${n}</span>` : '';
+
   return `
 <div class="workspace-left" style="max-width:960px;margin:0 auto">
   <div class="form-header" style="margin-bottom:16px">
@@ -1357,15 +1352,11 @@ function renderQualify() {
   ${conflictHtml}
   ${banner}
   ${gapNote}
-  ${budgetHtml}
-  ${factorRows ? qCard('q-factors', 'Qualification Factors', '', factorRows, false) : ''}
-  ${qCard('q-deliverables', 'Response Type &amp; Deliverables Map', nb((q.deliverables || []).length), deliverablesBody, false)}
-  ${qCard('q-reqs', 'Submission Requirements', nb((q.submissionRequirements || []).length), reqBody, false)}
-  ${qCard('q-sections', 'Required Proposal Sections', nb((q.requiredProposalSections || []).length), secBody, false)}
-  ${qCard('q-capability', 'Capability Matrix', nb((q.capabilityMatrix || []).length), capBody, false)}
-  ${qCard('q-timeline', 'Timeline &amp; Critical Dates', nb((q.timeline || []).length), tlBody, false)}
+  ${statsHtml}
+  ${qCard('q-roadmap', 'Road Map', '', roadMapBody, true)}
+  ${qCard('q-strategy', 'Strategy', '', strategyBody, false)}
+  ${qCard('q-subreq', 'Submission Requirements', nb((q.submissionRequirements || []).length), submissionReqBody, false)}
   ${qCard('q-process', 'Submission Process', '', spBody, false)}
-  ${qCard('q-clarify', 'Client Questions &amp; Clarifications', nb((cl.questions || []).length), clBody, false)}
   <div class="q-proceed-bar">
     <button class="btn btn-ghost" onclick="setView('form:rfp')">← Back</button>
     <div style="flex:1"></div>
@@ -1374,7 +1365,27 @@ function renderQualify() {
 </div>`;
 }
 
-function attachQualify() { /* first card rendered open via qCard */ }
+async function uploadReqDoc(i) {
+  const r = S.qualification.submissionRequirements[i]; if (!r) return;
+  const url = prompt('Paste a link to the prepared document for "' + (r.name || 'this requirement') + '" (SharePoint / Drive URL). It will be saved to the library and reused:');
+  if (!url) return;
+  try {
+    await api('/proposal/library/docs', 'POST', { name: r.name, doc_type: docTypeForRequirement(r) || 'other', file_url: url });
+    const lib = await api('/proposal/library/docs', undefined, 'GET'); S.libraryDocs = (lib && lib.docs) || S.libraryDocs;
+    r.status = 'Complete';
+    render();
+  } catch (e) { alert('Save failed: ' + e.message); }
+}
+
+function attachQualify() {
+  // Load the firm document library so the Submission Requirements tracker can link matching docs.
+  if (S.libraryDocs == null) {
+    S.libraryDocs = [];
+    api('/proposal/library/docs', undefined, 'GET').then(r => {
+      if (r && Array.isArray(r.docs)) { S.libraryDocs = r.docs; if (S.view === 'qualify') render(); }
+    }).catch(() => {});
+  }
+}
 
 // ─── Phase 3: "How you'll be graded" checkpoint (between pursue decision and build) ──
 function renderGrading() {
@@ -2799,6 +2810,7 @@ Object.assign(window, {
   attachLibraryDoc, markReqManual, generateGuided, answerGuided, composeGuided,
   finalizeProposal, openPartnerDirectory,
   loadRfps, resumeRfp, saveRfpState,
+  uploadReqDoc, buildQuestionsMailto,
 });
 
 // ─── Boot ────────────────────────────────────────────────────────────────────────────
