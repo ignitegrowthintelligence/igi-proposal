@@ -1291,8 +1291,6 @@ function renderQualify() {
       <td>${c.subcontractorNeeded ? '<span class="q-owner">Partner</span>' : '—'}</td>
       <td style="font-size:12px">${esc(c.note || '')}</td></tr>`).join('');
   const requiredTacticsHtml = capRows ? `<div class="q-subhead">Required Tactics</div><table class="q-table"><thead><tr><th>Tactic</th><th>Fit</th><th>Partner?</th><th>How to apply</th></tr></thead><tbody>${capRows}</tbody></table>` : '';
-  const suggested = q.suggestedTactics || [];
-  const suggestedHtml = suggested.length ? `<div class="q-subhead" style="margin-top:18px">Suggested Tactics</div>${suggested.map(s => `<div class="q-kv"><span class="q-k">${esc(s.tactic || '')}</span>${esc(s.rationale || '')}</div>`).join('')}` : '';
   const risksHtml = factors.risks ? `<div class="q-subhead" style="margin-top:18px">Risks</div><div style="font-size:13px;line-height:1.6">${esc(factors.risks)}</div>` : '';
   const approvals = q.approvalsNeeded || [];
   const approvalsHtml = approvals.length ? `<div class="q-subhead" style="margin-top:18px">Approvals that may be needed</div><ul style="margin:0 0 0 18px;font-size:13px;line-height:1.7">${approvals.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : '';
@@ -1304,7 +1302,7 @@ function renderQualify() {
     <div class="q-subhead" style="margin-top:18px">Questions &amp; Clarifications</div>
     ${dueHead}${clQ}
     ${(cl.draftEmail || clQ) ? `<a class="btn btn-primary btn-sm" style="margin-top:12px;display:inline-block;text-decoration:none" href="${buildQuestionsMailto(cl, clientName)}">✉ Email your questions</a>` : ''}` : '';
-  const strategyBody = [requiredTacticsHtml, suggestedHtml, risksHtml, approvalsHtml, compAdvHtml, questionsHtml].filter(Boolean).join('') || '<p style="color:var(--text-muted);font-size:13px">No strategy details.</p>';
+  const strategyBody = [requiredTacticsHtml, risksHtml, approvalsHtml, compAdvHtml, questionsHtml].filter(Boolean).join('') || '<p style="color:var(--text-muted);font-size:13px">No strategy details.</p>';
 
   // ── SECTION 3 — SUBMISSION REQUIREMENTS (tracker: link a library doc or upload) ──
   const trackerRows = (q.submissionRequirements || []).map((r, i) => {
