@@ -346,23 +346,35 @@ nav { background: var(--bg-nav); height: 52px; display: flex; align-items: cente
 .grade-total { font-weight: 700; padding-top: 14px; }
 .grade-total .grade-pts, .grade-total span:last-child { background: none; color: var(--text); font-family: 'Roboto', sans-serif; font-size: 14px; }
 
-/* ── Phase 4: guided Build Workspace (checklist-left / work-pane-right) ── */
-.bw { display: grid; grid-template-columns: 340px 1fr; gap: 16px; align-items: start; }
-.bw-left { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; position: sticky; top: 68px; overflow: hidden; }
-.bw-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
-.bw-progress { padding: 14px 16px; border-bottom: 1px solid var(--border); }
-.bw-bar { height: 7px; background: var(--bg-sec); border-radius: 4px; overflow: hidden; }
+/* ── Build Workspace (Erin redesign: canvas-left / assistant+checklist-right) ── */
+.bw { display: grid; grid-template-columns: 1fr 400px; gap: 16px; align-items: start; }
+.bw-canvas { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.bw-canvas-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--border); }
+.bw-doc-title { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+.bw-doc-title b { color: var(--text); }
+.bw-canvas-body { padding: 24px 26px 44px; min-height: 520px; }
+.bw-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px; color: var(--text-muted); max-width: 380px; margin: 70px auto; }
+.bw-empty-glyph { width: 52px; height: 52px; border-radius: 14px; border: 1.5px dashed var(--border); display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 6px; }
+.bw-empty h3 { color: var(--text); font-size: 15px; margin: 0; font-weight: 600; }
+.bw-empty p { margin: 0; font-size: 13px; line-height: 1.55; }
+.bw-side { position: sticky; top: 68px; display: flex; flex-direction: column; gap: 16px; }
+.bw-bar { height: 6px; background: var(--bg-sec); border-radius: 4px; overflow: hidden; }
 .bw-bar-fill { height: 100%; background: var(--cyan); border-radius: 4px; transition: width .3s; }
-.bw-list { max-height: 46vh; overflow-y: auto; padding: 6px 0; }
+.bw-list { max-height: 42vh; overflow-y: auto; padding: 4px 0 8px; }
 .bw-group { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); font-family: 'Inter', sans-serif; padding: 12px 16px 5px; }
-.bw-item { display: flex; align-items: center; gap: 9px; padding: 9px 16px; cursor: pointer; font-size: 13px; border-left: 2px solid transparent; }
+.bw-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 16px; cursor: pointer; font-size: 13px; border-left: 2px solid transparent; }
 .bw-item:hover { background: rgba(255,255,255,.03); }
 .bw-item.sel { background: rgba(0,174,189,.1); border-left-color: var(--cyan); }
-.bw-ic { font-size: 13px; width: 16px; text-align: center; flex-shrink: 0; }
-.bw-item-title { flex: 1; line-height: 1.35; }
-.bw-pct { font-size: 11px; color: var(--text-muted); font-family: 'Inter', sans-serif; flex-shrink: 0; }
+.bw-check { width: 15px; height: 15px; flex-shrink: 0; margin-top: 2px; border-radius: 4px; border: 1.5px solid var(--cyan); display: flex; align-items: center; justify-content: center; }
+.bw-check.done { background: var(--cyan); }
+.bw-check.done::after { content: '✓'; font-size: 10px; color: #04201f; font-weight: 900; }
+.bw-item-main { flex: 1; min-width: 0; }
+.bw-item-title { display: block; line-height: 1.35; }
+.bw-pill { display: inline-block; margin-top: 4px; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 5px; font-family: 'Inter', sans-serif; }
+.bw-pill.st-notstarted { background: var(--bg-sec); color: var(--text-muted); }
+.bw-pill.st-inprog { background: rgba(96,165,250,.15); color: #60a5fa; }
+.bw-pill.st-complete { background: rgba(117,190,25,.15); color: var(--green); }
 .bw-left-foot { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); }
-.bw-pane { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 22px 24px; min-height: 400px; }
 .bw-pane-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .bw-pane-head h3 { font-size: 16px; font-weight: 600; flex: 1; }
 .bw-note { font-size: 13px; line-height: 1.6; color: var(--text-muted); background: var(--bg-sec); border-radius: 6px; padding: 12px 14px; }
@@ -1762,6 +1774,7 @@ function itemObj(item) {
 
 function itemProgress(item) {
   const o = itemObj(item); if (!o) return 0;
+  if (o._forceComplete) return 100;   // manual checkbox in the checklist
   if (item.ref.kind === 'requirement' && item.type === 'A') return (o._attached || o._manual) ? 100 : 0;
   if (o._reviewed || o._done) return 100;
   if (item.type === 'C') {
@@ -1779,46 +1792,70 @@ function overallProgress() {
   return Math.round(items.reduce((s, it) => s + itemProgress(it), 0) / items.length);
 }
 
+// Phase A (Erin redesign): working canvas on the LEFT, AI Assistant + Checklist on the RIGHT.
 function renderRfpWorkspace() {
   const ctx = S.proposalContext, c = ctx.client;
   const items = buildItems();
-  if (!S.buildSel || !items.find(it => it.id === S.buildSel)) S.buildSel = items[0] && items[0].id;
+  if (S.buildSel && !items.find(it => it.id === S.buildSel)) S.buildSel = null;
   const overall = overallProgress();
-  const groups = {};
-  items.forEach(it => { (groups[it.group] = groups[it.group] || []).push(it); });
-  const typeIcon = { A: '📎', B: '✍️', C: '❓' };
-  const leftRows = Object.entries(groups).map(([g, its]) => `
-    <div class="bw-group">${esc(g)}</div>
-    ${its.map(it => { const p = itemProgress(it); const s = it.id === S.buildSel;
-      return `<div class="bw-item${s ? ' sel' : ''}" onclick="selectBuildItem('${it.id}')">
-        <span class="bw-ic">${p >= 100 ? '✅' : typeIcon[it.type]}</span>
-        <span class="bw-item-title">${esc(it.title)}</span>
-        <span class="bw-pct">${p}%</span>
-      </div>`; }).join('')}`).join('');
+  const done = items.filter(it => itemProgress(it) >= 100).length;
   const sel = items.find(it => it.id === S.buildSel);
+  const empty = `<div class="bw-empty"><div class="bw-empty-glyph">✎</div><h3>Select an item to start working</h3><p>Click anything in the RFP Checklist on the right — it opens here so you and the AI assistant can draft it together.</p></div>`;
   return `
 <div class="bw">
-  <div class="bw-left">
-    <div class="bw-head">
-      <div style="flex:1"><h2 style="font-size:15px;font-weight:600">${esc(c.name)}</h2>
-      <div style="font-size:11px;color:var(--text-muted)">${esc(c.market)}${c.category ? ' · ' + esc(c.category) : ''}</div></div>
-      <span class="badge badge-rfp">RFP</span>
+  <div class="bw-canvas">
+    <div class="bw-canvas-top">
+      <div class="bw-doc-title">${esc(c.name)} — <b>Working Draft</b></div>
+      <button class="btn btn-primary btn-sm" onclick="finalizeProposal()"${done ? '' : ' disabled style="opacity:.5;cursor:not-allowed"'}>⇩ Export Final Proposal</button>
     </div>
-    <div class="bw-progress">
-      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span>Overall progress</span><strong>${overall}%</strong></div>
-      <div class="bw-bar"><div class="bw-bar-fill" style="width:${overall}%"></div></div>
-      ${overall >= 100
-        ? '<button class="btn btn-primary btn-sm" style="width:100%;margin-top:12px" onclick="finalizeProposal()">✨ Finalize &amp; prose proposal</button>'
-        : '<div style="font-size:11px;color:var(--text-muted);margin-top:8px">Everything lives here — progress tracked as you go. Complete every item to finalize.</div>'}
+    <div class="bw-canvas-body" id="bw-pane">${sel ? renderBuildPane(sel) : empty}</div>
+  </div>
+  <div class="bw-side">
+    <div class="panel-card">
+      <div class="panel-header"><span class="panel-icon">🤖</span><h3>AI Assistant</h3></div>
+      <div class="chat-messages" id="chat-messages" style="height:200px">
+        <div class="chat-msg ai"><div class="chat-bubble">Hi! Click any checklist item to open it on the left, or ask me anything here — RFP compliance, rewrites, strategy.</div></div>
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chat-input" placeholder="Ask me anything…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){sendChat();event.preventDefault()}" />
+        <button class="chat-send" onclick="sendChat()">↑</button>
+      </div>
     </div>
-    <div class="bw-list">${leftRows}</div>
-    <div class="bw-left-foot">
-      <button class="btn btn-ghost btn-sm" onclick="runTechCheck()">✅ Tech Check</button>
-      <button class="btn btn-ghost btn-sm" onclick="saveProposal()">💾 Save</button>
+    <div class="panel-card">
+      <div class="panel-header"><span class="panel-icon">📋</span><h3>RFP Checklist</h3></div>
+      <div style="padding:12px 16px 4px">
+        <div class="bw-bar"><div class="bw-bar-fill" style="width:${overall}%"></div></div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px">${done} of ${items.length} complete</div>
+      </div>
+      <div class="bw-list">${renderBuildChecklist(items)}</div>
+      <div class="bw-left-foot">
+        <button class="btn btn-ghost btn-sm" onclick="runTechCheck()">✅ Tech Check</button>
+        <button class="btn btn-ghost btn-sm" onclick="saveProposal()">💾 Save</button>
+      </div>
     </div>
   </div>
-  <div class="bw-pane" id="bw-pane">${sel ? renderBuildPane(sel) : '<div class="empty-state"><p>No checklist items.</p></div>'}</div>
 </div>`;
+}
+
+function renderBuildChecklist(items) {
+  const groups = {};
+  items.forEach(it => { (groups[it.group] = groups[it.group] || []).push(it); });
+  return Object.entries(groups).map(([g, its]) => `
+    <div class="bw-group">${esc(g)}</div>
+    ${its.map(it => { const p = itemProgress(it); const on = it.id === S.buildSel;
+      const label = p >= 100 ? 'Complete' : p > 0 ? 'In Progress' : 'Not Started';
+      const cls = p >= 100 ? 'st-complete' : p > 0 ? 'st-inprog' : 'st-notstarted';
+      return `<div class="bw-item${on ? ' sel' : ''}" onclick="selectBuildItem('${it.id}')">
+        <span class="bw-check${p >= 100 ? ' done' : ''}" onclick="event.stopPropagation();toggleItemComplete('${it.id}')"></span>
+        <span class="bw-item-main"><span class="bw-item-title">${esc(it.title)}</span><span class="bw-pill ${cls}">${label}</span></span>
+      </div>`; }).join('')}`).join('');
+}
+
+function toggleItemComplete(id) {
+  const item = buildItems().find(it => it.id === id); if (!item) return;
+  const o = itemObj(item); if (!o) return;
+  o._forceComplete = !(itemProgress(item) >= 100);
+  refreshBuild();
 }
 
 function refreshBuild() { if (S.view === 'workspace') render(); autoSaveRfp('building'); }
@@ -2809,6 +2846,7 @@ Object.assign(window, {
   finalizeProposal, openPartnerDirectory,
   loadRfps, resumeRfp, saveRfpState,
   uploadReqDoc, buildQuestionsMailto,
+  toggleItemComplete, renderBuildChecklist,
 });
 
 // ─── Boot ────────────────────────────────────────────────────────────────────────────
