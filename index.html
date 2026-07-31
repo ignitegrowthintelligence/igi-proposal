@@ -11,6 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root {
   --cyan:       #00aebd;
@@ -390,6 +391,25 @@ nav { background: var(--bg-nav); height: 52px; display: flex; align-items: cente
 .bw-opt:hover { border-color: var(--cyan); }
 .bw-opt.sel { border-color: var(--cyan); background: rgba(0,174,189,.15); color: var(--cyan); font-weight: 500; }
 .bw-draft { margin-top: 18px; padding: 14px 16px; background: var(--bg-sec); border-radius: 6px; border-left: 3px solid var(--green); }
+.bw-assist-out { margin-top: 14px; padding: 14px 16px; background: var(--bg-sec); border-radius: 8px; border-left: 3px solid var(--cyan); }
+.bw-assist-label { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--cyan); font-family: 'Inter', sans-serif; font-weight: 600; margin-bottom: 6px; }
+.bw-flags { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.bw-flag { font-size: 12.5px; padding: 8px 12px; border-radius: 6px; line-height: 1.45; }
+.bw-flag.error { background: rgba(229,57,53,.12); border: 1px solid rgba(229,57,53,.4); color: #ff6b6b; }
+.bw-flag.warn { background: rgba(239,152,9,.12); border: 1px solid rgba(239,152,9,.4); color: var(--orange); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+.media-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.media-table th { background: var(--bg-sec); color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .04em; text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.media-table td { border-bottom: 1px solid var(--border); padding: 0; }
+.media-table td[data-editable] div { padding: 8px 12px; outline: none; min-width: 70px; }
+.media-table td[data-editable] div:focus { background: rgba(0,174,189,.08); box-shadow: inset 0 0 0 1.5px var(--cyan); }
+.media-table tr:last-child td { border-bottom: none; }
+.media-table tfoot td { background: var(--bg-sec); font-weight: 700; padding: 10px 12px; }
+.row-remove { color: var(--text-muted); cursor: pointer; padding: 0 10px; font-size: 13px; }
+.row-remove:hover { color: var(--red); }
+.bw-itemchat { margin-top: 28px; border-top: 1px solid var(--border); padding-top: 20px; }
+.bw-itemchat-label { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); font-family: 'Inter', sans-serif; margin-bottom: 12px; }
+.bw-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); }
 @media (max-width: 860px) { .bw { grid-template-columns: 1fr; } .bw-left { position: static; } }
 
 /* ── Misc ── */
@@ -431,6 +451,19 @@ nav { background: var(--bg-nav); height: 52px; display: flex; align-items: cente
     <div style="display:flex;gap:10px;">
       <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-techcheck').style.display='none'">Close</button>
       <button class="btn btn-primary btn-sm" id="btn-export-modal" onclick="closeModal();showExportMenu()">Export</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-export" class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box" style="max-width:760px;width:92%">
+    <h3>Export Final Proposal</h3>
+    <p style="font-size:13px;color:var(--text-muted);margin:-8px 0 12px">Only items marked Complete are included. Edit the markdown below, then export to PDF.</p>
+    <textarea id="export-modal-body" style="width:100%;height:46vh;background:var(--bg-sec);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:monospace;font-size:12.5px;line-height:1.6;padding:12px 14px;resize:vertical;outline:none"></textarea>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-export').style.display='none'">Close</button>
+      <button class="btn btn-ghost btn-sm" onclick="downloadFinalMd()">⇩ Download .md</button>
+      <button class="btn btn-primary btn-sm" onclick="exportFinalPdf()">⇩ Export PDF</button>
     </div>
   </div>
 </div>
@@ -1755,8 +1788,9 @@ function buildItems() {
   const q = S.qualification || {};
   const items = [];
   (S.rfpSections || []).forEach((s, i) => {
+    const isMedia = /media\s*plan|recommended\s*(media|buy)|channel\s*mix/i.test(s.title || '');
     items.push({ id: 'sec-' + i, group: 'Proposal sections', title: s.title || ('Section ' + (i + 1)),
-      type: (s.coverage === 'full') ? 'B' : 'C', ref: { kind: 'section', idx: i } });
+      type: isMedia ? 'table' : (s.coverage === 'full') ? 'B' : 'C', ref: { kind: 'section', idx: i } });
   });
   (q.submissionRequirements || []).forEach((r, i) => {
     const dt = docTypeForRequirement(r);
@@ -1864,23 +1898,135 @@ function selectBuildItem(id) { S.buildSel = id; refreshBuild(); }
 
 function renderBuildPane(item) {
   const o = itemObj(item);
-  if (item.ref.kind === 'section') {
-    return item.type === 'B' ? renderPaneSection(item, o) : renderPaneGuided(item, o);
-  }
-  if (item.type === 'A') return renderPaneFixedDoc(item, o);
-  return renderPaneGuided(item, o);
+  let inner;
+  if (item.type === 'table') inner = renderPaneTable(item, o);
+  else if (item.ref.kind === 'section') inner = (item.type === 'C') ? renderPaneGuided(item, o) : renderPaneSection(item, o);
+  else if (item.type === 'A') inner = renderPaneFixedDoc(item, o);
+  else inner = renderPaneGuided(item, o);
+  return inner + renderItemChat(item);   // Phase C: per-item "work on this together" chat on every pane
 }
 
-// Type B — AI-drafted section (editable, review to 100%)
+// B1: text section — editable draft + Draft / Tighten / Compliance AI actions.
 function renderPaneSection(item, s) {
   const reviewed = !!s._reviewed;
+  const idx = item.ref.idx;
   return `
-  <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence ${reviewed ? 'conf-confirmed' : 'conf-generated'}">${reviewed ? 'Reviewed' : 'AI Draft'}</span></div>
-  <textarea class="bw-editor" id="bw-ed-${item.ref.idx}" oninput="editRfpSection(${item.ref.idx}, this.value)">${esc(String(s.content || ''))}</textarea>
+  <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence ${reviewed ? 'conf-confirmed' : 'conf-generated'}">${reviewed ? 'Reviewed' : 'Draft'}</span></div>
+  <textarea class="bw-editor" id="bw-ed-${idx}" oninput="editRfpSection(${idx}, this.value)" placeholder="Write or paste here, or use the buttons below to draft this with AI…">${esc(String(s.content || ''))}</textarea>
+  <div id="bw-assist-${idx}"></div>
   <div class="bw-actions">
-    <button class="btn btn-ghost btn-sm" onclick="regenRfpSection(${item.ref.idx})">↺ Regenerate</button>
-    <button class="btn btn-primary btn-sm" onclick="markSectionReviewed(${item.ref.idx})">✓ Mark reviewed</button>
+    <button class="btn btn-primary btn-sm" onclick="sectionAssist(${idx},'draft')">✨ Draft this with AI</button>
+    <button class="btn btn-ghost btn-sm" onclick="sectionAssist(${idx},'tighten')">Tighten language</button>
+    <button class="btn btn-ghost btn-sm" onclick="sectionAssist(${idx},'compliance')">Check RFP compliance</button>
+    <button class="btn btn-ghost btn-sm" onclick="markSectionReviewed(${idx})">✓ Mark reviewed</button>
   </div>`;
+}
+
+let _assistBuf = {};
+async function sectionAssist(i, mode) {
+  const s = S.rfpSections[i]; if (!s) return;
+  const box = document.getElementById('bw-assist-' + i);
+  if (box) box.innerHTML = '<div class="bw-assist-out" style="color:var(--text-muted)">Working…</div>';
+  try {
+    const r = await api('/proposal/section-assist', { title: s.title, content: s.content || '', mode,
+      rfpText: S.rfpIntake?.rfpText || S.proposalContext?.rfpText || '', clientName: S.proposalContext?.client?.name, market: S.proposalContext?.client?.market });
+    if (!box) return;
+    if (mode === 'compliance') {
+      box.innerHTML = `<div class="bw-assist-out"><div class="bw-assist-label">Compliance review</div><div style="white-space:pre-wrap;font-size:13px;line-height:1.6">${esc(r.content || '')}</div></div>`;
+    } else {
+      _assistBuf[i] = r.content || '';
+      box.innerHTML = `<div class="bw-assist-out"><div class="bw-assist-label">${mode === 'draft' ? 'Suggested draft' : 'Tightened text'}</div><div style="white-space:pre-wrap;font-size:13px;line-height:1.6">${esc(r.content || '')}</div><button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="applySectionAssist(${i})">↳ Use this</button></div>`;
+    }
+  } catch (e) { if (box) box.innerHTML = `<div class="bw-assist-out" style="color:var(--red)">Failed: ${esc(e.message)}</div>`; }
+}
+function applySectionAssist(i) {
+  const t = _assistBuf[i]; if (t == null) return;
+  S.rfpSections[i].content = t; S.rfpSections[i]._reviewed = false; S.isDirty = true; refreshBuild();
+}
+
+// B2 + D: editable Media Plan table with auto-total, Library generation, and validation flags.
+const MEDIA_COLS = ['Solution Name', 'Solution Goal', 'Audience Detail', 'Solution Footprint', 'Media Delivered', 'Volume', 'Budget'];
+function renderPaneTable(item, s) {
+  if (!s._table) s._table = { cols: MEDIA_COLS.slice(), rows: [] };
+  const t = s._table;
+  const flags = s._flags || [];
+  const budI = t.cols.indexOf('Budget');
+  let total = 0;
+  t.rows.forEach(r => { const b = parseFloat(String(r[budI] || '').replace(/[^0-9.]/g, '')) || 0; if (!/added value|in-?kind/i.test(String(r[budI] || ''))) total += b; });
+  const flagHtml = flags.length ? `<div class="bw-flags">${flags.map(f => `<div class="bw-flag ${f.level}">${f.level === 'error' ? '⛔' : '⚠'} ${esc(f.msg)}</div>`).join('')}</div>` : '';
+  const rowsHtml = t.rows.map((r, ri) => `<tr>${t.cols.map((c, ci) => `<td data-editable><div contenteditable="true" oninput="editTableCell(${item.ref.idx},${ri},${ci},this.textContent)">${esc(r[ci] || '')}</div></td>`).join('')}<td><span class="row-remove" onclick="removeTableRow(${item.ref.idx},${ri})">✕</span></td></tr>`).join('');
+  return `
+  <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence conf-generated">Editable</span></div>
+  ${flagHtml}
+  <div class="table-wrap"><table class="media-table">
+    <thead><tr>${t.cols.map(c => `<th>${esc(c)}</th>`).join('')}<th></th></tr></thead>
+    <tbody>${rowsHtml || `<tr><td colspan="${t.cols.length + 1}" style="padding:16px;color:var(--text-muted)">No rows yet — generate a plan from the Library, or add a row.</td></tr>`}</tbody>
+    <tfoot><tr><td colspan="${t.cols.length - 1}">Total Investment</td><td>$${total.toLocaleString()}</td><td></td></tr></tfoot>
+  </table></div>
+  <div class="bw-actions">
+    <button class="btn btn-primary btn-sm" onclick="generateMediaPlan(${item.ref.idx})">✨ Generate plan from Library</button>
+    <button class="btn btn-ghost btn-sm" onclick="addTableRow(${item.ref.idx})">+ Add row</button>
+    <button class="btn btn-ghost btn-sm" onclick="validateMediaPlan(${item.ref.idx})">✓ Validate</button>
+    <button class="btn btn-ghost btn-sm" onclick="markSectionReviewed(${item.ref.idx})">✓ Mark reviewed</button>
+  </div>`;
+}
+let _valTimer = null;
+function editTableCell(i, ri, ci, val) { const t = S.rfpSections[i]._table; if (t && t.rows[ri]) { t.rows[ri][ci] = val; S.isDirty = true; clearTimeout(_valTimer); _valTimer = setTimeout(() => validateMediaPlan(i), 900); } }
+function addTableRow(i) { const t = S.rfpSections[i]._table; t.rows.push(t.cols.map(() => '')); refreshBuild(); }
+function removeTableRow(i, ri) { const t = S.rfpSections[i]._table; t.rows.splice(ri, 1); refreshBuild(); }
+async function generateMediaPlan(i) {
+  const s = S.rfpSections[i]; const pane = document.getElementById('bw-pane'); if (pane) pane.style.opacity = '.5';
+  try {
+    const b = S.qualification?.budgetConstraint || {};
+    const r = await api('/proposal/media-plan', { clientName: S.proposalContext?.client?.name, market: S.proposalContext?.client?.market, category: S.proposalContext?.client?.category, budget: b.mediaBudget || b.statedFee || '', rfpText: S.rfpIntake?.rfpText || '' });
+    s._table = { cols: (r.cols && r.cols.length) ? r.cols : MEDIA_COLS.slice(), rows: r.rows || [] };
+    S.isDirty = true; await validateMediaPlanSilent(i);
+  } catch (e) { alert('Generate failed: ' + e.message); }
+  refreshBuild();
+}
+async function validateMediaPlan(i) { await validateMediaPlanSilent(i); refreshBuild(); }
+async function validateMediaPlanSilent(i) {
+  const s = S.rfpSections[i]; const t = s && s._table; if (!t) return;
+  try { const r = await api('/proposal/validate', { mediaCols: t.cols, mediaRows: t.rows, totalFloor: 2000 }); s._flags = r.flags || []; }
+  catch (e) { s._flags = []; }
+}
+
+// Phase C: per-item chat ("work on this section together").
+function renderItemChat(item) {
+  S.itemChats = S.itemChats || {};
+  const msgs = S.itemChats[item.id] || [];
+  const feed = msgs.map(m => `<div class="chat-msg ${m.role === 'user' ? 'user' : 'ai'}"><div class="chat-bubble">${esc(m.text).replace(/\n/g, '<br>')}</div></div>`).join('');
+  return `
+  <div class="bw-itemchat">
+    <div class="bw-itemchat-label"><span class="bw-dot"></span> Work on this section together</div>
+    <div class="chat-messages" id="bw-itemchat-feed" style="height:auto;max-height:220px;background:var(--bg-sec);border-radius:8px">${feed}</div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="bw-itemchat-input" placeholder="e.g. make this more concrete about our media reach…" onkeydown="if(event.key==='Enter'){sendItemChat('${item.id}');event.preventDefault()}" />
+      <button class="chat-send" onclick="sendItemChat('${item.id}')">↑</button>
+    </div>
+  </div>`;
+}
+async function sendItemChat(id) {
+  const item = buildItems().find(it => it.id === id); if (!item) return;
+  const input = document.getElementById('bw-itemchat-input'); const text = (input && input.value || '').trim(); if (!text) return;
+  input.value = '';
+  S.itemChats = S.itemChats || {}; S.itemChats[id] = S.itemChats[id] || [];
+  S.itemChats[id].push({ role: 'user', text });
+  S.itemChats[id].push({ role: 'ai', text: 'Thinking…', pending: true });
+  updateItemChatFeed(id);
+  const o = itemObj(item); const content = (o && (o.content || (o._table && JSON.stringify(o._table.rows)))) || '';
+  try {
+    const hist = S.itemChats[id].filter(m => !m.pending).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }));
+    const r = await api('/proposal/chat', { proposalContext: S.proposalContext, sections: { [item.title]: content }, messages: hist });
+    S.itemChats[id] = S.itemChats[id].filter(m => !m.pending);
+    S.itemChats[id].push({ role: 'ai', text: (r && r.response) || '(no response)' });
+  } catch (e) { S.itemChats[id] = S.itemChats[id].filter(m => !m.pending); S.itemChats[id].push({ role: 'ai', text: 'Error: ' + e.message }); }
+  updateItemChatFeed(id);
+}
+function updateItemChatFeed(id) {
+  const feed = document.getElementById('bw-itemchat-feed'); if (!feed) return;
+  feed.innerHTML = (S.itemChats[id] || []).map(m => `<div class="chat-msg ${m.role === 'user' ? 'user' : 'ai'}"><div class="chat-bubble">${esc(m.text).replace(/\n/g, '<br>')}</div></div>`).join('');
+  feed.scrollTop = feed.scrollHeight;
 }
 
 function editRfpSection(i, val) { if (S.rfpSections[i]) { S.rfpSections[i].content = val; S.isDirty = true; autoSaveRfp('building'); } }
@@ -1994,30 +2140,55 @@ async function composeGuided(id) {
 }
 
 // Phase 7 — Finalize / prose assembler
-function assembleFinalItems() {
-  return buildItems().map(it => {
-    const o = itemObj(it); let content = '';
-    if (it.ref.kind === 'section') content = o._draft || o.content || '[To be completed]';
-    else if (it.type === 'A') content = o._attached ? 'Standing document attached (on file in the library).' : (o._manual ? 'Handled manually.' : '[To be completed]');
-    else content = o._draft || '[To be completed]';
-    return { title: it.title, content };
+// Phase E: assemble every COMPLETE item into one markdown kit; edit in-platform; export PDF.
+function assembleMarkdown() {
+  const items = buildItems(); const c = S.proposalContext.client;
+  const parts = [`# ${c.name} — Proposal`, `_${c.market || ''}${c.aeName ? ' · Prepared by ' + c.aeName : ''}_\n`];
+  items.forEach(it => {
+    if (itemProgress(it) < 100) return;
+    const o = itemObj(it);
+    if (it.type === 'table' && o._table && o._table.rows.length) {
+      const t = o._table;
+      parts.push(`## ${it.title}\n\n| ${t.cols.join(' | ')} |\n| ${t.cols.map(() => '---').join(' | ')} |\n${t.rows.map(r => `| ${r.join(' | ')} |`).join('\n')}\n`);
+    } else if (it.type === 'A') {
+      const doc = (S.libraryDocs || []).find(d => d.doc_type === it.docType);
+      parts.push(`## ${it.title}\n\n${doc ? (doc.name + (doc.file_url ? ' — ' + doc.file_url : '')) : 'Attached separately.'}\n`);
+    } else {
+      const content = o._draft || o.content || '';
+      if (content.trim()) parts.push(`## ${it.title}\n\n${content.trim()}\n`);
+    }
   });
+  if (parts.length <= 2) parts.push('_No items marked complete yet — check items off in the RFP Checklist to include them here._');
+  return parts.join('\n');
 }
-
 function finalizeProposal() {
+  S.finalMd = assembleMarkdown();
+  const ta = document.getElementById('export-modal-body'); if (ta) ta.value = S.finalMd;
+  const m = document.getElementById('modal-export'); if (m) m.style.display = 'flex';
+}
+function downloadFinalMd() {
+  const md = document.getElementById('export-modal-body').value;
+  const blob = new Blob([md], { type: 'text/markdown' }); const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = (S.proposalContext.client.name || 'proposal').replace(/\s+/g, '-').toLowerCase() + '-proposal.md'; a.click(); URL.revokeObjectURL(url);
+}
+function exportFinalPdf() {
+  const md = document.getElementById('export-modal-body').value;
   const c = S.proposalContext.client;
-  const body = assembleFinalItems().map(s =>
-    `<section><h2>${esc(s.title)}</h2><div>${esc(s.content).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</div></section>`).join('');
-  const w = window.open('', '_blank');
-  if (!w) { alert('Please allow pop-ups to open the finalized proposal.'); return; }
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(c.name)} — Proposal</title>
-    <style>body{font-family:Georgia,serif;max-width:820px;margin:40px auto;padding:0 24px;color:#111;line-height:1.6}
-    h1{font-size:26px;border-bottom:3px solid #00aebd;padding-bottom:10px}h2{font-size:17px;color:#00757f;margin-top:28px}
-    section{page-break-inside:avoid}</style></head><body>
-    <h1>${esc(c.name)}</h1><p style="color:#666">${esc(c.market || '')} · Prepared by ${esc(c.aeName || 'Townsquare Ignite')}</p>
-    ${body}</body></html>`);
-  w.document.close();
-  showToast('Proposal assembled ✓ — print or save as PDF from the new tab');
+  if (!(window.jspdf && window.jspdf.jsPDF)) { alert('PDF library still loading — try again in a moment.'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+  const margin = 56, maxW = 500; let y = margin;
+  md.split('\n').forEach(raw => {
+    let line = raw, size = 11, bold = false;
+    if (/^# /.test(raw)) { line = raw.slice(2); size = 20; bold = true; }
+    else if (/^## /.test(raw)) { line = raw.slice(3); size = 14; bold = true; y += 10; }
+    else if (/^_.*_\s*$/.test(raw)) { line = raw.replace(/_/g, ''); size = 10; }
+    doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(size);
+    const wrapped = doc.splitTextToSize(line, maxW);
+    wrapped.forEach(w => { if (y > 740) { doc.addPage(); y = margin; } doc.text(w, margin, y); y += size + 4; });
+    if (!raw.trim()) y += 6;
+  });
+  doc.save((c.name || 'proposal').replace(/\s+/g, '-').toLowerCase() + '-proposal.pdf');
 }
 
 // Phase 8 — Partner ecosystem (stub directory + referral logging)
@@ -2847,6 +3018,9 @@ Object.assign(window, {
   loadRfps, resumeRfp, saveRfpState,
   uploadReqDoc, buildQuestionsMailto,
   toggleItemComplete, renderBuildChecklist,
+  sectionAssist, applySectionAssist, sendItemChat,
+  editTableCell, addTableRow, removeTableRow, generateMediaPlan, validateMediaPlan,
+  downloadFinalMd, exportFinalPdf,
 });
 
 // ─── Boot ────────────────────────────────────────────────────────────────────────────
