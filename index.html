@@ -1987,7 +1987,7 @@ async function generateMediaPlan(i) {
 async function validateMediaPlan(i) { await validateMediaPlanSilent(i); refreshBuild(); }
 async function validateMediaPlanSilent(i) {
   const s = S.rfpSections[i]; const t = s && s._table; if (!t) return;
-  try { const r = await api('/proposal/validate', { mediaCols: t.cols, mediaRows: t.rows, totalFloor: 2000 }); s._flags = r.flags || []; }
+  try { const r = await api('/proposal/validate', { mediaCols: t.cols, mediaRows: t.rows }); s._flags = r.flags || []; }
   catch (e) { s._flags = []; }
 }
 
