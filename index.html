@@ -2154,7 +2154,8 @@ function assembleMarkdown() {
       const doc = (S.libraryDocs || []).find(d => d.doc_type === it.docType);
       parts.push(`## ${it.title}\n\n${doc ? (doc.name + (doc.file_url ? ' — ' + doc.file_url : '')) : 'Attached separately.'}\n`);
     } else {
-      const content = o._draft || o.content || '';
+      let content = (o._draft || o.content || '').trim();
+      content = content.replace(/^#{1,6}\s+.*(?:\r?\n)+/, '');   // drop a leading heading the model may have added (avoids doubled title)
       if (content.trim()) parts.push(`## ${it.title}\n\n${content.trim()}\n`);
     }
   });
