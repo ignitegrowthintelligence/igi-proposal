@@ -427,6 +427,7 @@ nav { background: var(--bg-nav); height: 52px; display: flex; align-items: cente
 <nav>
   <a class="nav-logo" href="#" onclick="goHome()">IGI <span>Proposal</span></a>
   <div class="nav-spacer"></div>
+  <button class="nav-btn" onclick="goHome()">🗂 In Progress</button>
   <button class="nav-btn" onclick="showLibrary()">📋 All Proposals</button>
   <button class="nav-btn" id="btn-new" style="display:none" onclick="goHome()">+ New Proposal</button>
   <button class="nav-btn" id="btn-save" style="display:none" onclick="saveProposal()">💾 Save</button>
@@ -1546,6 +1547,7 @@ async function saveRfpState(status) {
   const intake = S.rfpIntake;
   if (!intake || !intake.clientName) return;
   const prog = (Array.isArray(S.rfpSections) && S.rfpSections.length) ? overallProgress() : 0;
+  S._lastRfpStatus = status || 'analyzed';
   try {
     const r = await api('/proposal/rfp/save', {
       id: S.rfpId, intake, qualification: S.qualification, rfpSections: S.rfpSections,
@@ -1558,6 +1560,19 @@ function autoSaveRfp(status) {
   clearTimeout(_rfpSaveTimer);
   _rfpSaveTimer = setTimeout(() => saveRfpState(status), 900);
 }
+// pr-v2-7: flush the working state if the tab is closed mid-edit. keepalive lets the POST outlive the page,
+// catching the <900ms of edits the debounce hasn't saved yet.
+window.addEventListener('beforeunload', function () {
+  if (!(S.rfpId && S.rfpIntake && S.rfpIntake.clientName)) return;
+  try {
+    const prog = (Array.isArray(S.rfpSections) && S.rfpSections.length) ? overallProgress() : 0;
+    fetch(INTEL_BASE + '/proposal/rfp/save', {
+      method: 'POST', keepalive: true,
+      headers: { 'Content-Type': 'application/json', 'X-IGI-Auth': INTEL_SECRET },
+      body: JSON.stringify({ id: S.rfpId, intake: S.rfpIntake, qualification: S.qualification, rfpSections: S.rfpSections, status: S._lastRfpStatus || 'building', overallProgress: prog }),
+    });
+  } catch (e) {}
+});
 
 async function loadRfps() {
   try {
@@ -1568,32 +1583,76 @@ async function loadRfps() {
   if (wrap) wrap.innerHTML = renderResumeRfps();
 }
 
+// pr-v2-7: RFP working-state lifecycle + filtered "Work in Progress" view.
+let _rfpFilter = 'in_progress';
+const RFP_STATUS_META = {
+  analyzed:  { label: 'Qualified',       cls: 'badge-rfp' },
+  qualified: { label: 'Qualified',       cls: 'badge-rfp' },
+  building:  { label: 'In progress',     cls: 'badge-discovery' },
+  in_progress:{label: 'In progress',     cls: 'badge-discovery' },
+  pitched:   { label: 'In progress',     cls: 'badge-discovery' },
+  ready:     { label: 'Ready to submit',  cls: 'badge-fresh' },
+  submitted: { label: 'Submitted',       cls: 'badge-rfp' },
+  won:       { label: 'Won',             cls: 'badge-fresh' },
+  lost:      { label: 'Lost',            cls: 'badge-draft' },
+  passed:    { label: 'Passed',          cls: 'badge-draft' },
+};
+function _rfpStatusGroup(s) { if (s === 'ready') return 'ready'; if (['submitted','won','lost','passed'].includes(s)) return 'closed'; return 'in_progress'; }
+function _rfpNextStep(r) { switch (r.status) {
+  case 'ready':     return 'Submit to the client';
+  case 'submitted': return 'Awaiting client decision';
+  case 'won':       return 'Won — hand off to Ops';
+  case 'lost':      return 'Closed (lost)';
+  case 'passed':    return 'Passed';
+  case 'building': case 'in_progress': case 'pitched':
+    return (r.overallProgress >= 100) ? 'Finalize & export' : ('Finish the draft' + (typeof r.overallProgress === 'number' ? ' (' + r.overallProgress + '%)' : ''));
+  default:          return 'Start the build'; } }
+function _rfpRel(iso) { if (!iso) return ''; const s = (Date.now() - Date.parse(iso)) / 1000; if (isNaN(s)) return ''; if (s < 3600) return Math.max(1, Math.round(s/60)) + 'm ago'; if (s < 86400) return Math.round(s/3600) + 'h ago'; return Math.round(s/86400) + 'd ago'; }
+function setRfpFilter(f) { _rfpFilter = f; const w = document.getElementById('resume-rfps'); if (w) w.innerHTML = renderResumeRfps(); }
+async function setRfpStatus(id, status) {
+  const rec = (S.rfps || []).find(x => x.id === id); if (rec) { rec.status = status; rec.updatedAt = new Date().toISOString(); }
+  const w = document.getElementById('resume-rfps'); if (w) w.innerHTML = renderResumeRfps();
+  try {
+    if (S.rfpId === id && S.rfpIntake) { await saveRfpState(status); }
+    else { const d = await api('/proposal/rfp/' + id, undefined, 'GET'); await api('/proposal/rfp/save', { id, intake: d.intake, qualification: d.qualification, rfpSections: d.rfpSections, status, overallProgress: d.overallProgress }); }
+  } catch (e) { console.warn('[IGI Proposal] status update failed:', e.message); }
+}
 function renderResumeRfps() {
   if (!S.rfps.length) return '';
-  const statusMeta = {
-    analyzed:  { label: 'Analyzed',  cls: 'badge-rfp' },
-    building:  { label: 'Building',  cls: 'badge-discovery' },
-    pitched:   { label: 'Pitched',   cls: 'badge-fresh' },
-    passed:    { label: 'Passed',    cls: 'badge-draft' },
-  };
-  const rows = S.rfps.map(r => {
-    const m = statusMeta[r.status] || { label: r.status || '—', cls: 'badge-draft' };
+  const counts = { in_progress: 0, ready: 0, closed: 0 };
+  S.rfps.forEach(r => counts[_rfpStatusGroup(r.status)]++);
+  const items = S.rfps.filter(r => _rfpStatusGroup(r.status) === _rfpFilter);
+  const tabStyle = a => `background:none;border:none;border-bottom:2px solid ${a ? 'var(--accent)' : 'transparent'};color:${a ? 'var(--text)' : 'var(--text-muted)'};font:inherit;font-size:12px;font-weight:${a ? 600 : 400};padding:4px 10px;cursor:pointer`;
+  const tab = (k, label) => `<button style="${tabStyle(_rfpFilter === k)}" onclick="setRfpFilter('${k}')">${label} <span style="opacity:.55">${counts[k]}</span></button>`;
+  const selStyle = 'background:var(--bg-secondary);border:1px solid var(--border,#ccc);border-radius:5px;color:var(--text);font:inherit;font-size:11px;padding:3px 6px';
+  const rows = items.length ? items.map(r => {
+    const m = RFP_STATUS_META[r.status] || { label: r.status || '—', cls: 'badge-draft' };
     const due = r.proposalDue ? fmtDate(r.proposalDue) : '';
     const prog = (typeof r.overallProgress === 'number') ? r.overallProgress + '%' : '';
+    const owner = r.aeName ? esc(r.aeName) : '';
+    const upd = _rfpRel(r.updatedAt);
+    const closed = _rfpStatusGroup(r.status) === 'closed';
+    const sel = `<select onclick="event.stopPropagation()" onchange="event.stopPropagation();setRfpStatus('${r.id}',this.value)" style="${selStyle}" title="Set status">`
+      + ['analyzed','building','ready','submitted','won','lost','passed'].map(s => `<option value="${s}"${r.status === s ? ' selected' : ''}>${(RFP_STATUS_META[s] || {}).label || s}</option>`).join('') + `</select>`;
     return `
     <div class="rfp-row" onclick="resumeRfp('${r.id}')">
-      <div style="flex:1">
+      <div style="flex:1;min-width:0">
         <div style="font-weight:500">${esc(r.client?.name || 'Untitled RFP')}</div>
-        <div style="font-size:12px;color:var(--text-muted)">${esc(r.client?.market || '')}${r.recommendation ? ' · ' + esc(r.recommendation) : ''}${due ? ' · due ' + due : ''}</div>
+        <div style="font-size:12px;color:var(--text-muted)">${esc(r.client?.market || '')}${owner ? ' · ' + owner : ''}${due ? ' · due ' + due : ''}${upd ? ' · updated ' + upd : ''}</div>
+        <div style="font-size:11.5px;color:var(--accent);margin-top:2px">Next: ${esc(_rfpNextStep(r))}</div>
       </div>
       ${prog ? `<span style="font-size:12px;color:var(--text-muted)">${prog}</span>` : ''}
       <span class="badge ${m.cls}">${m.label}</span>
-      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();resumeRfp('${r.id}')">Resume →</button>
+      ${sel}
+      ${closed ? '' : `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();resumeRfp('${r.id}')">Resume →</button>`}
     </div>`;
-  }).join('');
+  }).join('') : `<div style="padding:18px;color:var(--text-muted);font-size:13px">No ${_rfpFilter.replace('_', ' ')} RFPs.</div>`;
   return `
   <div style="max-width:960px;margin:28px auto 0">
-    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-family:'Inter',sans-serif;margin-bottom:10px">Resume an RFP</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-family:'Inter',sans-serif">Your RFP proposals</div>
+      <div style="display:flex;gap:2px">${tab('in_progress','In progress')}${tab('ready','Ready')}${tab('closed','Closed')}</div>
+    </div>
     <div class="rfp-list">${rows}</div>
   </div>`;
 }
@@ -2167,6 +2226,7 @@ function assembleMarkdown() {
   return parts.join('\n');
 }
 function finalizeProposal() {
+  if (S.rfpId) saveRfpState('ready'); // pr-v2-7: reaching finalize means the draft is ready to submit
   S.finalMd = assembleMarkdown();
   const ta = document.getElementById('export-modal-body'); if (ta) ta.value = S.finalMd;
   const m = document.getElementById('modal-export'); if (m) m.style.display = 'flex';
