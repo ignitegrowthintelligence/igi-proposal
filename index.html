@@ -1433,7 +1433,7 @@ function attachQualify() {
 // ─── Phase 3: "How you'll be graded" checkpoint (between pursue decision and build) ──
 function renderGrading() {
   const q = S.qualification || {};
-  const crit = q.evaluationCriteria || [];
+  const crit = (q.evaluationCriteria || []).filter(c => !/^\s*(total|total points|total score|overall|maximum)\s*$/i.test(String(c.criterion || '')));
   const intake = S.rfpIntake || {};
   const total = crit.reduce((s, c) => s + (Number(c.points) || 0), 0);
   const rows = crit.map(c => `
