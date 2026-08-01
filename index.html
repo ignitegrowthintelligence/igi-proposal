@@ -2008,7 +2008,10 @@ function applySectionAssist(i) {
 }
 
 // B2 + D: editable Media Plan table with auto-total, Library generation, and validation flags.
-const MEDIA_COLS = ['Solution Name', 'Solution Goal', 'Audience Detail', 'Solution Footprint', 'Media Delivered', 'Volume', 'Budget'];
+// pr9: priced media plan — product × Flight × Rate × Volume × Budget(line total). 'Budget' stays the column
+// name (the engine /proposal/validate rate-sanity check and the footer both key on it), functioning as the
+// line total = Rate × Volume; Flight (date range) + Rate (unit price) make it a rate-card structure.
+const MEDIA_COLS = ['Solution Name', 'Solution Goal', 'Audience Detail', 'Solution Footprint', 'Flight', 'Media Delivered', 'Rate', 'Volume', 'Budget'];
 function renderPaneTable(item, s) {
   if (!s._table) s._table = { cols: MEDIA_COLS.slice(), rows: [] };
   const t = s._table;
@@ -2034,7 +2037,21 @@ function renderPaneTable(item, s) {
   </div>`;
 }
 let _valTimer = null;
-function editTableCell(i, ri, ci, val) { const t = S.rfpSections[i]._table; if (t && t.rows[ri]) { t.rows[ri][ci] = val; S.isDirty = true; clearTimeout(_valTimer); _valTimer = setTimeout(() => validateMediaPlan(i), 900); } }
+function editTableCell(i, ri, ci, val) {
+  const t = S.rfpSections[i]._table;
+  if (t && t.rows[ri]) {
+    t.rows[ri][ci] = val;
+    // pr9: line Budget (total) = Rate × Volume when both are numeric. The AE can still type Budget directly
+    // (rows without a rate/volume — e.g. a flat package — keep their entered Budget).
+    const rateI = t.cols.indexOf('Rate'), volI = t.cols.indexOf('Volume'), budI = t.cols.indexOf('Budget');
+    if (budI !== -1 && rateI !== -1 && volI !== -1 && (ci === rateI || ci === volI)) {
+      const rate = parseFloat(String(t.rows[ri][rateI] || '').replace(/[^0-9.]/g, ''));
+      const vol  = parseFloat(String(t.rows[ri][volI]  || '').replace(/[^0-9.]/g, ''));
+      if (!isNaN(rate) && !isNaN(vol)) t.rows[ri][budI] = '$' + Math.round(rate * vol).toLocaleString();
+    }
+    S.isDirty = true; clearTimeout(_valTimer); _valTimer = setTimeout(() => validateMediaPlan(i), 900);
+  }
+}
 function addTableRow(i) { const t = S.rfpSections[i]._table; t.rows.push(t.cols.map(() => '')); refreshBuild(); }
 function removeTableRow(i, ri) { const t = S.rfpSections[i]._table; t.rows.splice(ri, 1); refreshBuild(); }
 async function generateMediaPlan(i) {
@@ -2042,7 +2059,11 @@ async function generateMediaPlan(i) {
   try {
     const b = S.qualification?.budgetConstraint || {};
     const r = await api('/proposal/media-plan', { clientName: S.proposalContext?.client?.name, market: S.proposalContext?.client?.market, category: S.proposalContext?.client?.category, budget: b.mediaBudget || b.statedFee || '', rfpText: S.rfpIntake?.rfpText || '' });
-    s._table = { cols: (r.cols && r.cols.length) ? r.cols : MEDIA_COLS.slice(), rows: r.rows || [] };
+    // pr9: normalize the engine's plan (still 7-col: …/Volume/Budget) into the priced layout by column NAME —
+    // Budget carries over as the line total, Flight + Rate start blank for the AE to price. Non-breaking.
+    const inCols = (r.cols && r.cols.length) ? r.cols : ['Solution Name', 'Solution Goal', 'Audience Detail', 'Solution Footprint', 'Media Delivered', 'Volume', 'Budget'];
+    const rows = (r.rows || []).map(row => { const byName = {}; inCols.forEach((c, ci) => { byName[c] = row[ci]; }); return MEDIA_COLS.map(c => (byName[c] != null ? byName[c] : '')); });
+    s._table = { cols: MEDIA_COLS.slice(), rows };
     S.isDirty = true; await validateMediaPlanSilent(i);
   } catch (e) { alert('Generate failed: ' + e.message); }
   refreshBuild();
