@@ -463,6 +463,8 @@ nav { background: var(--bg-nav); height: 52px; display: flex; align-items: cente
     <textarea id="export-modal-body" style="width:100%;height:46vh;background:var(--bg-sec);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:monospace;font-size:12.5px;line-height:1.6;padding:12px 14px;resize:vertical;outline:none"></textarea>
     <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">
       <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-export').style.display='none'">Close</button>
+      <button class="btn btn-ghost btn-sm" onclick="loadInsertionOrder()" title="Build a signable Insertion Order from the priced media plan">⬇ Insertion Order</button>
+      <button class="btn btn-ghost btn-sm" onclick="loadOpsHandoff()" title="Build an ops-handoff sheet from the media plan">⬇ Ops Handoff</button>
       <button class="btn btn-ghost btn-sm" onclick="downloadFinalMd()">⇩ Download .md</button>
       <button class="btn btn-primary btn-sm" onclick="exportFinalPdf()">⇩ Export PDF</button>
     </div>
@@ -2246,6 +2248,71 @@ function assembleMarkdown() {
   if (parts.length <= 2) parts.push('_No items marked complete yet — check items off in the RFP Checklist to include them here._');
   return parts.join('\n');
 }
+// ═══ pr9 part 2 — Insertion Order + Ops-Handoff exports (from the priced media plan) ═══════════════
+// Turns the priced Media Plan table into signable/actionable docs, reusing the export modal (Download .md / PDF).
+function _pricedMediaTable() {
+  const sec = (S.rfpSections || []).find(s => s && s._table && Array.isArray(s._table.rows)
+    && s._table.rows.some(r => (r || []).some(c => String(c || '').trim())));
+  if (!sec) return null;
+  const cols = sec._table.cols || [];
+  const idx = n => cols.indexOf(n);
+  const iName = idx('Solution Name'), iGoal = idx('Solution Goal'), iFlight = idx('Flight'),
+        iMedia = idx('Media Delivered'), iRate = idx('Rate'), iVol = idx('Volume'), iBud = idx('Budget');
+  let total = 0;
+  const rows = (sec._table.rows || []).map(r => {
+    const name = String(r[iName] || '').trim(); if (!name) return null;
+    const bud = String(r[iBud] || '');
+    const addedValue = /added value|in-?kind/i.test(bud);
+    if (!addedValue) total += parseFloat(bud.replace(/[^0-9.]/g, '')) || 0;
+    return { name, goal: String(r[iGoal] || ''), flight: String(r[iFlight] || ''), media: String(r[iMedia] || ''),
+      rate: String(r[iRate] || ''), vol: String(r[iVol] || ''), bud, addedValue };
+  }).filter(Boolean);
+  return rows.length ? { rows, total } : null;
+}
+function _ioHeaderMd(title) {
+  const c = (S.proposalContext && S.proposalContext.client) || {};
+  const cf = (S.qualification || {}).campaignFlight || {};
+  const flight = cf.label || [cf.start, cf.end].filter(Boolean).map(x => { try { return fmtDate(x); } catch (e) { return x; } }).join(' – ') || '';
+  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  return '# ' + title + '\n\n'
+    + '**Advertiser:** ' + (c.name || '—') + (c.market ? ' — ' + c.market : '') + '  \n'
+    + '**Prepared by:** ' + (c.aeName || 'Townsquare Ignite') + ', Townsquare Ignite  \n'
+    + '**Date:** ' + today + (flight ? '  \n**Campaign flight:** ' + flight : '') + '\n';
+}
+function loadInsertionOrder() {
+  const ta = document.getElementById('export-modal-body'); if (!ta) return;
+  const t = _pricedMediaTable();
+  let body;
+  if (!t) body = '_No priced media plan found — build the Media Plan table in the Workspace (with Rate + Volume) first._';
+  else {
+    const cell = s => String(s || '').replace(/\|/g, '/');
+    const lines = ['| Solution | Flight | Rate | Volume | Investment |', '|---|---|---|---|---|'];
+    t.rows.forEach(r => lines.push('| ' + [r.name, r.flight || '—', r.rate || '—', r.vol || '—',
+      (r.addedValue ? (r.bud + ' (added value)') : (r.bud || '—'))].map(cell).join(' | ') + ' |'));
+    lines.push('| | | | **Total Investment** | **$' + t.total.toLocaleString() + '** |');
+    body = '## Media Plan\n\n' + lines.join('\n')
+      + '\n\n## Terms\n\nThis Insertion Order authorizes Townsquare Ignite to execute the media plan above for the campaign flight indicated. Rates and volumes are as stated; added-value / in-kind lines are provided at no charge and excluded from the Total Investment. Billing, cancellation, and standard terms per the Townsquare Ignite master agreement.\n\n'
+      + '| | |\n|---|---|\n| Advertiser signature: ________________________ | Date: __________ |\n| Townsquare Ignite: ________________________ | Date: __________ |\n';
+  }
+  ta.value = _ioHeaderMd('INSERTION ORDER') + '\n' + body;
+  try { showToast('Insertion Order loaded — download or export below'); } catch (e) {}
+}
+function loadOpsHandoff() {
+  const ta = document.getElementById('export-modal-body'); if (!ta) return;
+  const t = _pricedMediaTable();
+  let body;
+  if (!t) body = '_No priced media plan found — build the Media Plan table in the Workspace first._';
+  else {
+    const cell = s => String(s || '').replace(/\|/g, '/');
+    const lines = ['| Solution | Goal | Media Delivered | Flight | Volume | Budget |', '|---|---|---|---|---|---|'];
+    t.rows.forEach(r => lines.push('| ' + [r.name, r.goal || '—', r.media || '—', r.flight || '—', r.vol || '—', r.bud || '—'].map(cell).join(' | ') + ' |'));
+    lines.push('| | | | | **Total** | **$' + t.total.toLocaleString() + '** |');
+    body = '## Campaign — Ops Handoff\n\nThe sold plan below is approved and ready to build. Set up each line item, confirm creative/assets and targeting to the audience in the proposal, and schedule to the flight dates. Flag any line missing a rate or volume back to the AE before launch.\n\n' + lines.join('\n') + '\n';
+  }
+  ta.value = _ioHeaderMd('OPS HANDOFF') + '\n' + body;
+  try { showToast('Ops Handoff loaded — download or export below'); } catch (e) {}
+}
+
 function finalizeProposal() {
   if (S.rfpId) saveRfpState('ready'); // pr-v2-7: reaching finalize means the draft is ready to submit
   S.finalMd = assembleMarkdown();
@@ -3107,6 +3174,7 @@ Object.assign(window, {
   sectionAssist, applySectionAssist, sendItemChat,
   editTableCell, addTableRow, removeTableRow, generateMediaPlan, validateMediaPlan,
   downloadFinalMd, exportFinalPdf,
+  loadInsertionOrder, loadOpsHandoff,
 });
 
 // ─── Boot ────────────────────────────────────────────────────────────────────────────
