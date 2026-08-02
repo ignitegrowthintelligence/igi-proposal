@@ -465,6 +465,7 @@ nav { background: var(--bg-nav); height: 52px; display: flex; align-items: cente
       <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-export').style.display='none'">Close</button>
       <button class="btn btn-ghost btn-sm" onclick="loadInsertionOrder()" title="Build a signable Insertion Order from the priced media plan">⬇ Insertion Order</button>
       <button class="btn btn-ghost btn-sm" onclick="loadOpsHandoff()" title="Build an ops-handoff sheet from the media plan">⬇ Ops Handoff</button>
+      <button class="btn btn-ghost btn-sm" onclick="loadSOW()" title="Build a narrative Statement of Work from the media plan">⬇ SOW</button>
       <button class="btn btn-ghost btn-sm" onclick="downloadFinalMd()">⇩ Download .md</button>
       <button class="btn btn-primary btn-sm" onclick="exportFinalPdf()">⇩ Export PDF</button>
     </div>
@@ -2313,6 +2314,26 @@ function loadOpsHandoff() {
   try { showToast('Ops Handoff loaded — download or export below'); } catch (e) {}
 }
 
+function loadSOW() {
+  const ta = document.getElementById('export-modal-body'); if (!ta) return;
+  const t = _pricedMediaTable();
+  const c = (S.proposalContext && S.proposalContext.client) || {};
+  const cf = (S.qualification || {}).campaignFlight || {};
+  const flight = cf.label || [cf.start, cf.end].filter(Boolean).map(x => { try { return fmtDate(x); } catch (e) { return x; } }).join(' – ') || 'TBD';
+  let deliverables = '_Build the Media Plan table in the Workspace to populate deliverables._', total = '';
+  if (t) {
+    deliverables = t.rows.map(r => '- **' + r.name + '**' + (r.goal ? ' — ' + r.goal : '') + (r.media ? ' (' + r.media + ')' : '') + (r.flight ? ' · ' + r.flight : '')).join('\n');
+    total = '\n\n**Total investment:** $' + t.total.toLocaleString() + ' for the flight above (added-value / in-kind excluded).';
+  }
+  ta.value = _ioHeaderMd('STATEMENT OF WORK')
+    + '\n## 1. Overview\n\nTownsquare Ignite (the "Agency") will plan, execute, and manage the digital advertising program described below for ' + (c.name || 'the Advertiser') + (c.market ? ' in the ' + c.market + ' market' : '') + '. This Statement of Work defines the scope, deliverables, timeline, and investment for the engagement.\n'
+    + '\n## 2. Scope & Deliverables\n\nThe Agency will deliver and manage the following solutions:\n\n' + deliverables + total + '\n'
+    + '\n## 3. Timeline\n\nCampaign flight: **' + flight + '**. Setup and launch begin on execution of this SOW / Insertion Order; reporting is provided on the Agency\'s standard cadence.\n'
+    + '\n## 4. Responsibilities\n\n**Agency:** campaign setup, creative trafficking, optimization, and reporting for the solutions above. **Advertiser:** timely provision of assets, approvals, and any required access. Rates, volumes, and totals are per the accompanying Insertion Order.\n'
+    + '\n## 5. Acceptance\n\n| | |\n|---|---|\n| Advertiser: ________________________ | Date: __________ |\n| Townsquare Ignite: ________________________ | Date: __________ |\n';
+  try { showToast('Statement of Work loaded — download or export below'); } catch (e) {}
+}
+
 function finalizeProposal() {
   if (S.rfpId) saveRfpState('ready'); // pr-v2-7: reaching finalize means the draft is ready to submit
   S.finalMd = assembleMarkdown();
@@ -3174,7 +3195,7 @@ Object.assign(window, {
   sectionAssist, applySectionAssist, sendItemChat,
   editTableCell, addTableRow, removeTableRow, generateMediaPlan, validateMediaPlan,
   downloadFinalMd, exportFinalPdf,
-  loadInsertionOrder, loadOpsHandoff,
+  loadInsertionOrder, loadOpsHandoff, loadSOW,
 });
 
 // ─── Boot ────────────────────────────────────────────────────────────────────────────
