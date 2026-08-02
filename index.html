@@ -12,6 +12,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- Presentation deck export: html2canvas for PDF fidelity (jsPDF + pptxgenjs already loaded above) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 :root {
   --cyan:       #00aebd;
@@ -471,6 +473,23 @@ nav { background: var(--bg-nav); height: 52px; display: flex; align-items: cente
     </div>
   </div>
 </div>
+
+<div id="modal-deck" class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box" style="max-width:1060px;width:97%">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+      <h3 style="margin:0">Presentation Deck</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="exportDeckHtml()" title="Self-contained, interactive (arrow keys)">⇩ HTML</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportDeckPdf()" title="High-fidelity slides">⇩ PDF</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportDeckPptx()" title="Editable PowerPoint">⇩ PPTX</button>
+        <button class="btn btn-primary btn-sm" onclick="buildDeck()" title="Regenerate from the current proposal">↻ Rebuild</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-deck').style.display='none'">Close</button>
+      </div>
+    </div>
+    <div id="deck-preview" style="min-height:200px"></div>
+  </div>
+</div>
+<div id="deck-stage" style="position:fixed;left:-99999px;top:0;width:1280px;height:720px;pointer-events:none"></div>
 
 <div id="modal-outcome" class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
   <div class="modal-box">
@@ -1906,7 +1925,10 @@ function renderRfpWorkspace() {
   <div class="bw-canvas">
     <div class="bw-canvas-top">
       <div class="bw-doc-title">${esc(c.name)} — <b>Working Draft</b></div>
-      <button class="btn btn-primary btn-sm" onclick="finalizeProposal()"${done ? '' : ' disabled style="opacity:.5;cursor:not-allowed"'}>⇩ Export Final Proposal</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="buildDeck()">▧ Build Presentation</button>
+        <button class="btn btn-primary btn-sm" onclick="finalizeProposal()"${done ? '' : ' disabled style="opacity:.5;cursor:not-allowed"'}>⇩ Export Final Proposal</button>
+      </div>
     </div>
     <div class="bw-canvas-body" id="bw-pane">${sel ? renderBuildPane(sel) : empty}</div>
   </div>
@@ -2363,6 +2385,205 @@ function exportFinalPdf() {
     if (!raw.trim()) y += 6;
   });
   doc.save((c.name || 'proposal').replace(/\s+/g, '-').toLowerCase() + '-proposal.pdf');
+}
+
+// ─── Presentation Deck (HTML → HTML / PDF / PPTX) ─────────────────────────────
+const DECK_CSS = `
+.deck-slide{width:1280px;height:720px;position:relative;overflow:hidden;box-sizing:border-box;font-family:'Inter',system-ui,sans-serif;background:#fff;color:#0F2430;}
+.deck-slide *{box-sizing:border-box;}
+.ds-cover{width:100%;height:100%;background:#0B1F2A;color:#fff;padding:70px 80px;display:flex;flex-direction:column;justify-content:center;}
+.ds-wordmark{position:absolute;top:44px;left:80px;font:700 14px 'Roboto',sans-serif;letter-spacing:3px;color:#00AEBD;}
+.ds-accentbar{width:90px;height:8px;background:#00AEBD;border-radius:4px;margin-bottom:26px;}
+.ds-cover h1{font:700 58px/1.05 'Roboto',sans-serif;margin:0 0 18px;max-width:1060px;}
+.ds-sub{font-size:26px;color:#00AEBD;font-weight:500;}
+.ds-tag{font-size:18px;color:#C7D3DA;margin-top:14px;max-width:940px;line-height:1.4;}
+.ds-meta{position:absolute;bottom:50px;left:80px;font-size:15px;color:#8FA5B0;letter-spacing:.3px;}
+.ds-closing .ds-bullets{margin-top:28px;}
+.ds-closing .ds-bullets li{color:#E6EDF1;}
+.ds-closing .ds-bullets li:before{background:#00AEBD;}
+.ds-content{width:100%;height:100%;padding:64px 80px;display:flex;flex-direction:column;}
+.ds-head h2{font:700 40px 'Roboto',sans-serif;margin:0;color:#0F2430;}
+.ds-rule{width:90px;height:6px;background:#00AEBD;border-radius:3px;margin:16px 0 30px;}
+.ds-bullets{list-style:none;margin:0;padding:0;}
+.ds-bullets li{position:relative;font-size:24px;line-height:1.5;padding:0 0 20px 40px;color:#213541;}
+.ds-bullets li:before{content:'';position:absolute;left:0;top:12px;width:14px;height:14px;background:#00AEBD;border-radius:3px;}
+.ds-note{margin-top:auto;font-size:15px;color:#5B7280;font-style:italic;padding-top:16px;}
+.ds-foot{position:absolute;bottom:34px;left:80px;right:80px;display:flex;justify-content:space-between;font-size:13px;color:#93A6B0;border-top:1px solid #E6EDF1;padding-top:12px;}
+.ds-table{width:100%;border-collapse:collapse;font-size:18px;margin-top:6px;}
+.ds-table th{background:#00AEBD;color:#fff;text-align:left;padding:12px 16px;font-weight:600;}
+.ds-table td{padding:11px 16px;border-bottom:1px solid #E6EDF1;color:#213541;}
+.ds-table td.num,.ds-table th.num{text-align:right;white-space:nowrap;}
+.ds-table tfoot td{font-weight:700;color:#0F2430;border-top:2px solid #00AEBD;background:#F2FAFB;}
+.ds-metric{width:100%;height:100%;background:#00AEBD;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px;}
+.ds-metric-label{font:600 26px 'Roboto',sans-serif;color:#06333A;letter-spacing:1px;text-transform:uppercase;}
+.ds-metric-value{font:700 120px 'Roboto',sans-serif;line-height:1;margin:18px 0;}
+.ds-metric-sub{font-size:22px;color:#06333A;}
+.deck-navbar{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:14px;}
+.deck-count{font-size:13px;color:var(--text-muted);min-width:70px;text-align:center;}
+`;
+function ensureDeckStyle() {
+  if (document.getElementById('igi-deck-style')) return;
+  const st = document.createElement('style'); st.id = 'igi-deck-style'; st.textContent = DECK_CSS; document.head.appendChild(st);
+}
+function deckFileName(d) { return ((d.client && d.client.name) || 'proposal').replace(/\s+/g, '-').toLowerCase() + '-deck'; }
+function renderSlideInner(s, client) {
+  const cName = esc((client && client.name) || '');
+  const ae = esc((client && client.aeName) || 'Townsquare Ignite');
+  const foot = `<div class="ds-foot"><span>Townsquare Ignite</span><span>${cName}</span></div>`;
+  if (s.type === 'cover') {
+    return `<div class="ds-cover"><div class="ds-wordmark">TOWNSQUARE IGNITE</div><div>
+      <div class="ds-accentbar"></div><h1>${esc(s.title || '')}</h1>
+      ${s.subtitle ? `<div class="ds-sub">${esc(s.subtitle)}</div>` : ''}
+      ${s.tagline ? `<div class="ds-tag">${esc(s.tagline)}</div>` : ''}</div>
+      ${s.meta ? `<div class="ds-meta">${esc(s.meta)}</div>` : ''}</div>`;
+  }
+  if (s.type === 'closing') {
+    return `<div class="ds-cover ds-closing"><div class="ds-wordmark">TOWNSQUARE IGNITE</div><div>
+      <div class="ds-accentbar"></div><h1>${esc(s.title || '')}</h1>
+      <ul class="ds-bullets">${(s.bullets || []).map(b => `<li>${esc(b)}</li>`).join('')}</ul></div>
+      <div class="ds-meta">${cName}${ae ? '  ·  ' + ae : ''}</div></div>`;
+  }
+  if (s.type === 'metric') {
+    return `<div class="ds-metric"><div class="ds-metric-label">${esc(s.title || '')}</div>
+      <div class="ds-metric-value">${esc(s.value || '')}</div>
+      ${s.sub ? `<div class="ds-metric-sub">${esc(s.sub)}</div>` : ''}</div>`;
+  }
+  if (s.type === 'table') {
+    const cols = s.cols || [], last = cols.length - 1;
+    const head = cols.map((c, i) => `<th class="${i === last ? 'num' : ''}">${esc(c)}</th>`).join('');
+    const body = (s.rows || []).map(r => `<tr>${cols.map((c, i) => `<td class="${i === last ? 'num' : ''}">${esc(String(r[i] == null ? '' : r[i]))}</td>`).join('')}</tr>`).join('');
+    return `<div class="ds-content"><div class="ds-head"><h2>${esc(s.title || 'Recommended Media Plan')}</h2></div><div class="ds-rule"></div>
+      <table class="ds-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody>
+      <tfoot><tr><td colspan="${Math.max(1, last)}">Total Investment</td><td class="num">$${Number(s.total || 0).toLocaleString()}</td></tr></tfoot></table>${foot}</div>`;
+  }
+  // content
+  return `<div class="ds-content"><div class="ds-head"><h2>${esc(s.title || '')}</h2></div><div class="ds-rule"></div>
+    <ul class="ds-bullets">${(s.bullets || []).map(b => `<li>${esc(b)}</li>`).join('')}</ul>
+    ${s.note ? `<div class="ds-note">${esc(s.note)}</div>` : ''}${foot}</div>`;
+}
+async function buildDeck() {
+  const ctx = S.proposalContext; if (!ctx) return;
+  const c = ctx.client || {};
+  const secs = [];
+  (S.rfpSections || []).forEach(s => {
+    if (s._table) { secs.push({ kind: 'media', title: s.title || 'Media Plan' }); }
+    else { const content = (s._draft || s.content || ''); if (content.trim()) secs.push({ kind: 'text', title: s.title, content }); }
+  });
+  const t = _pricedMediaTable();
+  const media = t ? { rows: t.rows, total: t.total } : null;
+  const cf = (S.qualification || {}).campaignFlight || {};
+  let flight = cf.label || [cf.start, cf.end].filter(Boolean).map(x => { try { return fmtDate(x); } catch (e) { return x; } }).join(' – ') || '';
+  ensureDeckStyle();
+  const m = document.getElementById('modal-deck'); if (m) m.style.display = 'flex';
+  const pv = document.getElementById('deck-preview');
+  if (pv) pv.innerHTML = '<div style="padding:48px;text-align:center;color:var(--text-muted)">Building your deck… (~15s)</div>';
+  try {
+    const r = await api('/proposal/deck', { client: c, flight, sections: secs, media });
+    S.deck = { slides: r.slides || [], idx: 0, client: c };
+    renderDeck();
+  } catch (e) { if (pv) pv.innerHTML = `<div style="padding:48px;text-align:center;color:var(--red)">Failed to build deck: ${esc(e.message)}</div>`; }
+}
+function renderDeck() {
+  const d = S.deck; if (!d || !d.slides.length) return;
+  const pv = document.getElementById('deck-preview'); if (!pv) return;
+  d.idx = Math.max(0, Math.min(d.idx, d.slides.length - 1));
+  pv.innerHTML = `<div id="deck-scaler"><div class="deck-slide">${renderSlideInner(d.slides[d.idx], d.client)}</div></div>
+    <div class="deck-navbar"><button class="btn btn-ghost btn-sm" onclick="deckNav(-1)"${d.idx === 0 ? ' disabled' : ''}>◀ Prev</button>
+    <span class="deck-count">${d.idx + 1} / ${d.slides.length}</span>
+    <button class="btn btn-ghost btn-sm" onclick="deckNav(1)"${d.idx === d.slides.length - 1 ? ' disabled' : ''}>Next ▶</button></div>`;
+  const scaler = document.getElementById('deck-scaler');
+  const w = pv.clientWidth || 960, scale = Math.min(1, w / 1280);
+  const sl = scaler.querySelector('.deck-slide');
+  sl.style.transform = 'scale(' + scale + ')'; sl.style.transformOrigin = 'top left';
+  scaler.style.width = (1280 * scale) + 'px'; scaler.style.height = (720 * scale) + 'px'; scaler.style.margin = '0 auto';
+  scaler.style.boxShadow = '0 6px 30px rgba(0,0,0,.3)'; scaler.style.borderRadius = '6px'; scaler.style.overflow = 'hidden';
+}
+function deckNav(dir) { const d = S.deck; if (!d) return; d.idx += dir; renderDeck(); }
+function exportDeckHtml() {
+  const d = S.deck; if (!d || !d.slides.length) return;
+  const slidesHtml = d.slides.map(s => `<section class="deck-slide">${renderSlideInner(s, d.client)}</section>`).join('\n');
+  const doc = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>${esc((d.client.name || 'Proposal'))} — Presentation</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>${DECK_CSS}
+html,body{margin:0;height:100%;background:#0B1F2A;overflow:hidden;}
+.deck-slide{display:none;box-shadow:0 10px 50px rgba(0,0,0,.5);}
+.deck-slide.active{display:block;}
+.deck-hint{position:fixed;bottom:12px;left:0;right:0;text-align:center;color:#7d95a2;font:12px 'Inter',sans-serif;}
+</style></head><body>
+${slidesHtml}
+<div class="deck-hint">← → to navigate · ${d.slides.length} slides · Esc-free fullscreen: press F11</div>
+<script>
+var idx=0,slides=document.querySelectorAll('.deck-slide');
+function fit(){var sc=Math.min(window.innerWidth/1280,window.innerHeight/720);slides.forEach(function(s){s.style.transform='scale('+sc+')';s.style.transformOrigin='top left';s.style.position='absolute';s.style.left=((window.innerWidth-1280*sc)/2)+'px';s.style.top=((window.innerHeight-720*sc)/2)+'px';});}
+function show(n){slides.forEach(function(s){s.classList.remove('active');});idx=(n+slides.length)%slides.length;slides[idx].classList.add('active');}
+window.addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key===' ')show(idx+1);if(e.key==='ArrowLeft')show(idx-1);});
+window.addEventListener('resize',fit);fit();show(0);
+<\/script></body></html>`;
+  const blob = new Blob([doc], { type: 'text/html' }); const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = deckFileName(d) + '.html'; a.click(); URL.revokeObjectURL(url);
+}
+async function exportDeckPdf() {
+  const d = S.deck; if (!d || !d.slides.length) return;
+  if (!(window.jspdf && window.jspdf.jsPDF) || !window.html2canvas) { alert('PDF libraries still loading — try again in a moment.'); return; }
+  ensureDeckStyle();
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ unit: 'px', format: [1280, 720], orientation: 'landscape' });
+  const stage = document.getElementById('deck-stage');
+  try {
+    try { showToast('Rendering PDF…'); } catch (e) {}
+    for (let k = 0; k < d.slides.length; k++) {
+      stage.innerHTML = `<div class="deck-slide">${renderSlideInner(d.slides[k], d.client)}</div>`;
+      const el = stage.querySelector('.deck-slide');
+      const canvas = await html2canvas(el, { scale: 1.5, width: 1280, height: 720, backgroundColor: '#ffffff', logging: false });
+      const img = canvas.toDataURL('image/jpeg', 0.92);
+      if (k > 0) pdf.addPage([1280, 720], 'landscape');
+      pdf.addImage(img, 'JPEG', 0, 0, 1280, 720);
+    }
+    pdf.save(deckFileName(d) + '.pdf');
+  } catch (e) { alert('PDF export failed: ' + e.message); } finally { stage.innerHTML = ''; }
+}
+function exportDeckPptx() {
+  const d = S.deck; if (!d || !d.slides.length) return;
+  if (!window.PptxGenJS) { alert('PPTX library still loading — try again in a moment.'); return; }
+  const p = new PptxGenJS();
+  p.defineLayout({ name: 'IGI16x9', width: 13.333, height: 7.5 }); p.layout = 'IGI16x9';
+  const NAVY = '0B1F2A', CYAN = '00AEBD', DARK = '0F2430', MUT = '5B7280', WHITE = 'FFFFFF';
+  d.slides.forEach(s => {
+    const sl = p.addSlide();
+    if (s.type === 'cover' || s.type === 'closing') {
+      sl.background = { color: NAVY };
+      sl.addText('TOWNSQUARE IGNITE', { x: 0.6, y: 0.5, fontSize: 12, color: CYAN, bold: true, charSpacing: 2 });
+      sl.addShape(p.ShapeType.rect, { x: 0.6, y: 2.0, w: 0.95, h: 0.09, fill: { color: CYAN } });
+      sl.addText(s.title || '', { x: 0.6, y: 2.3, w: 12.1, fontSize: s.type === 'cover' ? 40 : 34, bold: true, color: WHITE, fontFace: 'Roboto' });
+      if (s.type === 'cover') {
+        if (s.subtitle) sl.addText(s.subtitle, { x: 0.6, y: 3.5, w: 12, fontSize: 20, color: CYAN });
+        if (s.tagline) sl.addText(s.tagline, { x: 0.6, y: 4.2, w: 12, fontSize: 15, color: 'C7D3DA' });
+        if (s.meta) sl.addText(s.meta, { x: 0.6, y: 6.7, w: 12, fontSize: 12, color: '8FA5B0' });
+      } else {
+        sl.addText((s.bullets || []).map(b => ({ text: b, options: { bullet: { code: '2022' } } })), { x: 0.6, y: 3.5, w: 12, fontSize: 18, color: 'E6EDF1', lineSpacingMultiple: 1.3 });
+      }
+    } else if (s.type === 'metric') {
+      sl.background = { color: CYAN };
+      sl.addText(s.title || '', { x: 0.6, y: 2.5, w: 12.1, align: 'center', fontSize: 22, bold: true, color: '06333A' });
+      sl.addText(s.value || '', { x: 0.6, y: 3.0, w: 12.1, align: 'center', fontSize: 60, bold: true, color: WHITE, fontFace: 'Roboto' });
+      if (s.sub) sl.addText(s.sub, { x: 0.6, y: 4.9, w: 12.1, align: 'center', fontSize: 16, color: '06333A' });
+    } else if (s.type === 'table') {
+      sl.background = { color: WHITE };
+      sl.addText(s.title || 'Recommended Media Plan', { x: 0.6, y: 0.5, w: 12.1, fontSize: 26, bold: true, color: DARK, fontFace: 'Roboto' });
+      const cols = s.cols || [], last = cols.length - 1;
+      const head = cols.map(c => ({ text: c, options: { bold: true, color: WHITE, fill: { color: CYAN }, align: 'left' } }));
+      const body = (s.rows || []).map(r => cols.map((c, i) => ({ text: String(r[i] == null ? '' : r[i]), options: { color: DARK, align: i === last ? 'right' : 'left' } })));
+      const totalRow = [{ text: 'Total Investment', options: { bold: true, color: DARK, colspan: Math.max(1, last), fill: { color: 'F2FAFB' } } }, { text: '$' + Number(s.total || 0).toLocaleString(), options: { bold: true, color: DARK, align: 'right', fill: { color: 'F2FAFB' } } }];
+      sl.addTable([head, ...body, totalRow], { x: 0.5, y: 1.4, w: 12.33, fontSize: 12, border: { type: 'solid', color: 'DDE5EA', pt: 1 }, valign: 'middle', rowH: 0.35 });
+    } else {
+      sl.background = { color: WHITE };
+      sl.addText(s.title || '', { x: 0.6, y: 0.6, w: 12.1, fontSize: 28, bold: true, color: DARK, fontFace: 'Roboto' });
+      sl.addShape(p.ShapeType.rect, { x: 0.6, y: 1.35, w: 0.95, h: 0.07, fill: { color: CYAN } });
+      sl.addText((s.bullets || []).map(b => ({ text: b, options: { bullet: { code: '2022' } } })), { x: 0.6, y: 1.7, w: 12.1, fontSize: 18, color: DARK, lineSpacingMultiple: 1.3 });
+      if (s.note) sl.addText(s.note, { x: 0.6, y: 6.8, w: 12.1, fontSize: 11, italic: true, color: MUT });
+    }
+  });
+  p.writeFile({ fileName: deckFileName(d) + '.pptx' });
 }
 
 // Phase 8 — Partner ecosystem (stub directory + referral logging)
@@ -3196,6 +3417,7 @@ Object.assign(window, {
   editTableCell, addTableRow, removeTableRow, generateMediaPlan, validateMediaPlan,
   downloadFinalMd, exportFinalPdf,
   loadInsertionOrder, loadOpsHandoff, loadSOW,
+  buildDeck, renderDeck, deckNav, exportDeckHtml, exportDeckPdf, exportDeckPptx,
 });
 
 // ─── Boot ────────────────────────────────────────────────────────────────────────────
