@@ -2583,7 +2583,7 @@ function exportDeckPptx() {
       if (s.note) sl.addText(s.note, { x: 0.6, y: 6.8, w: 12.1, fontSize: 11, italic: true, color: MUT });
     }
   });
-  p.writeFile({ fileName: deckFileName(d) + '.pptx' });
+  return p.writeFile({ fileName: deckFileName(d) + '.pptx' });
 }
 
 // Phase 8 — Partner ecosystem (stub directory + referral logging)
