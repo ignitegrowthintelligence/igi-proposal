@@ -1375,7 +1375,7 @@ function renderQualify() {
   // ── SECTION 3 — SUBMISSION REQUIREMENTS (tracker: link a library doc or upload) ──
   const trackerRows = (q.submissionRequirements || []).map((r, i) => {
     const dt = docTypeForRequirement(r);
-    const doc = dt && (S.libraryDocs || []).find(d => d.doc_type === dt);
+    const doc = dt && libraryDocFor(dt).doc;
     const linkCell = doc
       ? `<a href="${doc.file_url ? esc(doc.file_url) : LIBRARY_URL}" target="_blank" rel="noopener" style="color:var(--cyan);font-size:12px">🔗 ${esc(String(doc.name || 'prepared doc').slice(0, 28))}</a>`
       : `<button class="btn btn-ghost btn-sm" onclick="uploadReqDoc(${i})">⬆ Upload</button>`;
@@ -1750,7 +1750,9 @@ async function generate(payload) {
     updateGenStep(4, 'Done!');
     S.proposalContext = result.proposalContext;
     S.sections        = result.sections;
-    S.rfpSections     = result.rfpSections || null;   // RFP entry: engine-built per-RFP sections
+    // The engine returns { proposalContext, sections } with the per-RFP list nested at sections.rfpSections.
+    // Reading only the top level left this null on every real run, so RFP builds fell back to the old workspace.
+    S.rfpSections     = result.rfpSections || (result.sections && result.sections.rfpSections) || null;
     S.proposalId      = null;
     S.isDirty         = true;
     S.techCheck       = null;
@@ -1867,6 +1869,23 @@ function docTypeForRequirement(r) {
   if (/sanctions|ukraine|russia|iran/.test(n)) return 'sanctions_cert';
   if (/swam|dbe|\bmbe\b|\bwbe\b|minority|women-?owned|small business/.test(n)) return 'swam_cert';
   return null; // no standing doc → needs input (Type C)
+}
+
+// A doc type can hold many rows (one W-9 per market). Choose this RFP's market first, then the corporate
+// copy, and only then the first row. Returns { doc, matched: 'only'|'market'|'corporate'|'first'|null }.
+function _normMarket(x) { return String(x || '').toLowerCase().replace(/\bsaint\b/g, 'st').replace(/[^a-z0-9]+/g, ' ').replace(/\bft\b/g, 'fort').trim(); }
+function libraryDocFor(docType) {
+  const docs = (S.libraryDocs || []).filter(d => d.doc_type === docType);
+  if (!docs.length) return { doc: null, matched: null };
+  if (docs.length === 1) return { doc: docs[0], matched: 'only' };
+  const market = _normMarket((S.rfpIntake && S.rfpIntake.market) || (S.proposalContext && S.proposalContext.client && S.proposalContext.client.market));
+  if (market) {
+    const hit = docs.find(d => String(d.name || '').split('/').map(_normMarket).filter(Boolean)
+      .some(part => part === market || market.startsWith(part + ' ') || part.startsWith(market + ' ')));
+    if (hit) return { doc: hit, matched: 'market' };
+  }
+  const corp = docs.find(d => /corporate/i.test(d.note || '') || /townsquare media,? inc/i.test(d.name || ''));
+  return corp ? { doc: corp, matched: 'corporate' } : { doc: docs[0], matched: 'first' };
 }
 
 function buildItems() {
@@ -2154,7 +2173,11 @@ async function regenRfpSection(i) {
 
 // Type A — fixed library document (Phase 5)
 function renderPaneFixedDoc(item, r) {
-  const doc = (S.libraryDocs || []).find(d => d.doc_type === item.docType);
+  const pick = libraryDocFor(item.docType);
+  const doc = pick.doc;
+  const mkt = (S.rfpIntake && S.rfpIntake.market) || (S.proposalContext && S.proposalContext.client && S.proposalContext.client.market) || '';
+  const matchNote = pick.matched === 'market' ? `Matched to the ${esc(mkt)} market.`
+    : (pick.matched === 'corporate' || pick.matched === 'first') ? `No ${esc(mkt || 'market')} copy on file, so this shows ${esc(doc.name)}. Add the market copy in the Library if the RFP needs it.` : '';
   if (!doc) {
     return `<div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence conf-validate">No file on record</span></div>
       <div class="bw-note">This is a standing document (<code>${esc(item.docType || 'certification')}</code>). No matching file is in your document library yet — add one to the library so it auto-attaches next time, or mark it handled manually.</div>
@@ -2167,6 +2190,7 @@ function renderPaneFixedDoc(item, r) {
   <div class="bw-doc">
     <div style="font-weight:600">${esc(doc.name)}</div>
     ${doc.note ? `<div style="font-size:13px;color:var(--text-muted);margin-top:4px">${esc(doc.note)}</div>` : ''}
+    ${matchNote ? `<div style="font-size:12px;color:${pick.matched === 'market' ? 'var(--text-muted)' : 'var(--orange)'};margin-top:6px">${matchNote}</div>` : ''}
     ${expired ? `<div style="color:var(--red);font-size:12px;margin-top:8px">⚠ On file but expired ${esc(doc.expires_on)} — update before submitting.</div>`
       : (doc.expires_on ? `<div style="font-size:12px;color:var(--text-muted);margin-top:8px">Valid through ${esc(doc.expires_on)}</div>` : '')}
     <div style="margin-top:14px;display:flex;gap:12px;align-items:center">
@@ -2180,7 +2204,7 @@ function renderPaneFixedDoc(item, r) {
 function attachLibraryDoc(i) {
   const r = S.qualification.submissionRequirements[i]; if (!r) return;
   const item = buildItems().find(it => it.ref.kind === 'requirement' && it.ref.idx === i);
-  const doc = (S.libraryDocs || []).find(d => d.doc_type === (item && item.docType));
+  const doc = item ? libraryDocFor(item.docType).doc : null;
   r._attached = doc ? doc.id : true; r.status = 'Complete'; S.isDirty = true;
   refreshBuild();
 }
@@ -2260,7 +2284,7 @@ function assembleMarkdown() {
       const t = o._table;
       parts.push(`## ${it.title}\n\n| ${t.cols.join(' | ')} |\n| ${t.cols.map(() => '---').join(' | ')} |\n${t.rows.map(r => `| ${r.join(' | ')} |`).join('\n')}\n`);
     } else if (it.type === 'A') {
-      const doc = (S.libraryDocs || []).find(d => d.doc_type === it.docType);
+      const doc = libraryDocFor(it.docType).doc;
       parts.push(`## ${it.title}\n\n${doc ? (doc.name + (doc.file_url ? ' — ' + doc.file_url : '')) : 'Attached separately.'}\n`);
     } else {
       let content = (o._draft || o.content || '').trim();
