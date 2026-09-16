@@ -1309,6 +1309,8 @@ function qCard(key, title, badge, bodyHtml, open) {
 
 const LIBRARY_URL = 'https://ignitegrowthintelligence.github.io/igi-journey-library/';
 const KEY_PLAYER_ROLES = ['RISD', 'DSM', 'DNA', 'DCM', 'Ops Manager', 'KAM', 'Buyers', 'Creative Director'];
+// Key Players stays hidden until the market roster is loaded (Justin, 2026-09-16). Flip to true to bring it back.
+const SHOW_KEY_PLAYERS = false;
 
 function buildQuestionsMailto(cl, clientName) {
   const to = (cl.contact && cl.contact.email) || '';
@@ -1359,7 +1361,7 @@ function renderQualify() {
     ${budget.notes ? `<div class="q-budget-note">${esc(budget.notes)}</div>` : ''}`;
 
   // ── SECTION 1 — ROAD MAP: contacts (key players) + timeline w/ icons ──
-  const contactsHtml = `
+  const contactsHtml = !SHOW_KEY_PLAYERS ? '' : `
     <div class="q-subhead">Key Players${intake.market ? ' — ' + esc(intake.market) : ''}</div>
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Internal team for this market — populates from the roster once connected.</div>
     ${KEY_PLAYER_ROLES.map(role => `<div class="q-kv"><span class="q-k" style="display:inline-block;min-width:130px">${role}</span><span style="color:var(--text-muted)">— roster pending</span></div>`).join('')}`;
@@ -1374,7 +1376,7 @@ function renderQualify() {
       <span class="q-tl-date"${t.date ? '' : ' style="color:var(--text-muted)"'}>${t.date ? fmtDate(t.date) : 'Not provided'}</span>
       <span class="q-countdown q-pri-${t.priority === 'high' ? 'high' : t.priority === 'med' ? 'med' : 'low'}">${t.countdownDays != null ? (t.countdownDays >= 0 ? 'in ' + t.countdownDays + 'd' : Math.abs(t.countdownDays) + 'd ago') : ''}</span>
     </div>`).join('');
-  const roadMapBody = contactsHtml + '<div class="q-subhead" style="margin-top:18px">Timeline &amp; Critical Dates</div>' + (tlRows || '<p style="color:var(--text-muted);font-size:13px">No dates found.</p>');
+  const roadMapBody = contactsHtml + `<div class="q-subhead"${contactsHtml ? ' style="margin-top:18px"' : ''}>Timeline &amp; Critical Dates</div>` + (tlRows || '<p style="color:var(--text-muted);font-size:13px">No dates found.</p>');
 
   // ── SECTION 2 — STRATEGY: required + suggested tactics, risks, approvals, competitive advantage, questions ──
   const capRows = (q.capabilityMatrix || []).map(c => `
