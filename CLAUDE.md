@@ -13,3 +13,8 @@
 - Categories come from the canonical Supabase list; "Other" has a free-text description field.
 - Tier math conventions (AdMall → ad_response) are documented in the suite-fixes memory/spec — don't re-derive.
 - Feature-level changes: append one line to `../igi-docs/IGI_Changelog.md`.
+
+## Landmines (learned 2026-09-16)
+- **`/proposal/generate` returns `{ proposalContext, sections }` with the RFP list at `sections.rfpSections`.** The page read `result.rfpSections` from 2026-07-07 until 2026-09-16, so no real RFP ever reached the Build Workspace; every earlier "live verified" test had injected `S.rfpSections` by hand. Verify RFP builds through `proceedToBuild()` with a real or exact-shape generate response, never by setting state.
+- **The page source is public and carries `INTEL_SECRET`.** Treat anything an engine route returns as readable by anyone. Never return signed storage links or full tax IDs from a route this page calls. Library files stay behind the Library login.
+- Git on the Cowork VM mount: use `git --no-optional-locks` for status/diff so it doesn't leave `index.lock` behind.
