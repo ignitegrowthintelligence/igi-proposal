@@ -377,6 +377,9 @@ nav { background: var(--bg-nav); height: 52px; display: flex; align-items: cente
 .bw-pill.st-notstarted { background: var(--bg-sec); color: var(--text-muted); }
 .bw-pill.st-inprog { background: rgba(96,165,250,.15); color: #60a5fa; }
 .bw-pill.st-complete { background: rgba(117,190,25,.15); color: var(--green); }
+.bw-mini { display: inline-block; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; padding: 1px 6px; border-radius: 4px; margin-left: 4px; vertical-align: 1px; font-family: 'Inter', sans-serif; }
+.bw-mini.deadline { background: rgba(155,135,245,.15); color: #9b87f5; }
+.bw-mini.final { background: rgba(0,174,189,.15); color: var(--cyan); }
 .bw-left-foot { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); }
 .bw-pane-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .bw-pane-head h3 { font-size: 16px; font-weight: 600; flex: 1; }
@@ -1377,7 +1380,7 @@ function renderQualify() {
     const dt = docTypeForRequirement(r);
     const doc = dt && libraryDocFor(dt).doc;
     const linkCell = doc
-      ? `<a href="${doc.file_url ? esc(doc.file_url) : LIBRARY_URL}" target="_blank" rel="noopener" style="color:var(--cyan);font-size:12px">🔗 ${esc(String(doc.name || 'prepared doc').slice(0, 28))}</a>`
+      ? `<a href="${docHref(doc) ? esc(docHref(doc)) : LIBRARY_URL}" target="_blank" rel="noopener" style="color:var(--cyan);font-size:12px">🔗 ${esc(String(docLabel(doc) || 'prepared doc').slice(0, 32))}</a>`
       : `<button class="btn btn-ghost btn-sm" onclick="uploadReqDoc(${i})">⬆ Upload</button>`;
     return `<tr>
       <td><strong>${esc(r.name || '')}</strong></td>
@@ -1436,21 +1439,29 @@ async function uploadReqDoc(i) {
   const url = prompt('Paste a link to the prepared document for "' + (r.name || 'this requirement') + '" (SharePoint / Drive URL). It will be saved to the library and reused:');
   if (!url) return;
   try {
-    await api('/proposal/library/docs', 'POST', { name: r.name, doc_type: docTypeForRequirement(r) || 'other', file_url: url });
-    const lib = await api('/proposal/library/docs', undefined, 'GET'); S.libraryDocs = (lib && lib.docs) || S.libraryDocs;
+    const dt = docTypeForRequirement(r);
+    // api(path, body, method): the body goes second. The old call passed 'POST' as the body, so every save failed.
+    await api('/proposal/library/docs', { name: r.name, doc_type: (dt && !DOC_NAME_HINTS[dt]) ? dt : 'other', file_url: url });
+    const lib = await api('/proposal/library/docs', undefined, 'GET'); S.libraryDocs = (lib && lib.docs) || S.libraryDocs; S.libraryDocsAt = Date.now();
     r.status = 'Complete';
     render();
   } catch (e) { alert('Save failed: ' + e.message); }
 }
 
+// Load the firm document library. Signed document links expire after 8h, so reload a list older than 6h.
+function loadLibraryDocs(view) {
+  const stale = S.libraryDocsAt && (Date.now() - S.libraryDocsAt > 6 * 3600 * 1000);
+  if (S.libraryDocs != null && !stale) return;
+  if (S.libraryDocs == null) S.libraryDocs = [];
+  S.libraryDocsAt = Date.now();
+  api('/proposal/library/docs', undefined, 'GET').then(r => {
+    if (r && Array.isArray(r.docs)) { S.libraryDocs = r.docs; S.libraryDocsAt = Date.now(); if (S.view === view) render(); }
+  }).catch(() => {});
+}
+
 function attachQualify() {
   // Load the firm document library so the Submission Requirements tracker can link matching docs.
-  if (S.libraryDocs == null) {
-    S.libraryDocs = [];
-    api('/proposal/library/docs', undefined, 'GET').then(r => {
-      if (r && Array.isArray(r.docs)) { S.libraryDocs = r.docs; if (S.view === 'qualify') render(); }
-    }).catch(() => {});
-  }
+  loadLibraryDocs('qualify');
 }
 
 // ─── Phase 3: "How you'll be graded" checkpoint (between pursue decision and build) ──
@@ -1868,14 +1879,22 @@ function docTypeForRequirement(r) {
   if (/non-?collusion/.test(n)) return 'non_collusion';
   if (/sanctions|ukraine|russia|iran/.test(n)) return 'sanctions_cert';
   if (/swam|dbe|\bmbe\b|\bwbe\b|minority|women-?owned|small business/.test(n)) return 'swam_cert';
+  if (/information security|security program|infosec|cyber ?security|data security|incident response|security incident/.test(n)) return 'security';
+  if (/litigation/.test(n)) return 'litigation';
   return null; // no standing doc → needs input (Type C)
 }
 
 // A doc type can hold many rows (one W-9 per market). Choose this RFP's market first, then the corporate
 // copy, and only then the first row. Returns { doc, matched: 'only'|'market'|'corporate'|'first'|null }.
 function _normMarket(x) { return String(x || '').toLowerCase().replace(/\bsaint\b/g, 'st').replace(/[^a-z0-9]+/g, ' ').replace(/\bft\b/g, 'fort').trim(); }
+// Some standing docs sit in the Library as doc_type 'other' (no dedicated type yet); find those by name.
+const DOC_NAME_HINTS = { security: /security|incident response/i, litigation: /litigation/i };
+// file_url is a path in a PRIVATE storage bucket. The engine signs it into open_url; never link the raw path.
+function docHref(doc) { if (!doc) return ''; if (doc.open_url) return doc.open_url; return /^https?:\/\//i.test(doc.file_url || '') ? doc.file_url : ''; }
+function docLabel(doc) { if (!doc) return ''; return (doc.doc_type === 'w9' && doc.note) ? doc.note : (doc.name || ''); }
 function libraryDocFor(docType) {
-  const docs = (S.libraryDocs || []).filter(d => d.doc_type === docType);
+  let docs = (S.libraryDocs || []).filter(d => d.doc_type === docType);
+  if (!docs.length && DOC_NAME_HINTS[docType]) docs = (S.libraryDocs || []).filter(d => d.doc_type === 'other' && DOC_NAME_HINTS[docType].test(d.name || ''));
   if (!docs.length) return { doc: null, matched: null };
   if (docs.length === 1) return { doc: docs[0], matched: 'only' };
   const market = _normMarket((S.rfpIntake && S.rfpIntake.market) || (S.proposalContext && S.proposalContext.client && S.proposalContext.client.market));
@@ -1888,23 +1907,82 @@ function libraryDocFor(docType) {
   return corp ? { doc: corp, matched: 'corporate' } : { doc: docs[0], matched: 'first' };
 }
 
+// One media plan table per RFP: the best-scoring title across sections AND submission requirements.
+function mediaScore(title) {
+  const t = String(title || '');
+  if (/media\s*(plan|schedule|flowchart)|flowchart/i.test(t)) return 3;
+  if (/creative|reporting|measurement|attribution/i.test(t)) return 0;
+  if (/budget\s*allocation|recommended\s*(media|buy)|media\s*(mix|buy)\b|channel\s*mix/i.test(t)) return 2;
+  return 0;
+}
+// "Single electronic PDF" style requirements are the finished file itself, not something to write.
+function isFinalPdfReq(r) {
+  const n = (r.name || '') + ' ' + (r.type || '');
+  return /\bpdf\b/i.test(n) && /single|one file|electronic|combined|format|submitted|submission/i.test(n);
+}
+// Deadlines and format rules (subject line, received by 5pm) are instructions to confirm, not documents.
+function isInstructionReq(r) {
+  const ty = String(r.type || '').toLowerCase();
+  return ty === 'format' || ty === 'deadline' || /\b(received by|due (by|on)|no later than|deadline|subject line|submitted by)\b/i.test(r.name || '');
+}
+const DEADLINE_RX = /received by|\bdue\b|deadline|no later than|submitted by|\d{1,2}:\d{2}|\b[ap]\.?m\b/i;
+function parseDue(d) {
+  if (!d) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d));   // date-only strings: read as local, not UTC
+  const x = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(d);
+  return isNaN(x.getTime()) ? null : x;
+}
+function fmtDateText(d) { const x = parseDue(d); return x ? x.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : String(d || ''); }
+
 function buildItems() {
   const q = S.qualification || {};
+  const secs = S.rfpSections || [], reqs = q.submissionRequirements || [];
+  let media = null;
+  secs.forEach((s, i) => { const sc = mediaScore(s && s.title); if (sc && (!media || sc > media.score)) media = { kind: 'section', idx: i, score: sc }; });
+  reqs.forEach((r, i) => { const sc = mediaScore(r && r.name); if (sc && (!media || sc > media.score)) media = { kind: 'requirement', idx: i, score: sc }; });
+  const isMediaHost = (kind, i) => !!media && media.kind === kind && media.idx === i;
+  const hasRows = o => !!(o && o._table && Array.isArray(o._table.rows) && o._table.rows.length);
   const items = [];
-  (S.rfpSections || []).forEach((s, i) => {
-    const isMedia = /media\s*plan|recommended\s*(media|buy)|channel\s*mix/i.test(s.title || '');
+  secs.forEach((s, i) => {
+    // A section that already holds a filled table keeps it (older saves could have more than one).
+    const table = isMediaHost('section', i) || hasRows(s);
     items.push({ id: 'sec-' + i, group: 'Proposal sections', title: s.title || ('Section ' + (i + 1)),
-      type: isMedia ? 'table' : (s.coverage === 'full') ? 'B' : 'C', ref: { kind: 'section', idx: i } });
+      type: table ? 'table' : (s.coverage === 'full') ? 'B' : 'C', ref: { kind: 'section', idx: i } });
   });
-  (q.submissionRequirements || []).forEach((r, i) => {
+  let hasDeadlineReq = false, hasQuestionsReq = false;
+  reqs.forEach((r, i) => {
+    const title = r.name || ('Requirement ' + (i + 1));
+    const base = { id: 'req-' + i, group: 'Submission requirements', title, ref: { kind: 'requirement', idx: i } };
+    if (isMediaHost('requirement', i) || hasRows(r)) { items.push({ ...base, type: 'table' }); return; }
+    if (media && mediaScore(title) === 3) return;   // a second "media plan" ask: same table, don't list it twice
+    if (isFinalPdfReq(r)) { items.push({ ...base, type: 'F' }); return; }
+    if (isInstructionReq(r)) {
+      const deadline = DEADLINE_RX.test(title);
+      if (deadline) hasDeadlineReq = true;
+      if (/question/i.test(title)) hasQuestionsReq = true;
+      items.push({ ...base, type: 'D', deadline });
+      return;
+    }
     const dt = docTypeForRequirement(r);
-    items.push({ id: 'req-' + i, group: 'Submission requirements', title: r.name || ('Requirement ' + (i + 1)),
-      type: dt ? 'A' : 'C', docType: dt, ref: { kind: 'requirement', idx: i } });
+    items.push({ ...base, type: dt ? 'A' : 'C', docType: dt });
+  });
+  // Key dates from the RFP timeline, unless a requirement already covers them.
+  (q.timeline || []).forEach((t, i) => {
+    const ev = String((t && t.event) || '');
+    if (!t || !t.date) return;
+    const isQ = /question/i.test(ev) && /due|deadline|submi/i.test(ev);
+    const isP = /(proposal|response|submission)s?\s*(due|deadline)/i.test(ev);
+    if (!(isQ || isP) || (isQ && hasQuestionsReq) || (isP && hasDeadlineReq)) return;
+    items.push({ id: 'tl-' + i, group: 'Deadlines', title: ev + ' ' + fmtDateText(t.date), type: 'D', deadline: true, due: t.date,
+      ref: { kind: 'timeline', idx: i } });
   });
   return items;
 }
 
+function hostById(id) { const it = buildItems().find(x => x.id === id); return it ? itemObj(it) : null; }
+
 function itemObj(item) {
+  if (item.ref.kind === 'timeline') return ((S.qualification && S.qualification.timeline) || [])[item.ref.idx];
   return item.ref.kind === 'section'
     ? (S.rfpSections || [])[item.ref.idx]
     : ((S.qualification && S.qualification.submissionRequirements) || [])[item.ref.idx];
@@ -1915,6 +1993,8 @@ function itemProgress(item) {
   if (o._forceComplete) return 100;   // manual checkbox in the checklist
   if (item.ref.kind === 'requirement' && item.type === 'A') return (o._attached || o._manual) ? 100 : 0;
   if (o._reviewed || o._done) return 100;
+  if (item.type === 'table') return (o._table && Array.isArray(o._table.rows) && o._table.rows.length) ? 70 : 0;
+  if (item.type === 'D' || item.type === 'F') return 0;
   if (item.type === 'C') {
     const g = o._guided; if (!g) return 0;
     if (o._draft) return 100;
@@ -1988,7 +2068,7 @@ function renderBuildChecklist(items) {
       const cls = p >= 100 ? 'st-complete' : p > 0 ? 'st-inprog' : 'st-notstarted';
       return `<div class="bw-item${on ? ' sel' : ''}" onclick="selectBuildItem('${it.id}')">
         <span class="bw-check${p >= 100 ? ' done' : ''}" onclick="event.stopPropagation();toggleItemComplete('${it.id}')"></span>
-        <span class="bw-item-main"><span class="bw-item-title">${esc(it.title)}</span><span class="bw-pill ${cls}">${label}</span></span>
+        <span class="bw-item-main"><span class="bw-item-title">${esc(it.title)}${it.deadline ? ' <span class="bw-mini deadline">Deadline</span>' : ''}${it.type === 'F' ? ' <span class="bw-mini final">Final file</span>' : ''}</span><span class="bw-pill ${cls}">${label}</span></span>
       </div>`; }).join('')}`).join('');
 }
 
@@ -2007,9 +2087,12 @@ function renderBuildPane(item) {
   const o = itemObj(item);
   let inner;
   if (item.type === 'table') inner = renderPaneTable(item, o);
+  else if (item.type === 'F') inner = renderPaneFinal(item, o);
+  else if (item.type === 'D') inner = renderPaneInstruction(item, o);
   else if (item.ref.kind === 'section') inner = (item.type === 'C') ? renderPaneGuided(item, o) : renderPaneSection(item, o);
   else if (item.type === 'A') inner = renderPaneFixedDoc(item, o);
   else inner = renderPaneGuided(item, o);
+  if (item.type === 'D') return inner;   // a deadline has nothing to draft
   return inner + renderItemChat(item);   // Phase C: per-item "work on this together" chat on every pane
 }
 
@@ -2064,7 +2147,7 @@ function renderPaneTable(item, s) {
   let total = 0;
   t.rows.forEach(r => { const b = parseFloat(String(r[budI] || '').replace(/[^0-9.]/g, '')) || 0; if (!/added value|in-?kind/i.test(String(r[budI] || ''))) total += b; });
   const flagHtml = flags.length ? `<div class="bw-flags">${flags.map(f => `<div class="bw-flag ${f.level}">${f.level === 'error' ? '⛔' : '⚠'} ${esc(f.msg)}</div>`).join('')}</div>` : '';
-  const rowsHtml = t.rows.map((r, ri) => `<tr>${t.cols.map((c, ci) => `<td data-editable><div contenteditable="true" oninput="editTableCell(${item.ref.idx},${ri},${ci},this.textContent)">${esc(r[ci] || '')}</div></td>`).join('')}<td><span class="row-remove" onclick="removeTableRow(${item.ref.idx},${ri})">✕</span></td></tr>`).join('');
+  const rowsHtml = t.rows.map((r, ri) => `<tr>${t.cols.map((c, ci) => `<td data-editable><div contenteditable="true" oninput="editTableCell('${item.id}',${ri},${ci},this.textContent)">${esc(r[ci] || '')}</div></td>`).join('')}<td><span class="row-remove" onclick="removeTableRow('${item.id}',${ri})">✕</span></td></tr>`).join('');
   return `
   <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence conf-generated">Editable</span></div>
   ${flagHtml}
@@ -2074,15 +2157,15 @@ function renderPaneTable(item, s) {
     <tfoot><tr><td colspan="${t.cols.length - 1}">Total Investment</td><td>$${total.toLocaleString()}</td><td></td></tr></tfoot>
   </table></div>
   <div class="bw-actions">
-    <button class="btn btn-primary btn-sm" onclick="generateMediaPlan(${item.ref.idx})">✨ Generate plan from Library</button>
-    <button class="btn btn-ghost btn-sm" onclick="addTableRow(${item.ref.idx})">+ Add row</button>
-    <button class="btn btn-ghost btn-sm" onclick="validateMediaPlan(${item.ref.idx})">✓ Validate</button>
-    <button class="btn btn-ghost btn-sm" onclick="markSectionReviewed(${item.ref.idx})">✓ Mark reviewed</button>
+    <button class="btn btn-primary btn-sm" onclick="generateMediaPlan('${item.id}')">✨ Generate plan from Library</button>
+    <button class="btn btn-ghost btn-sm" onclick="addTableRow('${item.id}')">+ Add row</button>
+    <button class="btn btn-ghost btn-sm" onclick="validateMediaPlan('${item.id}')">✓ Validate</button>
+    <button class="btn btn-ghost btn-sm" onclick="markItemReviewed('${item.id}')">✓ Mark reviewed</button>
   </div>`;
 }
 let _valTimer = null;
 function editTableCell(i, ri, ci, val) {
-  const t = S.rfpSections[i]._table;
+  const host = hostById(i); const t = host && host._table;
   if (t && t.rows[ri]) {
     t.rows[ri][ci] = val;
     // pr9: line Budget (total) = Rate × Volume when both are numeric. The AE can still type Budget directly
@@ -2096,10 +2179,10 @@ function editTableCell(i, ri, ci, val) {
     S.isDirty = true; clearTimeout(_valTimer); _valTimer = setTimeout(() => validateMediaPlan(i), 900);
   }
 }
-function addTableRow(i) { const t = S.rfpSections[i]._table; t.rows.push(t.cols.map(() => '')); refreshBuild(); }
-function removeTableRow(i, ri) { const t = S.rfpSections[i]._table; t.rows.splice(ri, 1); refreshBuild(); }
+function addTableRow(i) { const h = hostById(i); if (!h) return; if (!h._table) h._table = { cols: MEDIA_COLS.slice(), rows: [] }; const t = h._table; t.rows.push(t.cols.map(() => '')); S.isDirty = true; refreshBuild(); }
+function removeTableRow(i, ri) { const h = hostById(i); const t = h && h._table; if (!t) return; t.rows.splice(ri, 1); S.isDirty = true; refreshBuild(); }
 async function generateMediaPlan(i) {
-  const s = S.rfpSections[i]; const pane = document.getElementById('bw-pane'); if (pane) pane.style.opacity = '.5';
+  const s = hostById(i); if (!s) return; const pane = document.getElementById('bw-pane'); if (pane) pane.style.opacity = '.5';
   try {
     const b = S.qualification?.budgetConstraint || {};
     const r = await api('/proposal/media-plan', { clientName: S.proposalContext?.client?.name, market: S.proposalContext?.client?.market, category: S.proposalContext?.client?.category, budget: b.mediaBudget || b.statedFee || '', rfpText: S.rfpIntake?.rfpText || '' });
@@ -2114,7 +2197,7 @@ async function generateMediaPlan(i) {
 }
 async function validateMediaPlan(i) { await validateMediaPlanSilent(i); refreshBuild(); }
 async function validateMediaPlanSilent(i) {
-  const s = S.rfpSections[i]; const t = s && s._table; if (!t) return;
+  const s = hostById(i); const t = s && s._table; if (!t) return;
   try { const r = await api('/proposal/validate', { mediaCols: t.cols, mediaRows: t.rows }); s._flags = r.flags || []; }
   catch (e) { s._flags = []; }
 }
@@ -2159,6 +2242,7 @@ function updateItemChatFeed(id) {
 
 function editRfpSection(i, val) { if (S.rfpSections[i]) { S.rfpSections[i].content = val; S.isDirty = true; autoSaveRfp('building'); } }
 function markSectionReviewed(i) { if (S.rfpSections[i]) { S.rfpSections[i]._reviewed = true; S.isDirty = true; } refreshBuild(); }
+function markItemReviewed(id) { const o = hostById(id); if (o) { o._reviewed = true; S.isDirty = true; } refreshBuild(); }
 
 async function regenRfpSection(i) {
   const s = S.rfpSections[i]; if (!s) return;
@@ -2171,13 +2255,68 @@ async function regenRfpSection(i) {
   refreshBuild();
 }
 
+// Type D — a deadline or submission instruction: confirm it, nothing to write.
+function renderPaneInstruction(item, o) {
+  const done = !!(o && (o._done || o._forceComplete));
+  let when = '';
+  const d = parseDue(item.due);
+  if (d) {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const days = Math.round((d - today) / 86400000);
+    const tag = days < 0 ? ' (passed)' : days === 0 ? ' (today)' : ` (${days} day${days === 1 ? '' : 's'} left)`;
+    const col = days < 0 ? 'var(--text-muted)' : days <= 3 ? 'var(--orange)' : 'var(--text)';
+    when = `<div style="margin-top:8px;font-weight:600;color:${col}">Due ${esc(d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }))}${tag}</div>`;
+  }
+  const what = item.deadline ? 'This is a deadline, not a document to write.' : 'This is a submission instruction, not a document to write.';
+  return `
+  <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence ${done ? 'conf-confirmed' : 'conf-validate'}">${done ? 'Covered' : 'Confirm'}</span></div>
+  <div class="bw-note">${what} Make sure the team has it covered, then check it off.${when}</div>
+  <div class="bw-actions"><button class="btn ${done ? 'btn-ghost' : 'btn-primary'} btn-sm" onclick="ackItem('${item.id}')">${done ? '✓ Covered (undo)' : '✓ Got it'}</button></div>`;
+}
+function ackItem(id) {
+  const o = hostById(id); if (!o) return;
+  o._done = !(o._done || o._forceComplete);
+  if (!o._done) o._forceComplete = false;
+  if (String(id).indexOf('req-') === 0) o.status = o._done ? 'Complete' : 'Not Started';
+  S.isDirty = true; refreshBuild();
+}
+
+// Type F — the single combined PDF the RFP asks for: compile and export, not a section to write.
+function renderPaneFinal(item, o) {
+  const items = buildItems().filter(it => it.type !== 'F' && it.type !== 'D');
+  const open = items.filter(it => itemProgress(it) < 100);
+  const ready = items.length - open.length;
+  const exported = !!(o && o._done);
+  const off = ready ? '' : ' disabled style="opacity:.5;cursor:not-allowed"';
+  const openList = open.length
+    ? ` Still open: ${open.slice(0, 4).map(it => esc(String(it.title).replace(/\s*\(.*$/, '').slice(0, 60))).join(', ')}${open.length > 4 ? ` and ${open.length - 4} more` : ''}.`
+    : ' Everything is checked off.';
+  return `
+  <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence ${exported ? 'conf-confirmed' : 'conf-generated'}">${exported ? 'Exported' : 'Final file'}</span></div>
+  <div class="bw-note">This is the finished proposal itself: every item you check off, compiled in RFP order into one PDF. Standing documents (W-9, insurance) are listed in it, so send their files along with it.
+    <div style="margin-top:10px;color:var(--text)"><b>${ready} of ${items.length}</b> items ready.${openList}</div>
+  </div>
+  <div class="bw-actions" style="flex-wrap:wrap">
+    <button class="btn btn-primary btn-sm" onclick="exportFinalPdfFor('${item.id}')"${off}>⇩ Export as PDF</button>
+    <button class="btn btn-ghost btn-sm" onclick="finalizeProposal()"${off}>Preview and edit first</button>
+    <button class="btn btn-ghost btn-sm" onclick="openSow()">Statement of Work</button>
+  </div>`;
+}
+function exportFinalPdfFor(id) {
+  exportFinalPdf(assembleMarkdown());
+  const o = hostById(id);
+  if (o) { o._done = true; if (String(id).indexOf('req-') === 0) o.status = 'Complete'; S.isDirty = true; }
+  refreshBuild();
+}
+function openSow() { const m = document.getElementById('modal-export'); if (m) m.style.display = 'flex'; loadSOW(); }
+
 // Type A — fixed library document (Phase 5)
 function renderPaneFixedDoc(item, r) {
   const pick = libraryDocFor(item.docType);
   const doc = pick.doc;
   const mkt = (S.rfpIntake && S.rfpIntake.market) || (S.proposalContext && S.proposalContext.client && S.proposalContext.client.market) || '';
   const matchNote = pick.matched === 'market' ? `Matched to the ${esc(mkt)} market.`
-    : (pick.matched === 'corporate' || pick.matched === 'first') ? `No ${esc(mkt || 'market')} copy on file, so this shows ${esc(doc.name)}. Add the market copy in the Library if the RFP needs it.` : '';
+    : (pick.matched === 'corporate' || pick.matched === 'first') ? `No ${esc(mkt || 'market')} copy on file, so this shows ${esc(docLabel(doc))}. Add the market copy in the Library if the RFP needs it.` : '';
   if (!doc) {
     return `<div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence conf-validate">No file on record</span></div>
       <div class="bw-note">This is a standing document (<code>${esc(item.docType || 'certification')}</code>). No matching file is in your document library yet — add one to the library so it auto-attaches next time, or mark it handled manually.</div>
@@ -2188,13 +2327,13 @@ function renderPaneFixedDoc(item, r) {
   return `
   <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence conf-confirmed">On file</span></div>
   <div class="bw-doc">
-    <div style="font-weight:600">${esc(doc.name)}</div>
+    <div style="font-weight:600">${esc(docLabel(doc))}</div>
     ${doc.note ? `<div style="font-size:13px;color:var(--text-muted);margin-top:4px">${esc(doc.note)}</div>` : ''}
     ${matchNote ? `<div style="font-size:12px;color:${pick.matched === 'market' ? 'var(--text-muted)' : 'var(--orange)'};margin-top:6px">${matchNote}</div>` : ''}
     ${expired ? `<div style="color:var(--red);font-size:12px;margin-top:8px">⚠ On file but expired ${esc(doc.expires_on)} — update before submitting.</div>`
       : (doc.expires_on ? `<div style="font-size:12px;color:var(--text-muted);margin-top:8px">Valid through ${esc(doc.expires_on)}</div>` : '')}
     <div style="margin-top:14px;display:flex;gap:12px;align-items:center">
-      ${doc.file_url ? `<a href="${esc(doc.file_url)}" target="_blank" rel="noopener" style="color:var(--cyan);font-size:13px">📄 ${esc(doc.name)} ↗</a>` : ''}
+      ${docHref(doc) ? `<a href="${esc(docHref(doc))}" target="_blank" rel="noopener" style="color:var(--cyan);font-size:13px">📄 Open ${esc(docLabel(doc))} ↗</a>` : `<a href="${LIBRARY_URL}" target="_blank" rel="noopener" style="color:var(--cyan);font-size:13px">📄 Open in the Library ↗</a>`}
       <div style="flex:1"></div>
       <button class="btn ${attached ? 'btn-ghost' : 'btn-primary'} btn-sm" onclick="attachLibraryDoc(${item.ref.idx})">${attached ? '✓ Attached' : 'Attach to proposal'}</button>
     </div>
@@ -2285,7 +2424,7 @@ function assembleMarkdown() {
       parts.push(`## ${it.title}\n\n| ${t.cols.join(' | ')} |\n| ${t.cols.map(() => '---').join(' | ')} |\n${t.rows.map(r => `| ${r.join(' | ')} |`).join('\n')}\n`);
     } else if (it.type === 'A') {
       const doc = libraryDocFor(it.docType).doc;
-      parts.push(`## ${it.title}\n\n${doc ? (doc.name + (doc.file_url ? ' — ' + doc.file_url : '')) : 'Attached separately.'}\n`);
+      parts.push(`## ${it.title}\n\n${doc ? docLabel(doc) + ' (attached as a separate file).' : 'Attached separately.'}\n`);
     } else {
       let content = (o._draft || o.content || '').trim();
       content = content.replace(/^#{1,6}\s+.*(?:\r?\n)+/, '');   // drop a leading heading the model may have added (avoids doubled title)
@@ -2298,7 +2437,8 @@ function assembleMarkdown() {
 // ═══ pr9 part 2 — Insertion Order + Ops-Handoff exports (from the priced media plan) ═══════════════
 // Turns the priced Media Plan table into signable/actionable docs, reusing the export modal (Download .md / PDF).
 function _pricedMediaTable() {
-  const sec = (S.rfpSections || []).find(s => s && s._table && Array.isArray(s._table.rows)
+  const hosts = buildItems().filter(it => it.type === 'table').map(it => itemObj(it));
+  const sec = hosts.find(s => s && s._table && Array.isArray(s._table.rows)
     && s._table.rows.some(r => (r || []).some(c => String(c || '').trim())));
   if (!sec) return null;
   const cols = sec._table.cols || [];
@@ -2314,7 +2454,7 @@ function _pricedMediaTable() {
     return { name, goal: String(r[iGoal] || ''), flight: String(r[iFlight] || ''), media: String(r[iMedia] || ''),
       rate: String(r[iRate] || ''), vol: String(r[iVol] || ''), bud, addedValue };
   }).filter(Boolean);
-  return rows.length ? { rows, total } : null;
+  return rows.length ? { rows, total, title: sec.title || sec.name || 'Media Plan' } : null;
 }
 function _ioHeaderMd(title) {
   const c = (S.proposalContext && S.proposalContext.client) || {};
@@ -2391,8 +2531,8 @@ function downloadFinalMd() {
   const blob = new Blob([md], { type: 'text/markdown' }); const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = (S.proposalContext.client.name || 'proposal').replace(/\s+/g, '-').toLowerCase() + '-proposal.md'; a.click(); URL.revokeObjectURL(url);
 }
-function exportFinalPdf() {
-  const md = document.getElementById('export-modal-body').value;
+function exportFinalPdf(mdArg) {
+  const md = (typeof mdArg === 'string') ? mdArg : document.getElementById('export-modal-body').value;
   const c = S.proposalContext.client;
   if (!(window.jspdf && window.jspdf.jsPDF)) { alert('PDF library still loading — try again in a moment.'); return; }
   const { jsPDF } = window.jspdf;
@@ -2494,6 +2634,7 @@ async function buildDeck() {
     else { const content = (s._draft || s.content || ''); if (content.trim()) secs.push({ kind: 'text', title: s.title, content }); }
   });
   const t = _pricedMediaTable();
+  if (t && !secs.some(x => x.kind === 'media')) secs.push({ kind: 'media', title: t.title });   // table lives on a requirement
   const media = t ? { rows: t.rows, total: t.total } : null;
   const cf = (S.qualification || {}).campaignFlight || {};
   let flight = cf.label || [cf.start, cf.end].filter(Boolean).map(x => { try { return fmtDate(x); } catch (e) { return x; } }).join(' – ') || '';
@@ -2732,8 +2873,8 @@ function renderBudgetModelBody(bm, forClient) {
         <td>${fmtMoney(t.monthlyBudget)}/mo</td>
         <td>${(t.clicks || 0).toLocaleString()}</td>
         <td>${t.sharePct != null ? t.sharePct + '%' : '—'}</td>
-        <td>${(t.leads || 0).toLocaleString()}</td>
-        <td>${t.monthlyRevenueOpportunity ? fmtMoney(t.monthlyRevenueOpportunity) + '/mo' : '—'}</td>
+        <td>${((t.inquiries != null ? t.inquiries : t.leads) || 0).toLocaleString()}</td>
+        <td>${t.breakevenCustomers != null ? t.breakevenCustomers.toLocaleString() + ' customer' + (t.breakevenCustomers > 1 ? 's' : '') + (t.breakevenClosePct != null ? ' (' + t.breakevenClosePct + '% close)' : '') : '—'}</td>
         <td style="font-size:12px;color:var(--text-muted)">${esc(t.kpiLine || t.why || '')}</td>
       </tr>`;
     const rows = (bm.tiers || []).map(t => tierRow(t, t.name === 'Recommended' ? 'bm-rec' : '')).join('')
@@ -2741,7 +2882,7 @@ function renderBudgetModelBody(bm, forClient) {
     return `
       <div class="bm-tam"><strong>${bm.tam.monthlySearches.toLocaleString()}</strong> tracked monthly searches — ${esc(bm.tam.locationUsed || 'market')}${bm.tam.competitorBrandExcluded ? ` <span style="font-size:12px;color:var(--text-muted)">(${bm.tam.competitorBrandExcluded} competitor-brand term${bm.tam.competitorBrandExcluded > 1 ? 's' : ''} excluded)</span>` : ''}</div>
       <table class="bm-table">
-        <thead><tr><th>Tier</th><th>Investment</th><th>Est. Clicks</th><th>Share of Demand</th><th>Leads/mo</th><th>Est. Value</th><th></th></tr></thead>
+        <thead><tr><th>Tier</th><th>Investment</th><th>Est. Clicks</th><th>Share of Demand</th><th>Inquiries/mo</th><th>Breakeven</th><th></th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
       ${bm.breakeven ? `<div class="bm-breakeven">✓ ${esc(bm.breakeven.line)}</div>` : ''}
@@ -2750,7 +2891,7 @@ function renderBudgetModelBody(bm, forClient) {
   }
   return `
     ${bm.breakeven ? `<div class="bm-breakeven">✓ ${esc(bm.breakeven.line)}</div>` : ''}
-    ${bm.statedBudgetOutcome ? `<div class="bm-tam" style="margin-top:10px">At ${esc(bm.statedBudgetOutcome.label || fmtMoney(bm.statedBudgetOutcome.monthlyBudget) + '/mo')}: <strong>~${(bm.statedBudgetOutcome.leads || 0).toLocaleString()} leads/mo</strong>${bm.statedBudgetOutcome.monthlyRevenueOpportunity ? ' → ' + fmtMoney(bm.statedBudgetOutcome.monthlyRevenueOpportunity) + '/mo revenue opportunity' : ''}${bm.statedBudgetOutcome.kpiLine ? ' — ' + esc(bm.statedBudgetOutcome.kpiLine) : ''}</div>` : ''}
+    ${bm.statedBudgetOutcome ? `<div class="bm-tam" style="margin-top:10px">At ${esc(bm.statedBudgetOutcome.label || fmtMoney(bm.statedBudgetOutcome.monthlyBudget) + '/mo')}: <strong>~${((bm.statedBudgetOutcome.inquiries != null ? bm.statedBudgetOutcome.inquiries : bm.statedBudgetOutcome.leads) || 0).toLocaleString()} inquiries/mo</strong>${bm.statedBudgetOutcome.breakevenCustomers != null ? ' → pays for itself with ' + bm.statedBudgetOutcome.breakevenCustomers.toLocaleString() + ' customer' + (bm.statedBudgetOutcome.breakevenCustomers > 1 ? 's' : '') + (bm.statedBudgetOutcome.breakevenClosePct != null ? ' (' + bm.statedBudgetOutcome.breakevenClosePct + '% close)' : '') : ''}${bm.statedBudgetOutcome.kpiLine ? ' — ' + esc(bm.statedBudgetOutcome.kpiLine) : ''}</div>` : ''}
     ${bm.tamPending ? `<div class="bm-note">${esc(bm.tamPending)}</div>` : ''}
     ${noteBlock}`;
 }
@@ -2908,12 +3049,7 @@ function attachWorkspace() {
   const isRfp = S.proposalContext?.entryPoint === 'rfp' && Array.isArray(S.rfpSections) && S.rfpSections.length;
   if (isRfp) {
     // Guided Build Workspace (Phase 4) — load the document library once for Type-A auto-attach (Phase 5).
-    if (S.libraryDocs == null) {
-      S.libraryDocs = [];
-      api('/proposal/library/docs', undefined, 'GET').then(r => {
-        if (r && Array.isArray(r.docs)) { S.libraryDocs = r.docs; if (S.view === 'workspace') render(); }
-      }).catch(() => {});
-    }
+    loadLibraryDocs('workspace');
     return;
   }
   const first = document.getElementById('sc-executiveSummary');
@@ -3185,11 +3321,11 @@ function exportPPTX() {
       so.addText(bm.tam.monthlySearches.toLocaleString() + ' tracked monthly searches — ' + (bm.tam.locationUsed || ''), { x: 0.5, y: 0.85, w: 12.3, h: 0.45, color: white, fontSize: 16, fontFace: 'Roboto', bold: true });
       const hd = (t) => ({ text: t, options: { bold: true, color: cyan, fontSize: 11, fill: { color: '1a1a1a' } } });
       const cell = (t) => ({ text: String(t), options: { color: white, fontSize: 12, fill: { color: '181818' } } });
-      const tRows = [['Tier', 'Investment', 'Est. Clicks', 'Share', 'Leads/mo', 'Est. Value'].map(hd)];
+      const tRows = [['Tier', 'Investment', 'Est. Clicks', 'Share', 'Inquiries/mo', 'Breakeven'].map(hd)];
       const pushRow = (t, label) => tRows.push([
         label || t.name, fmtMoney(t.monthlyBudget) + '/mo', (t.clicks || 0).toLocaleString(),
-        (t.sharePct != null ? t.sharePct + '%' : '—'), (t.leads || 0).toLocaleString(),
-        t.monthlyRevenueOpportunity ? fmtMoney(t.monthlyRevenueOpportunity) + '/mo' : '—',
+        (t.sharePct != null ? t.sharePct + '%' : '—'), ((t.inquiries != null ? t.inquiries : t.leads) || 0).toLocaleString(),
+        t.breakevenCustomers != null ? t.breakevenCustomers.toLocaleString() + ' cust' + (t.breakevenClosePct != null ? ' (' + t.breakevenClosePct + '%)' : '') : '—',
       ].map(cell));
       bm.tiers.forEach(t => pushRow(t));
       if (bm.statedBudgetOutcome) pushRow(bm.statedBudgetOutcome, 'Your stated budget');
@@ -3439,7 +3575,7 @@ Object.assign(window, {
   toggleItemComplete, renderBuildChecklist,
   sectionAssist, applySectionAssist, sendItemChat,
   editTableCell, addTableRow, removeTableRow, generateMediaPlan, validateMediaPlan,
-  downloadFinalMd, exportFinalPdf,
+  downloadFinalMd, exportFinalPdf, exportFinalPdfFor, openSow, ackItem, markItemReviewed, hostById,
   loadInsertionOrder, loadOpsHandoff, loadSOW,
   buildDeck, renderDeck, deckNav, exportDeckHtml, exportDeckPdf, exportDeckPptx,
 });
