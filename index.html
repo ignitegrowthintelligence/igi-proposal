@@ -2471,12 +2471,13 @@ function renderPaneFixedDoc(item, r) {
   const isScan = !!SCAN_SPECS[item.docType];
   const cf = (S.qualification || {}).campaignFlight || {};
   const flightEnd = parseDue(cf.end), docEnd = parseDue(doc.expires_on);
-  const lapses = !expired && flightEnd && docEnd && docEnd < flightEnd;
+  // A W-9's date in the Library is a review date, not an expiry, so only warn for documents that lapse.
+  const lapses = item.docType !== 'w9' && !expired && flightEnd && docEnd && docEnd < flightEnd;
   return `
   <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence conf-confirmed">On file</span></div>
   <div class="bw-doc">
     <div style="font-weight:600">${esc(docLabel(doc))}</div>
-    ${doc.note ? `<div style="font-size:13px;color:var(--text-muted);margin-top:4px">${esc(doc.note)}</div>` : ''}
+    ${doc.note && doc.note !== docLabel(doc) ? `<div style="font-size:13px;color:var(--text-muted);margin-top:4px">${esc(doc.note)}</div>` : ''}
     ${matchNote ? `<div style="font-size:12px;color:${pick.matched === 'market' ? 'var(--text-muted)' : 'var(--orange)'};margin-top:6px">${matchNote}</div>` : ''}
     ${expired ? `<div style="color:var(--red);font-size:12px;margin-top:8px">⚠ On file but expired ${esc(doc.expires_on)} — update before submitting.</div>`
       : (doc.expires_on ? `<div style="font-size:12px;color:var(--text-muted);margin-top:8px">Valid through ${esc(doc.expires_on)}</div>` : '')}
