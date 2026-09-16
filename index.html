@@ -1992,7 +1992,13 @@ function buildItems() {
     const sdt = docTypeForRequirement({ name: title });
     if (sdt && reqDocTypes.has(sdt)) return;
     if (sdt) { items.push({ ...base, type: 'A', docType: sdt }); return; }
-    items.push({ ...base, type: (s.coverage === 'full') ? 'B' : 'C' });
+    // A section the engine drafted with placeholders ("scaffold") still has text: open it in the editor.
+    // Only a section with no real text, or one already on the guided path, uses guided questions.
+    const text = String(s.content || '').trim();
+    const hasText = !!text && !/didn't auto-generate on this run/i.test(text);
+    const guidedStarted = !!s._guided || typeof s._draft === 'string';
+    const scaffold = s.coverage !== 'full';
+    items.push({ ...base, type: guidedStarted ? 'C' : (!scaffold || hasText) ? 'B' : 'C', scaffold, needs: s.needsInput || '' });
   });
   const shownSecTitles = items.filter(it => it.ref.kind === 'section').map(it => it.title);
   let hasDeadlineReq = false, hasQuestionsReq = false;
@@ -2057,8 +2063,8 @@ function derivedProgress(item, o) {
     const answered = (o._answers || []).filter(a => a != null).length;
     return (g.questions && g.questions.length) ? Math.round(60 * answered / g.questions.length) : 0;
   }
-  // Type B section: drafted by the engine but not yet reviewed
-  return (o.content && String(o.content).trim()) ? 70 : 0;
+  // Type B section: drafted by the engine but not yet reviewed (a placeholder draft counts for less)
+  return (o.content && String(o.content).trim()) ? (item.scaffold ? 30 : 70) : 0;
 }
 function statusKey(p) { return p >= 100 ? 'complete' : p > 0 ? 'in-progress' : 'not-started'; }
 const STATUS_LABEL = { 'complete': 'Complete', 'in-progress': 'In Progress', 'not-started': 'Not Started' };
@@ -2182,6 +2188,7 @@ function itemSub(item) {
     : item.type === 'D' ? (item.deadline ? 'A deadline to meet' : 'A submission instruction')
     : item.type === 'F' ? 'The file you submit'
     : item.type === 'table' ? 'Built from Library products'
+    : item.scaffold ? ('Placeholder draft' + (item.needs ? ' · needs ' + item.needs : ''))
     : item.aiCan ? 'IGI can draft this' : 'Needs input from your team';
   return [where, what].filter(Boolean).join(' · ');
 }
@@ -2216,7 +2223,8 @@ function renderPaneSection(item, s) {
   const reviewed = !!s._reviewed;
   const idx = item.ref.idx;
   return `
-  <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence ${reviewed ? 'conf-confirmed' : 'conf-generated'}">${reviewed ? 'Reviewed' : 'Draft'}</span></div>
+  <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence ${reviewed ? 'conf-confirmed' : item.scaffold ? 'conf-validate' : 'conf-generated'}">${reviewed ? 'Reviewed' : item.scaffold ? 'Placeholder draft' : 'Draft'}</span></div>
+  ${item.scaffold && !reviewed ? `<div class="bw-note" style="margin-bottom:12px">IGI didn't have what it needed to finish this one${item.needs ? ` (${esc(item.needs)} to complete)` : ''}. Replace anything in brackets, such as [Validate on Call] or [Finance to confirm], before you mark it reviewed.</div>` : ''}
   <textarea class="bw-editor" id="bw-ed-${idx}" oninput="editRfpSection(${idx}, this.value)" placeholder="Write or paste here, or use the buttons below to draft this with AI…">${esc(String(s.content || ''))}</textarea>
   <div id="bw-assist-${idx}"></div>
   <div class="bw-actions">
@@ -2262,6 +2270,12 @@ const MEDIA_COLS = ['Solution Name', 'Solution Goal', 'Audience Detail', 'Soluti
 function renderPaneTable(item, s) {
   if (!s._table) s._table = { cols: MEDIA_COLS.slice(), rows: [] };
   const t = s._table;
+  // First open of an empty table: build it from Library products once, automatically.
+  const autoFill = !t.rows.length && !s._autoPlanTried;
+  if (autoFill) { s._autoPlanTried = true; setTimeout(() => generateMediaPlan(item.id, true), 0); }
+  const written = String(s.content || '').trim();
+  const writtenHtml = (written && !/didn't auto-generate on this run/i.test(written))
+    ? `<details class="bw-written" style="margin-top:16px"><summary style="cursor:pointer;font-size:12.5px;color:var(--text-muted)">IGI's written media recommendation from Build (reference only; the table above is what exports)</summary><div class="bw-note" style="margin-top:8px;white-space:pre-wrap;max-height:360px;overflow:auto">${esc(written)}</div></details>` : '';
   const flags = s._flags || [];
   const budI = t.cols.indexOf('Budget');
   let total = 0;
@@ -2273,7 +2287,7 @@ function renderPaneTable(item, s) {
   ${flagHtml}
   <div class="table-wrap"><table class="media-table">
     <thead><tr>${t.cols.map(c => `<th>${esc(c)}</th>`).join('')}<th></th></tr></thead>
-    <tbody>${rowsHtml || `<tr><td colspan="${t.cols.length + 1}" style="padding:16px;color:var(--text-muted)">No rows yet — generate a plan from the Library, or add a row.</td></tr>`}</tbody>
+    <tbody>${rowsHtml || `<tr><td colspan="${t.cols.length + 1}" style="padding:16px;color:var(--text-muted)">${(autoFill || _planLoading.has(item.id)) ? 'Building a plan from Library products… (about 20 seconds)' : 'No rows yet. Generate a plan from the Library, or add a row.'}</td></tr>`}</tbody>
     <tfoot><tr><td colspan="${t.cols.length - 1}">Total Investment</td><td>$${total.toLocaleString()}</td><td></td></tr></tfoot>
   </table></div>
   <div class="bw-actions">
@@ -2282,7 +2296,8 @@ function renderPaneTable(item, s) {
     <button class="btn btn-ghost btn-sm" onclick="validateMediaPlan('${item.id}')">✓ Validate</button>
     <button class="btn btn-ghost btn-sm" onclick="reviewMediaPlan('${item.id}')">✨ Ask AI to review this plan</button>
     <button class="btn btn-ghost btn-sm" onclick="markItemReviewed('${item.id}')">✓ Mark reviewed</button>
-  </div>`;
+  </div>
+  ${writtenHtml}`;
 }
 let _valTimer = null;
 function editTableCell(i, ri, ci, val) {
@@ -2302,8 +2317,10 @@ function editTableCell(i, ri, ci, val) {
 }
 function addTableRow(i) { const h = hostById(i); if (!h) return; if (!h._table) h._table = { cols: MEDIA_COLS.slice(), rows: [] }; const t = h._table; t.rows.push(t.cols.map(() => '')); touch(h); S.isDirty = true; refreshBuild(); }
 function removeTableRow(i, ri) { const h = hostById(i); const t = h && h._table; if (!t) return; t.rows.splice(ri, 1); S.isDirty = true; refreshBuild(); }
-async function generateMediaPlan(i) {
-  const s = hostById(i); if (!s) return; const pane = document.getElementById('bw-pane'); if (pane) pane.style.opacity = '.5';
+const _planLoading = new Set();   // in-flight plan builds, by item id (never saved)
+async function generateMediaPlan(i, auto) {
+  const s = hostById(i); if (!s || _planLoading.has(i)) return; _planLoading.add(i);
+  const pane = document.getElementById('bw-pane'); if (pane) pane.style.opacity = '.5';
   try {
     const b = S.qualification?.budgetConstraint || {};
     const r = await api('/proposal/media-plan', { clientName: S.proposalContext?.client?.name, market: S.proposalContext?.client?.market, category: S.proposalContext?.client?.category, budget: b.mediaBudget || b.statedFee || '', rfpText: S.rfpIntake?.rfpText || '' });
@@ -2313,7 +2330,10 @@ async function generateMediaPlan(i) {
     const rows = (r.rows || []).map(row => { const byName = {}; inCols.forEach((c, ci) => { byName[c] = row[ci]; }); return MEDIA_COLS.map(c => (byName[c] != null ? byName[c] : '')); });
     s._table = { cols: MEDIA_COLS.slice(), rows }; touch(s);
     S.isDirty = true; await validateMediaPlanSilent(i);
-  } catch (e) { alert('Generate failed: ' + e.message); }
+  } catch (e) {
+    if (auto) { s._flags = [{ level: 'warn', msg: 'Could not build a plan from the Library automatically (' + e.message + '). Use Generate plan from Library to try again.' }]; }
+    else alert('Generate failed: ' + e.message);
+  } finally { _planLoading.delete(i); }
   refreshBuild();
 }
 async function validateMediaPlan(i) { await validateMediaPlanSilent(i); refreshBuild(); }
