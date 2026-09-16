@@ -380,6 +380,27 @@ nav { background: var(--bg-nav); height: 52px; display: flex; align-items: cente
 .bw-mini { display: inline-block; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; padding: 1px 6px; border-radius: 4px; margin-left: 4px; vertical-align: 1px; font-family: 'Inter', sans-serif; }
 .bw-mini.deadline { background: rgba(155,135,245,.15); color: #9b87f5; }
 .bw-mini.final { background: rgba(0,174,189,.15); color: var(--cyan); }
+.bw-mini.required { background: rgba(239,152,9,.12); color: var(--orange); }
+.bw-eyebrow { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); font-family: 'Inter', sans-serif; font-weight: 600; }
+.bw-eyebrow .bw-mini { margin-left: 0; }
+.bw-status-row { display: flex; align-items: center; gap: 12px; margin: -6px 0 18px; flex-wrap: wrap; }
+.bw-status-select { background: var(--bg-sec); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 5px 9px; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
+.bw-status-select.st-complete { color: var(--green); }
+.bw-status-select.st-inprog { color: #60a5fa; }
+.bw-status-select.st-notstarted { color: var(--text-muted); }
+.bw-sub { font-size: 12.5px; color: var(--text-muted); }
+.bw-lbl { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); font-family: 'Inter', sans-serif; font-weight: 600; margin: 18px 0 6px; }
+.scan-card { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-top: 14px; }
+.scan-head { padding: 10px 14px; background: var(--bg-sec); border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--text-muted); line-height: 1.45; }
+.scan-fields { display: grid; grid-template-columns: 1fr 1fr; }
+.scan-field { padding: 10px 14px; border-bottom: 1px solid var(--border); min-width: 0; }
+.scan-field:nth-child(odd) { border-right: 1px solid var(--border); }
+.scan-field label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); margin-bottom: 3px; font-family: 'Inter', sans-serif; }
+.scan-field input { width: 100%; background: transparent; border: none; border-bottom: 1px dashed transparent; color: var(--text); font-size: 13px; outline: none; padding: 2px 0; font-family: 'Roboto', sans-serif; }
+.scan-field input:focus { border-bottom-color: var(--cyan); }
+.scan-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; background: var(--bg-sec); flex-wrap: wrap; }
+.chat-insert { display: inline-block; margin-top: 6px; font-size: 11.5px; font-weight: 600; color: var(--cyan); cursor: pointer; text-decoration: underline; }
+@media (max-width: 700px) { .scan-fields { grid-template-columns: 1fr; } .scan-field:nth-child(odd) { border-right: none; } }
 .bw-left-foot { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); }
 .bw-pane-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .bw-pane-head h3 { font-size: 16px; font-weight: 600; flex: 1; }
@@ -387,7 +408,7 @@ nav { background: var(--bg-nav); height: 52px; display: flex; align-items: cente
 .bw-note code { color: var(--cyan); font-size: 12px; }
 .bw-editor { width: 100%; min-height: 300px; background: var(--bg-sec); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 13px; line-height: 1.65; padding: 12px 14px; resize: vertical; outline: none; font-family: 'Roboto', sans-serif; }
 .bw-editor:focus { border-color: var(--cyan); }
-.bw-actions { display: flex; gap: 10px; margin-top: 14px; }
+.bw-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
 .bw-doc { background: var(--bg-sec); border-radius: 6px; padding: 16px 18px; }
 .bw-qs { display: flex; flex-direction: column; gap: 16px; }
 .bw-q-prompt { font-size: 14px; line-height: 1.5; margin-bottom: 8px; }
@@ -1496,7 +1517,10 @@ function renderGrading() {
 
 function updateReqStatus(i, val) {
   if (S.qualification && S.qualification.submissionRequirements && S.qualification.submissionRequirements[i]) {
-    S.qualification.submissionRequirements[i].status = val;
+    const r = S.qualification.submissionRequirements[i];
+    r.status = val;
+    const k = { 'Complete': 'complete', 'In Progress': 'in-progress', 'Not Started': 'not-started' }[val];
+    if (k) { r._status = k; r._forceComplete = false; }
   }
   const pin = document.getElementById('qual-pin-inner');
   if (pin) pin.innerHTML = renderQualPinInner();
@@ -1934,6 +1958,17 @@ function parseDue(d) {
 }
 function fmtDateText(d) { const x = parseDue(d); return x ? x.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : String(d || ''); }
 
+// Two titles name the same ask ("Terms and Conditions" in both lists; "Pricing Structure" vs "Pricing Structure (fees)").
+const TITLE_STOP = new Set(['and', 'the', 'of', 'for', 'a', 'an', 'to', 'in', 'on', 'with', 'your', 'our', 'proposal', 'section']);
+function titleWords(t) { return String(t || '').toLowerCase().replace(/\([^)]*\)/g, ' ').replace(/[^a-z0-9]+/g, ' ').split(' ').filter(w => w && !TITLE_STOP.has(w)); }
+function sameTitle(a, b) {
+  const A = titleWords(a), B = titleWords(b);
+  if (!A.length || !B.length) return false;
+  if (A.join(' ') === B.join(' ')) return true;
+  const sm = A.length <= B.length ? A : B, lg = A.length <= B.length ? B : A;
+  return sm.length >= 2 && sm.every(w => lg.includes(w));
+}
+
 function buildItems() {
   const q = S.qualification || {};
   const secs = S.rfpSections || [], reqs = q.submissionRequirements || [];
@@ -1943,16 +1978,28 @@ function buildItems() {
   const isMediaHost = (kind, i) => !!media && media.kind === kind && media.idx === i;
   const hasRows = o => !!(o && o._table && Array.isArray(o._table.rows) && o._table.rows.length);
   const items = [];
+  const reqDocTypes = new Set(reqs.map(r => docTypeForRequirement(r)).filter(Boolean));
+  const secMeta = t => (q.requiredProposalSections || []).find(x => x && typeof x === 'object' && sameTitle(x.title, t)) || {};
   secs.forEach((s, i) => {
+    const title = s.title || ('Section ' + (i + 1));
+    const meta = secMeta(title);
+    const base = { id: 'sec-' + i, group: 'Proposal sections', title, required: true, src: meta.sourcePage || '',
+      aiCan: meta.aiCanDraft !== false, ref: { kind: 'section', idx: i } };
     // A section that already holds a filled table keeps it (older saves could have more than one).
-    const table = isMediaHost('section', i) || hasRows(s);
-    items.push({ id: 'sec-' + i, group: 'Proposal sections', title: s.title || ('Section ' + (i + 1)),
-      type: table ? 'table' : (s.coverage === 'full') ? 'B' : 'C', ref: { kind: 'section', idx: i } });
+    if (isMediaHost('section', i) || hasRows(s)) { items.push({ ...base, type: 'table' }); return; }
+    // A "section" that is really a standing document (W-9, COI, security policy) is listed once:
+    // the matching submission requirement carries it, and with none the section attaches the doc itself.
+    const sdt = docTypeForRequirement({ name: title });
+    if (sdt && reqDocTypes.has(sdt)) return;
+    if (sdt) { items.push({ ...base, type: 'A', docType: sdt }); return; }
+    items.push({ ...base, type: (s.coverage === 'full') ? 'B' : 'C' });
   });
+  const shownSecTitles = items.filter(it => it.ref.kind === 'section').map(it => it.title);
   let hasDeadlineReq = false, hasQuestionsReq = false;
   reqs.forEach((r, i) => {
     const title = r.name || ('Requirement ' + (i + 1));
-    const base = { id: 'req-' + i, group: 'Submission requirements', title, ref: { kind: 'requirement', idx: i } };
+    const base = { id: 'req-' + i, group: 'Submission requirements', title, required: true, src: r.sourcePage || '',
+      aiCan: !!r.aiCanComplete, ref: { kind: 'requirement', idx: i } };
     if (isMediaHost('requirement', i) || hasRows(r)) { items.push({ ...base, type: 'table' }); return; }
     if (media && mediaScore(title) === 3) return;   // a second "media plan" ask: same table, don't list it twice
     if (isFinalPdfReq(r)) { items.push({ ...base, type: 'F' }); return; }
@@ -1960,10 +2007,12 @@ function buildItems() {
       const deadline = DEADLINE_RX.test(title);
       if (deadline) hasDeadlineReq = true;
       if (/question/i.test(title)) hasQuestionsReq = true;
-      items.push({ ...base, type: 'D', deadline });
+      items.push({ ...base, type: 'D', deadline, required: false });
       return;
     }
     const dt = docTypeForRequirement(r);
+    // Same ask already listed as a proposal section: keep the section (it carries the draft).
+    if (!dt && shownSecTitles.some(t => sameTitle(t, title))) return;
     items.push({ ...base, type: dt ? 'A' : 'C', docType: dt });
   });
   // Key dates from the RFP timeline, unless a requirement already covers them.
@@ -1974,7 +2023,7 @@ function buildItems() {
     const isP = /(proposal|response|submission)s?\s*(due|deadline)/i.test(ev);
     if (!(isQ || isP) || (isQ && hasQuestionsReq) || (isP && hasDeadlineReq)) return;
     items.push({ id: 'tl-' + i, group: 'Deadlines', title: ev + ' ' + fmtDateText(t.date), type: 'D', deadline: true, due: t.date,
-      ref: { kind: 'timeline', idx: i } });
+      required: false, src: 'RFP timeline', ref: { kind: 'timeline', idx: i } });
   });
   return items;
 }
@@ -1988,22 +2037,34 @@ function itemObj(item) {
     : ((S.qualification && S.qualification.submissionRequirements) || [])[item.ref.idx];
 }
 
+// Status: an explicit choice (dropdown, checkbox, qualify tracker) wins over the derived one.
 function itemProgress(item) {
   const o = itemObj(item); if (!o) return 0;
-  if (o._forceComplete) return 100;   // manual checkbox in the checklist
-  if (item.ref.kind === 'requirement' && item.type === 'A') return (o._attached || o._manual) ? 100 : 0;
+  if (o._status === 'complete' || o._forceComplete) return 100;
+  if (o._status === 'not-started') return 0;
+  const p = derivedProgress(item, o);
+  if (o._status === 'in-progress') return Math.min(90, Math.max(10, p));
+  return p;
+}
+function derivedProgress(item, o) {
+  if (item.type === 'A') return (o._attached || o._manual) ? 100 : 0;
   if (o._reviewed || o._done) return 100;
   if (item.type === 'table') return (o._table && Array.isArray(o._table.rows) && o._table.rows.length) ? 70 : 0;
   if (item.type === 'D' || item.type === 'F') return 0;
   if (item.type === 'C') {
+    if (typeof o._draft === 'string' && o._draft.trim()) return 70;
     const g = o._guided; if (!g) return 0;
-    if (o._draft) return 100;
     const answered = (o._answers || []).filter(a => a != null).length;
     return (g.questions && g.questions.length) ? Math.round(60 * answered / g.questions.length) : 0;
   }
   // Type B section: drafted by the engine but not yet reviewed
   return (o.content && String(o.content).trim()) ? 70 : 0;
 }
+function statusKey(p) { return p >= 100 ? 'complete' : p > 0 ? 'in-progress' : 'not-started'; }
+const STATUS_LABEL = { 'complete': 'Complete', 'in-progress': 'In Progress', 'not-started': 'Not Started' };
+const STATUS_CLS = { 'complete': 'st-complete', 'in-progress': 'st-inprog', 'not-started': 'st-notstarted' };
+// Any real work on an item lifts a manual "Not Started".
+function touch(o) { if (o && o._status === 'not-started') delete o._status; }
 
 function overallProgress() {
   const items = buildItems(); if (!items.length) return 0;
@@ -2064,22 +2125,39 @@ function renderBuildChecklist(items) {
   return Object.entries(groups).map(([g, its]) => `
     <div class="bw-group">${esc(g)}</div>
     ${its.map(it => { const p = itemProgress(it); const on = it.id === S.buildSel;
-      const label = p >= 100 ? 'Complete' : p > 0 ? 'In Progress' : 'Not Started';
-      const cls = p >= 100 ? 'st-complete' : p > 0 ? 'st-inprog' : 'st-notstarted';
+      const label = STATUS_LABEL[statusKey(p)];
+      const cls = STATUS_CLS[statusKey(p)];
       return `<div class="bw-item${on ? ' sel' : ''}" onclick="selectBuildItem('${it.id}')">
         <span class="bw-check${p >= 100 ? ' done' : ''}" onclick="event.stopPropagation();toggleItemComplete('${it.id}')"></span>
-        <span class="bw-item-main"><span class="bw-item-title">${esc(it.title)}${it.deadline ? ' <span class="bw-mini deadline">Deadline</span>' : ''}${it.type === 'F' ? ' <span class="bw-mini final">Final file</span>' : ''}</span><span class="bw-pill ${cls}">${label}</span></span>
+        <span class="bw-item-main"><span class="bw-item-title">${esc(it.title)}${it.deadline ? ' <span class="bw-mini deadline">Deadline</span>' : ''}${it.type === 'F' ? ' <span class="bw-mini final">Final file</span>' : ''}${it.required ? ' <span class="bw-mini required">Required</span>' : ''}</span><span class="bw-pill ${cls}">${label}</span></span>
       </div>`; }).join('')}`).join('');
 }
 
+// The checkbox flips between Complete and Not Started for ANY item (it used to be unable to
+// uncheck something that was complete because it was reviewed or attached).
 function toggleItemComplete(id) {
   const item = buildItems().find(it => it.id === id); if (!item) return;
   const o = itemObj(item); if (!o) return;
-  o._forceComplete = !(itemProgress(item) >= 100);
+  const done = itemProgress(item) >= 100;
+  o._forceComplete = false;
+  o._status = done ? 'not-started' : 'complete';
+  S.isDirty = true;
   refreshBuild();
 }
+function setItemStatus(id, val) {
+  const o = hostById(id); if (!o) return;
+  o._forceComplete = false;
+  if (STATUS_LABEL[val]) o._status = val;
+  S.isDirty = true; refreshBuild();
+}
+// Keep the qualify-screen tracker in step with the build.
+function syncReqStatuses() {
+  try {
+    buildItems().forEach(it => { if (it.ref.kind !== 'requirement') return; const o = itemObj(it); if (o) o.status = STATUS_LABEL[statusKey(itemProgress(it))]; });
+  } catch (e) {}
+}
 
-function refreshBuild() { if (S.view === 'workspace') render(); autoSaveRfp('building'); }
+function refreshBuild() { if (S.view === 'workspace') { syncReqStatuses(); render(); } autoSaveRfp('building'); }
 
 function selectBuildItem(id) { S.buildSel = id; refreshBuild(); }
 
@@ -2089,11 +2167,48 @@ function renderBuildPane(item) {
   if (item.type === 'table') inner = renderPaneTable(item, o);
   else if (item.type === 'F') inner = renderPaneFinal(item, o);
   else if (item.type === 'D') inner = renderPaneInstruction(item, o);
-  else if (item.ref.kind === 'section') inner = (item.type === 'C') ? renderPaneGuided(item, o) : renderPaneSection(item, o);
   else if (item.type === 'A') inner = renderPaneFixedDoc(item, o);
+  else if (item.ref.kind === 'section' && item.type !== 'C') inner = renderPaneSection(item, o);
   else inner = renderPaneGuided(item, o);
+  inner = paneMeta(item, inner);
   if (item.type === 'D') return inner;   // a deadline has nothing to draft
   return inner + renderItemChat(item);   // Phase C: per-item "work on this together" chat on every pane
+}
+
+function itemSub(item) {
+  const src = String(item.src || '').trim();
+  const where = src ? (/^(rfp|section|sec\.|p\.|page|part|attachment|appendix|exhibit)/i.test(src) ? (/^rfp/i.test(src) ? src : 'RFP ' + src) : 'From ' + src) : '';
+  const what = item.type === 'A' ? 'Standing document from the Library'
+    : item.type === 'D' ? (item.deadline ? 'A deadline to meet' : 'A submission instruction')
+    : item.type === 'F' ? 'The file you submit'
+    : item.type === 'table' ? 'Built from Library products'
+    : item.aiCan ? 'IGI can draft this' : 'Needs input from your team';
+  return [where, what].filter(Boolean).join(' · ');
+}
+// Mockup header: group eyebrow with badges above the title, status dropdown and a one-line "what this is" below it.
+function paneMeta(item, inner) {
+  const st = statusKey(itemProgress(item));
+  const eyebrow = `<div class="bw-eyebrow">${esc(item.group)}${item.required ? '<span class="bw-mini required">Required</span>' : ''}${item.deadline ? '<span class="bw-mini deadline">Deadline</span>' : ''}</div>`;
+  const row = `<div class="bw-status-row"><select class="bw-status-select ${STATUS_CLS[st]}" aria-label="Status" onchange="setItemStatus('${item.id}', this.value)">${['not-started', 'in-progress', 'complete'].map(k => `<option value="${k}"${k === st ? ' selected' : ''}>${STATUS_LABEL[k]}</option>`).join('')}</select><span class="bw-sub">${esc(itemSub(item))}</span></div>`;
+  const m = inner.match(/<div class="bw-pane-head">[\s\S]*?<\/div>/);
+  return m ? eyebrow + inner.replace(m[0], () => m[0] + row) : eyebrow + row + inner;
+}
+
+// Text drafts live in `content` for engine-drafted sections and in `_draft` for guided items.
+function textHost(ref) {
+  if (typeof ref === 'number') { const o = (S.rfpSections || [])[ref]; return o ? { o, key: 'content', title: o.title } : null; }
+  const it = buildItems().find(x => x.id === ref); if (!it) return null;
+  const o = itemObj(it); if (!o) return null;
+  return { o, key: it.type === 'C' ? '_draft' : 'content', title: it.title };
+}
+function editItemText(id, val) {
+  const h = textHost(id); if (!h) return;
+  h.o[h.key] = val; touch(h.o); S.isDirty = true; autoSaveRfp('building');
+}
+function startFreeform(id) {
+  const o = hostById(id); if (!o) return;
+  o._freeform = true; if (typeof o._draft !== 'string') o._draft = '';
+  touch(o); S.isDirty = true; refreshBuild();
 }
 
 // B1: text section — editable draft + Draft / Tighten / Compliance AI actions.
@@ -2113,25 +2228,30 @@ function renderPaneSection(item, s) {
 }
 
 let _assistBuf = {};
-async function sectionAssist(i, mode) {
-  const s = S.rfpSections[i]; if (!s) return;
-  const box = document.getElementById('bw-assist-' + i);
+async function sectionAssist(ref, mode) {
+  const h = textHost(ref); if (!h) return;
+  const boxId = 'bw-assist-' + ref;
+  let box = document.getElementById(boxId);
   if (box) box.innerHTML = '<div class="bw-assist-out" style="color:var(--text-muted)">Working…</div>';
+  const arg = (typeof ref === 'number') ? String(ref) : `'${ref}'`;
   try {
-    const r = await api('/proposal/section-assist', { title: s.title, content: s.content || '', mode,
+    const r = await api('/proposal/section-assist', { title: h.title, content: h.o[h.key] || '', mode,
       rfpText: S.rfpIntake?.rfpText || S.proposalContext?.rfpText || '', clientName: S.proposalContext?.client?.name, market: S.proposalContext?.client?.market });
-    if (!box) return;
+    box = document.getElementById(boxId); if (!box) return;
     if (mode === 'compliance') {
       box.innerHTML = `<div class="bw-assist-out"><div class="bw-assist-label">Compliance review</div><div style="white-space:pre-wrap;font-size:13px;line-height:1.6">${esc(r.content || '')}</div></div>`;
     } else {
-      _assistBuf[i] = r.content || '';
-      box.innerHTML = `<div class="bw-assist-out"><div class="bw-assist-label">${mode === 'draft' ? 'Suggested draft' : 'Tightened text'}</div><div style="white-space:pre-wrap;font-size:13px;line-height:1.6">${esc(r.content || '')}</div><button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="applySectionAssist(${i})">↳ Use this</button></div>`;
+      _assistBuf[ref] = r.content || '';
+      box.innerHTML = `<div class="bw-assist-out"><div class="bw-assist-label">${mode === 'draft' ? 'Suggested draft' : 'Tightened text'}</div><div style="white-space:pre-wrap;font-size:13px;line-height:1.6">${esc(r.content || '')}</div><button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="applySectionAssist(${arg})">↳ Use this</button></div>`;
     }
-  } catch (e) { if (box) box.innerHTML = `<div class="bw-assist-out" style="color:var(--red)">Failed: ${esc(e.message)}</div>`; }
+  } catch (e) { box = document.getElementById(boxId); if (box) box.innerHTML = `<div class="bw-assist-out" style="color:var(--red)">Failed: ${esc(e.message)}</div>`; }
 }
-function applySectionAssist(i) {
-  const t = _assistBuf[i]; if (t == null) return;
-  S.rfpSections[i].content = t; S.rfpSections[i]._reviewed = false; S.isDirty = true; refreshBuild();
+function applySectionAssist(ref) {
+  const t = _assistBuf[ref]; if (t == null) return;
+  const h = textHost(ref); if (!h) return;
+  h.o[h.key] = t;
+  if (h.key === 'content') h.o._reviewed = false; else h.o._freeform = true;
+  touch(h.o); S.isDirty = true; refreshBuild();
 }
 
 // B2 + D: editable Media Plan table with auto-total, Library generation, and validation flags.
@@ -2160,6 +2280,7 @@ function renderPaneTable(item, s) {
     <button class="btn btn-primary btn-sm" onclick="generateMediaPlan('${item.id}')">✨ Generate plan from Library</button>
     <button class="btn btn-ghost btn-sm" onclick="addTableRow('${item.id}')">+ Add row</button>
     <button class="btn btn-ghost btn-sm" onclick="validateMediaPlan('${item.id}')">✓ Validate</button>
+    <button class="btn btn-ghost btn-sm" onclick="reviewMediaPlan('${item.id}')">✨ Ask AI to review this plan</button>
     <button class="btn btn-ghost btn-sm" onclick="markItemReviewed('${item.id}')">✓ Mark reviewed</button>
   </div>`;
 }
@@ -2167,7 +2288,7 @@ let _valTimer = null;
 function editTableCell(i, ri, ci, val) {
   const host = hostById(i); const t = host && host._table;
   if (t && t.rows[ri]) {
-    t.rows[ri][ci] = val;
+    t.rows[ri][ci] = val; touch(host);
     // pr9: line Budget (total) = Rate × Volume when both are numeric. The AE can still type Budget directly
     // (rows without a rate/volume — e.g. a flat package — keep their entered Budget).
     const rateI = t.cols.indexOf('Rate'), volI = t.cols.indexOf('Volume'), budI = t.cols.indexOf('Budget');
@@ -2179,7 +2300,7 @@ function editTableCell(i, ri, ci, val) {
     S.isDirty = true; clearTimeout(_valTimer); _valTimer = setTimeout(() => validateMediaPlan(i), 900);
   }
 }
-function addTableRow(i) { const h = hostById(i); if (!h) return; if (!h._table) h._table = { cols: MEDIA_COLS.slice(), rows: [] }; const t = h._table; t.rows.push(t.cols.map(() => '')); S.isDirty = true; refreshBuild(); }
+function addTableRow(i) { const h = hostById(i); if (!h) return; if (!h._table) h._table = { cols: MEDIA_COLS.slice(), rows: [] }; const t = h._table; t.rows.push(t.cols.map(() => '')); touch(h); S.isDirty = true; refreshBuild(); }
 function removeTableRow(i, ri) { const h = hostById(i); const t = h && h._table; if (!t) return; t.rows.splice(ri, 1); S.isDirty = true; refreshBuild(); }
 async function generateMediaPlan(i) {
   const s = hostById(i); if (!s) return; const pane = document.getElementById('bw-pane'); if (pane) pane.style.opacity = '.5';
@@ -2190,7 +2311,7 @@ async function generateMediaPlan(i) {
     // Budget carries over as the line total, Flight + Rate start blank for the AE to price. Non-breaking.
     const inCols = (r.cols && r.cols.length) ? r.cols : ['Solution Name', 'Solution Goal', 'Audience Detail', 'Solution Footprint', 'Media Delivered', 'Volume', 'Budget'];
     const rows = (r.rows || []).map(row => { const byName = {}; inCols.forEach((c, ci) => { byName[c] = row[ci]; }); return MEDIA_COLS.map(c => (byName[c] != null ? byName[c] : '')); });
-    s._table = { cols: MEDIA_COLS.slice(), rows };
+    s._table = { cols: MEDIA_COLS.slice(), rows }; touch(s);
     S.isDirty = true; await validateMediaPlanSilent(i);
   } catch (e) { alert('Generate failed: ' + e.message); }
   refreshBuild();
@@ -2203,46 +2324,69 @@ async function validateMediaPlanSilent(i) {
 }
 
 // Phase C: per-item chat ("work on this section together").
+function itemChatHtml(id) {
+  const it = buildItems().find(x => x.id === id);
+  const canInsert = !!it && (it.type === 'B' || it.type === 'C');
+  return ((S.itemChats || {})[id] || []).map((m, k) => {
+    const ins = (canInsert && m.role === 'ai' && !m.pending && m.insert)
+      ? `<br><span class="chat-insert" onclick="insertChatReply('${id}', ${k})">↳ Insert into draft</span>` : '';
+    return `<div class="chat-msg ${m.role === 'user' ? 'user' : 'ai'}"><div class="chat-bubble">${esc(m.text).replace(/\n/g, '<br>')}${ins}</div></div>`;
+  }).join('');
+}
 function renderItemChat(item) {
   S.itemChats = S.itemChats || {};
-  const msgs = S.itemChats[item.id] || [];
-  const feed = msgs.map(m => `<div class="chat-msg ${m.role === 'user' ? 'user' : 'ai'}"><div class="chat-bubble">${esc(m.text).replace(/\n/g, '<br>')}</div></div>`).join('');
+  const hint = item.type === 'table' ? 'e.g. shift more budget into streaming TV…' : 'e.g. make this more concrete about our media reach…';
   return `
   <div class="bw-itemchat">
     <div class="bw-itemchat-label"><span class="bw-dot"></span> Work on this section together</div>
-    <div class="chat-messages" id="bw-itemchat-feed" style="height:auto;max-height:220px;background:var(--bg-sec);border-radius:8px">${feed}</div>
+    <div class="chat-messages" id="bw-itemchat-feed" style="height:auto;max-height:260px;background:var(--bg-sec);border-radius:8px">${itemChatHtml(item.id)}</div>
     <div class="chat-input-row">
-      <input class="chat-input" id="bw-itemchat-input" placeholder="e.g. make this more concrete about our media reach…" onkeydown="if(event.key==='Enter'){sendItemChat('${item.id}');event.preventDefault()}" />
+      <input class="chat-input" id="bw-itemchat-input" placeholder="${hint}" onkeydown="if(event.key==='Enter'){sendItemChat('${item.id}');event.preventDefault()}" />
       <button class="chat-send" onclick="sendItemChat('${item.id}')">↑</button>
     </div>
   </div>`;
 }
-async function sendItemChat(id) {
+async function sendItemChat(id, preset) {
   const item = buildItems().find(it => it.id === id); if (!item) return;
-  const input = document.getElementById('bw-itemchat-input'); const text = (input && input.value || '').trim(); if (!text) return;
-  input.value = '';
+  const input = document.getElementById('bw-itemchat-input');
+  const text = String(preset || (input && input.value) || '').trim(); if (!text) return;
+  if (input && !preset) input.value = '';
   S.itemChats = S.itemChats || {}; S.itemChats[id] = S.itemChats[id] || [];
   S.itemChats[id].push({ role: 'user', text });
   S.itemChats[id].push({ role: 'ai', text: 'Thinking…', pending: true });
   updateItemChatFeed(id);
-  const o = itemObj(item); const content = (o && (o.content || (o._table && JSON.stringify(o._table.rows)))) || '';
+  const o = itemObj(item) || {};
+  const content = (item.type === 'table')
+    ? (o._table ? JSON.stringify({ columns: o._table.cols, rows: o._table.rows }) : '')
+    : String(o._draft || o.content || '');
   try {
     const hist = S.itemChats[id].filter(m => !m.pending).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }));
     const r = await api('/proposal/chat', { proposalContext: S.proposalContext, sections: { [item.title]: content }, messages: hist });
+    const up = (r && r.updateSection && typeof r.updateSection.content === 'string') ? r.updateSection.content : '';
     S.itemChats[id] = S.itemChats[id].filter(m => !m.pending);
-    S.itemChats[id].push({ role: 'ai', text: (r && r.response) || '(no response)' });
+    S.itemChats[id].push({ role: 'ai', text: (r && r.response) || up || '(no response)', insert: up || (r && r.response) || '' });
   } catch (e) { S.itemChats[id] = S.itemChats[id].filter(m => !m.pending); S.itemChats[id].push({ role: 'ai', text: 'Error: ' + e.message }); }
   updateItemChatFeed(id);
 }
 function updateItemChatFeed(id) {
   const feed = document.getElementById('bw-itemchat-feed'); if (!feed) return;
-  feed.innerHTML = (S.itemChats[id] || []).map(m => `<div class="chat-msg ${m.role === 'user' ? 'user' : 'ai'}"><div class="chat-bubble">${esc(m.text).replace(/\n/g, '<br>')}</div></div>`).join('');
+  feed.innerHTML = itemChatHtml(id);
   feed.scrollTop = feed.scrollHeight;
 }
+function insertChatReply(id, k) {
+  const m = ((S.itemChats || {})[id] || [])[k]; if (!m || !m.insert) return;
+  const h = textHost(id); if (!h) return;
+  h.o[h.key] = m.insert;
+  if (h.key === 'content') h.o._reviewed = false; else h.o._freeform = true;
+  touch(h.o); S.isDirty = true; refreshBuild();
+}
+function reviewMediaPlan(id) {
+  sendItemChat(id, 'Review this media plan for balance across the funnel. Flag anything that looks off: budget concentration, missing channels, unclear volume figures, or lines likely below product minimums. Keep it brief.');
+}
 
-function editRfpSection(i, val) { if (S.rfpSections[i]) { S.rfpSections[i].content = val; S.isDirty = true; autoSaveRfp('building'); } }
-function markSectionReviewed(i) { if (S.rfpSections[i]) { S.rfpSections[i]._reviewed = true; S.isDirty = true; } refreshBuild(); }
-function markItemReviewed(id) { const o = hostById(id); if (o) { o._reviewed = true; S.isDirty = true; } refreshBuild(); }
+function editRfpSection(i, val) { if (S.rfpSections[i]) { S.rfpSections[i].content = val; touch(S.rfpSections[i]); S.isDirty = true; autoSaveRfp('building'); } }
+function markSectionReviewed(i) { const o = S.rfpSections[i]; if (o) { o._reviewed = true; if (o._status !== 'complete') delete o._status; S.isDirty = true; } refreshBuild(); }
+function markItemReviewed(id) { const o = hostById(id); if (o) { o._reviewed = true; if (o._status !== 'complete') delete o._status; S.isDirty = true; } refreshBuild(); }
 
 async function regenRfpSection(i) {
   const s = S.rfpSections[i]; if (!s) return;
@@ -2274,10 +2418,10 @@ function renderPaneInstruction(item, o) {
   <div class="bw-actions"><button class="btn ${done ? 'btn-ghost' : 'btn-primary'} btn-sm" onclick="ackItem('${item.id}')">${done ? '✓ Covered (undo)' : '✓ Got it'}</button></div>`;
 }
 function ackItem(id) {
-  const o = hostById(id); if (!o) return;
-  o._done = !(o._done || o._forceComplete);
-  if (!o._done) o._forceComplete = false;
-  if (String(id).indexOf('req-') === 0) o.status = o._done ? 'Complete' : 'Not Started';
+  const it = buildItems().find(x => x.id === id); const o = it && itemObj(it); if (!o) return;
+  const done = itemProgress(it) >= 100;
+  o._forceComplete = false;
+  if (done) { o._done = false; o._status = 'not-started'; } else { o._done = true; delete o._status; }
   S.isDirty = true; refreshBuild();
 }
 
@@ -2305,7 +2449,7 @@ function renderPaneFinal(item, o) {
 function exportFinalPdfFor(id) {
   exportFinalPdf(assembleMarkdown());
   const o = hostById(id);
-  if (o) { o._done = true; if (String(id).indexOf('req-') === 0) o.status = 'Complete'; S.isDirty = true; }
+  if (o) { o._done = true; if (o._status !== 'complete') delete o._status; S.isDirty = true; }
   refreshBuild();
 }
 function openSow() { const m = document.getElementById('modal-export'); if (m) m.style.display = 'flex'; loadSOW(); }
@@ -2320,10 +2464,14 @@ function renderPaneFixedDoc(item, r) {
   if (!doc) {
     return `<div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence conf-validate">No file on record</span></div>
       <div class="bw-note">This is a standing document (<code>${esc(item.docType || 'certification')}</code>). No matching file is in your document library yet — add one to the library so it auto-attaches next time, or mark it handled manually.</div>
-      <div class="bw-actions"><button class="btn btn-primary btn-sm" onclick="markReqManual(${item.ref.idx})">Mark handled manually</button></div>`;
+      <div class="bw-actions"><button class="btn btn-primary btn-sm" onclick="markReqManual('${item.id}')">Mark handled manually</button></div>`;
   }
   const expired = doc.expires_on && new Date(doc.expires_on) < new Date();
   const attached = !!r._attached;
+  const isScan = !!SCAN_SPECS[item.docType];
+  const cf = (S.qualification || {}).campaignFlight || {};
+  const flightEnd = parseDue(cf.end), docEnd = parseDue(doc.expires_on);
+  const lapses = !expired && flightEnd && docEnd && docEnd < flightEnd;
   return `
   <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence conf-confirmed">On file</span></div>
   <div class="bw-doc">
@@ -2332,30 +2480,127 @@ function renderPaneFixedDoc(item, r) {
     ${matchNote ? `<div style="font-size:12px;color:${pick.matched === 'market' ? 'var(--text-muted)' : 'var(--orange)'};margin-top:6px">${matchNote}</div>` : ''}
     ${expired ? `<div style="color:var(--red);font-size:12px;margin-top:8px">⚠ On file but expired ${esc(doc.expires_on)} — update before submitting.</div>`
       : (doc.expires_on ? `<div style="font-size:12px;color:var(--text-muted);margin-top:8px">Valid through ${esc(doc.expires_on)}</div>` : '')}
+    ${lapses ? `<div style="font-size:12px;color:var(--orange);margin-top:6px">⚠ Expires before the campaign ends (${esc(fmtDateText(cf.end))}). Plan to send the renewed copy.</div>` : ''}
     <div style="margin-top:14px;display:flex;gap:12px;align-items:center">
       ${docHref(doc) ? `<a href="${esc(docHref(doc))}" target="_blank" rel="noopener" style="color:var(--cyan);font-size:13px">📄 Open ${esc(docLabel(doc))} ↗</a>` : `<a href="${LIBRARY_URL}" target="_blank" rel="noopener" style="color:var(--cyan);font-size:13px">📄 Open in the Library ↗</a>`}
       <div style="flex:1"></div>
-      <button class="btn ${attached ? 'btn-ghost' : 'btn-primary'} btn-sm" onclick="attachLibraryDoc(${item.ref.idx})">${attached ? '✓ Attached' : 'Attach to proposal'}</button>
+      ${isScan ? '' : `<button class="btn ${attached ? 'btn-ghost' : 'btn-primary'} btn-sm" onclick="attachLibraryDoc('${item.id}')">${attached ? '✓ Attached' : 'Attach to proposal'}</button>`}
     </div>
-  </div>`;
+  </div>
+  ${isScan ? renderScanCard(item, r, doc) : ''}`;
 }
 
+// Accepts an item id ('req-3', 'sec-4') or a bare requirement index (older callers).
+function _itemRef(i) {
+  const id = (typeof i === 'number') ? 'req-' + i : String(i);
+  const item = buildItems().find(it => it.id === id);
+  return { item, o: item ? itemObj(item) : null };
+}
 function attachLibraryDoc(i) {
-  const r = S.qualification.submissionRequirements[i]; if (!r) return;
-  const item = buildItems().find(it => it.ref.kind === 'requirement' && it.ref.idx === i);
-  const doc = item ? libraryDocFor(item.docType).doc : null;
-  r._attached = doc ? doc.id : true; r.status = 'Complete'; S.isDirty = true;
+  const { item, o } = _itemRef(i); if (!o) return;
+  const doc = libraryDocFor(item.docType).doc;
+  o._attached = doc ? doc.id : true; if (o._status !== 'complete') delete o._status; S.isDirty = true;
   refreshBuild();
 }
-function markReqManual(i) { const r = S.qualification.submissionRequirements[i]; if (r) { r._manual = true; r.status = 'Complete'; S.isDirty = true; } refreshBuild(); }
+function markReqManual(i) { const { o } = _itemRef(i); if (o) { o._manual = true; if (o._status !== 'complete') delete o._status; S.isDirty = true; } refreshBuild(); }
+
+// bw4: confirm cards for standing documents. The engine reads the fields off the Library PDF once
+// (cached on the row); the seller checks them, edits if needed, and confirms.
+const SCAN_SPECS = {
+  w9: [['name', 'Name (line 1)'], ['business_name', 'Business name (line 2)'], ['tax_class', 'Tax classification'],
+    ['exempt_payee', 'Exempt payee code'], ['address', 'Address'], ['ein', 'EIN'], ['signer', 'Signed by'], ['date_signed', 'Date signed']],
+  insurance: [['insured', 'Insured'], ['producer', 'Producer'], ['insurers', 'Insurer(s)'], ['cert_date', 'Certificate date'],
+    ['general_liability', 'General liability'], ['auto_liability', 'Auto liability'], ['umbrella', 'Umbrella / excess liability'],
+    ['workers_comp', "Workers' compensation"], ['holder', 'Certificate holder']],
+};
+function blankScanFields(docType) { return (SCAN_SPECS[docType] || []).map(([key, label]) => ({ key, label, value: '' })); }
+function scanFieldsFor(o, doc) {
+  if (o && o._fields && o._fieldsDocId === doc.id) return o._fields;
+  const x = doc.extracted_fields;
+  if (x && x.source === doc.file_url && Array.isArray(x.fields)) return x.fields;
+  return null;
+}
+function loadDocFields(docId) {
+  S._fieldsLoading = S._fieldsLoading || {}; S._fieldsErr = S._fieldsErr || {}; S._fieldsTried = S._fieldsTried || {};
+  if (S._fieldsLoading[docId]) return;
+  S._fieldsLoading[docId] = true; S._fieldsTried[docId] = true;
+  api('/proposal/library/docs/' + encodeURIComponent(docId) + '/fields', {}).then(r => {
+    const d = (S.libraryDocs || []).find(x => x.id === docId);
+    if (d && r && Array.isArray(r.fields)) {
+      d.extracted_fields = { source: r.source, extractedAt: r.extractedAt, fields: r.fields };
+      if (r.source !== d.file_url) S._fieldsErr[docId] = 'the Library file changed; reopen this RFP';
+    } else S._fieldsErr[docId] = 'no fields came back';
+  }).catch(e => { S._fieldsErr[docId] = (e && e.message) || 'read failed'; })
+    .finally(() => { S._fieldsLoading[docId] = false; if (S.view === 'workspace') render(); });
+}
+function renderScanCard(item, o, doc) {
+  let fields = scanFieldsFor(o, doc);
+  if (!fields && !(S._fieldsErr || {})[doc.id] && !(S._fieldsTried || {})[doc.id]) loadDocFields(doc.id);
+  const err = (S._fieldsErr || {})[doc.id];
+  const loading = !fields && !err && !!(S._fieldsLoading || {})[doc.id];
+  const failed = !fields && !loading;
+  if (!fields) fields = blankScanFields(item.docType);
+  const confirmed = !!(o._confirmed && o._fieldsDocId === doc.id);
+  const holder = item.docType === 'insurance' ? String((fields.find(f => f.key === 'holder') || {}).value || '').trim() : '';
+  const head = loading ? `Reading the fields from ${esc(docLabel(doc))}…`
+    : failed ? `Couldn't read this file automatically (${esc(err || 'no fields')}). Fill in the fields from the document.`
+    : `Read from ${esc(docLabel(doc))}. Check each field against the document before you confirm.`;
+  return `
+  <div class="scan-card">
+    <div class="scan-head">📎 ${head}</div>
+    ${holder ? `<div class="bw-flag warn" style="margin:10px 14px 0">Certificate holder on this copy: ${esc(holder)}. If the RFP names an additional insured, request a project certificate from Finance.</div>` : ''}
+    <div class="scan-fields">${fields.map(f => `<div class="scan-field"><label for="scan-${item.id}-${f.key}">${esc(f.label)}</label><input id="scan-${item.id}-${f.key}" value="${esc(f.value)}"${loading ? ' disabled' : ''} oninput="editScanField('${item.id}','${f.key}',this.value)" /></div>`).join('')}</div>
+    <div class="scan-foot"><span class="bw-sub">${confirmed ? '✓ Confirmed and attached to the proposal.' : 'Confirming attaches this document to the proposal.'}</span>
+      <button class="btn ${confirmed ? 'btn-ghost' : 'btn-primary'} btn-sm"${loading ? ' disabled style="opacity:.5"' : ''} onclick="confirmScan('${item.id}')">${confirmed ? '✓ Confirmed' : '✓ Confirm correct'}</button></div>
+  </div>`;
+}
+function _ownScanFields(item, o, doc) {
+  if (!(o._fields && o._fieldsDocId === doc.id)) {
+    o._fields = (scanFieldsFor(null, doc) || blankScanFields(item.docType)).map(f => ({ ...f }));
+    o._fieldsDocId = doc.id;
+  }
+  return o._fields;
+}
+function editScanField(id, key, val) {
+  const { item, o } = _itemRef(id); if (!o) return;
+  const doc = libraryDocFor(item.docType).doc; if (!doc) return;
+  const f = _ownScanFields(item, o, doc).find(x => x.key === key); if (f) f.value = val;
+  touch(o); S.isDirty = true; autoSaveRfp('building');
+}
+function confirmScan(id) {
+  const { item, o } = _itemRef(id); if (!o) return;
+  const doc = libraryDocFor(item.docType).doc; if (!doc) return;
+  _ownScanFields(item, o, doc);
+  o._confirmed = true; o._attached = doc.id; if (o._status !== 'complete') delete o._status;
+  S.isDirty = true; refreshBuild();
+}
 
 // Type C — guided button-click Q&A (Phase 6)
 function renderPaneGuided(item, o) {
   const g = o._guided;
+  const hasDraft = typeof o._draft === 'string' && o._draft.trim() !== '';
+  const writing = hasDraft || !!o._freeform;
+  const editor = writing ? `
+  <label class="bw-lbl" for="bw-ed-${item.id}">Draft</label>
+  <textarea class="bw-editor" id="bw-ed-${item.id}" oninput="editItemText('${item.id}', this.value)" placeholder="Write the response here, or use the buttons below…">${esc(String(o._draft || ''))}</textarea>
+  <div id="bw-assist-${item.id}"></div>
+  <div class="bw-actions">
+    <button class="btn btn-ghost btn-sm" onclick="sectionAssist('${item.id}','draft')">✨ Draft this with AI</button>
+    <button class="btn btn-ghost btn-sm" onclick="sectionAssist('${item.id}','tighten')">Tighten language</button>
+    <button class="btn btn-ghost btn-sm" onclick="sectionAssist('${item.id}','compliance')">Check RFP compliance</button>
+    <button class="btn btn-ghost btn-sm" onclick="markItemReviewed('${item.id}')">✓ Mark reviewed</button>
+  </div>` : '';
   if (!g) {
-    return `<div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence conf-validate">Needs input</span></div>
-      <div class="bw-note">This response needs specifics only your team can confirm. IGI turns the RFP's language into a few quick questions and drafts the written response from your answers — no chasing down leaders.</div>
-      <div class="bw-actions"><button class="btn btn-primary btn-sm" id="bw-genq" onclick="generateGuided('${item.id}')">Generate guided questions →</button></div>`;
+    const pill = writing ? '<span class="section-confidence conf-generated">Draft</span>' : '<span class="section-confidence conf-validate">Needs input</span>';
+    const intro = writing ? '' : `
+      <div class="bw-note">This response needs specifics only your team can confirm. IGI can turn the RFP's language into a few quick questions and draft the response from your answers, or you can draft it now and edit.</div>
+      <div id="bw-assist-${item.id}"></div>
+      <div class="bw-actions">
+        <button class="btn btn-primary btn-sm" id="bw-genq" onclick="generateGuided('${item.id}')">Generate guided questions →</button>
+        <button class="btn btn-ghost btn-sm" onclick="sectionAssist('${item.id}','draft')">✨ Draft this with AI</button>
+        <button class="btn btn-ghost btn-sm" onclick="startFreeform('${item.id}')">Write it myself</button>
+      </div>`;
+    return `<div class="bw-pane-head"><h3>${esc(item.title)}</h3>${pill}</div>${intro}${editor}`;
   }
   const answers = o._answers || [];
   const qs = g.questions.map((qq, qi) => `
@@ -2365,14 +2610,14 @@ function renderPaneGuided(item, o) {
         `<button class="bw-opt${answers[qi] === opt ? ' sel' : ''}" onclick="answerGuided('${item.id}',${qi},${oi})">${esc(opt)}</button>`).join('')}</div>
     </div>`).join('');
   const allAnswered = g.questions.length && g.questions.every((_, qi) => answers[qi] != null);
-  const draft = o._draft;
   return `
-  <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence ${draft ? 'conf-confirmed' : 'conf-validate'}">${draft ? 'Drafted' : 'Answer to draft'}</span></div>
+  <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence ${hasDraft ? 'conf-confirmed' : 'conf-validate'}">${hasDraft ? 'Drafted' : 'Answer to draft'}</span></div>
   <div class="bw-qs">${qs}</div>
   <div class="bw-actions">
-    <button class="btn btn-primary btn-sm"${allAnswered ? '' : ' disabled style="opacity:.5"'} onclick="composeGuided('${item.id}')">${draft ? '↺ Re-draft response' : 'Draft response from answers'}</button>
+    <button class="btn btn-primary btn-sm"${allAnswered ? '' : ' disabled style="opacity:.5"'} onclick="composeGuided('${item.id}')">${hasDraft ? '↺ Re-draft from answers' : 'Draft response from answers'}</button>
+    ${writing ? '' : `<button class="btn btn-ghost btn-sm" onclick="startFreeform('${item.id}')">Skip the questions, write it myself</button>`}
   </div>
-  ${draft ? `<div class="bw-draft"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:6px">Drafted response — saved to proposal</div><div class="section-content"><p>${esc(draft).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p></div></div>` : ''}`;
+  ${editor}`;
 }
 
 async function generateGuided(id) {
@@ -2392,7 +2637,7 @@ function answerGuided(id, qi, oi) {
   const o = itemObj(item); const g = o._guided; if (!g) return;
   const opts = (g.questions[qi].options && g.questions[qi].options.length) ? g.questions[qi].options : ['Yes', 'No'];
   o._answers = o._answers || []; o._answers[qi] = opts[oi];
-  S.isDirty = true; refreshBuild();
+  touch(o); S.isDirty = true; refreshBuild();
 }
 
 async function composeGuided(id) {
@@ -2402,10 +2647,9 @@ async function composeGuided(id) {
   const pane = document.getElementById('bw-pane'); if (pane) pane.style.opacity = '.5';
   try {
     const r = await api('/proposal/guided-compose', { itemTitle: item.title, qa, rfpText: S.rfpIntake?.rfpText || '' });
-    o._draft = r.draft || ''; o._done = true;
+    o._draft = r.draft || ''; o._done = true; if (o._status !== 'complete') delete o._status;
     o._answeredBy = S.rfpIntake?.aeEmail || S.rfpIntake?.aeName || 'user';
     o._answeredAt = new Date().toISOString();
-    if (item.ref.kind === 'requirement') o.status = 'Complete';
     S.isDirty = true;
   } catch (e) { alert('Draft failed: ' + e.message); }
   refreshBuild();
@@ -2424,7 +2668,9 @@ function assembleMarkdown() {
       parts.push(`## ${it.title}\n\n| ${t.cols.join(' | ')} |\n| ${t.cols.map(() => '---').join(' | ')} |\n${t.rows.map(r => `| ${r.join(' | ')} |`).join('\n')}\n`);
     } else if (it.type === 'A') {
       const doc = libraryDocFor(it.docType).doc;
-      parts.push(`## ${it.title}\n\n${doc ? docLabel(doc) + ' (attached as a separate file).' : 'Attached separately.'}\n`);
+      const conf = (o._confirmed && Array.isArray(o._fields))
+        ? o._fields.filter(f => String(f.value || '').trim()).map(f => `- **${f.label}:** ${f.value}`).join('\n') : '';
+      parts.push(`## ${it.title}\n\n${doc ? docLabel(doc) + ' (attached as a separate file).' : 'Attached separately.'}\n${conf ? '\n' + conf + '\n' : ''}`);
     } else {
       let content = (o._draft || o.content || '').trim();
       content = content.replace(/^#{1,6}\s+.*(?:\r?\n)+/, '');   // drop a leading heading the model may have added (avoids doubled title)
@@ -2468,6 +2714,7 @@ function _ioHeaderMd(title) {
 }
 function loadInsertionOrder() {
   const ta = document.getElementById('export-modal-body'); if (!ta) return;
+  _modalSeq++;
   const t = _pricedMediaTable();
   let body;
   if (!t) body = '_No priced media plan found — build the Media Plan table in the Workspace (with Rate + Volume) first._';
@@ -2486,6 +2733,7 @@ function loadInsertionOrder() {
 }
 function loadOpsHandoff() {
   const ta = document.getElementById('export-modal-body'); if (!ta) return;
+  _modalSeq++;
   const t = _pricedMediaTable();
   let body;
   if (!t) body = '_No priced media plan found — build the Media Plan table in the Workspace first._';
@@ -2500,55 +2748,145 @@ function loadOpsHandoff() {
   try { showToast('Ops Handoff loaded — download or export below'); } catch (e) {}
 }
 
-function loadSOW() {
+// Statement of Work in Erin Riha's 9-section layout. The engine writes the narrative; the plan table,
+// totals and approvals come from the priced media plan here. Falls back to the basic SOW if drafting fails.
+let _modalSeq = 0;
+async function loadSOW() {
   const ta = document.getElementById('export-modal-body'); if (!ta) return;
+  const seq = ++_modalSeq;
+  ta.value = 'Drafting the Statement of Work… (about 20 seconds)';
   const t = _pricedMediaTable();
   const c = (S.proposalContext && S.proposalContext.client) || {};
   const cf = (S.qualification || {}).campaignFlight || {};
-  const flight = cf.label || [cf.start, cf.end].filter(Boolean).map(x => { try { return fmtDate(x); } catch (e) { return x; } }).join(' – ') || 'TBD';
+  const flight = cf.label || [cf.start, cf.end].filter(Boolean).map(fmtDateText).join(' to ') || '';
+  const sections = buildItems().filter(it => it.type === 'B' || it.type === 'C')
+    .map(it => { const o = itemObj(it) || {}; return { title: it.title, content: String(o._draft || o.content || '') }; })
+    .filter(x => x.content.trim() && !/didn't auto-generate/i.test(x.content));
+  let n = null;
+  try {
+    n = await api('/proposal/sow', {
+      clientName: c.name, market: c.market, category: c.category,
+      rfpText: (S.rfpIntake && S.rfpIntake.rfpText) || (S.proposalContext && S.proposalContext.rfpText) || '',
+      flight: { label: flight, start: cf.start || null, end: cf.end || null },
+      media: t ? { rows: t.rows, total: t.total } : null, sections,
+    });
+  } catch (e) { console.warn('[IGI Proposal] SOW draft failed:', e.message); }
+  const ta2 = document.getElementById('export-modal-body');
+  if (seq !== _modalSeq || !ta2) return;   // the seller loaded something else meanwhile
+  ta2.value = n ? _sowMd(n, t, c, flight) : _basicSowMd();
+  try { showToast(n ? 'Statement of Work drafted. Review it, then download or export below' : 'Could not draft the narrative, so this is the basic Statement of Work'); } catch (e) {}
+}
+function _sowMd(n, t, c, flight) {
+  const cell = x => String(x == null ? '' : x).replace(/\|/g, '/').replace(/\s*\n\s*/g, ' ');
+  const total = t ? '$' + Math.round(t.total).toLocaleString('en-US') : '[confirm total]';
+  const L = [];
+  L.push('# STATEMENT OF WORK', '', '**' + cell(n.title || ((c.name || 'Client') + ' Digital Campaign')) + '**', '');
+  L.push('**Client:** ' + cell(c.name) + '  ', '**Vendor:** Townsquare Ignite  ', '**Total Digital Budget:** ' + total + '  ', '**Campaign Term:** ' + (flight || '[confirm dates]'), '');
+  L.push('## 1. Project Overview', '', n.overview || '[add overview]', '');
+  L.push('## 2. Problem Statement', '', n.problem || '[add problem statement]', '');
+  L.push('## 3. Campaign Objectives', '');
+  (n.objectives && n.objectives.length ? n.objectives : ['[add objectives]']).forEach(x => L.push('- ' + x));
+  L.push('', '## 4. Media Strategy Rationale', '', n.rationale || '[add rationale]', '');
+  L.push('## 5. Media Plan & Budget Allocation', '');
+  if (t) {
+    L.push('| Solution | Goal | Media Delivered | Flight | Volume | Budget |', '|---|---|---|---|---|---|');
+    t.rows.forEach(r => L.push('| ' + [r.name, r.goal, r.media, r.flight || flight, r.vol, r.addedValue ? 'Added Value' : r.bud].map(cell).join(' | ') + ' |'));
+    L.push('| | | | | **Total** | **' + total + '** |');
+  } else L.push('_Build the Media Plan table in the Workspace to fill this section._');
+  L.push('', '## 6. Creative Services', '', n.creative || '[describe creative services]', '');
+  L.push('## 7. Reporting & Optimization', '', n.reporting || '[describe reporting]', '');
+  L.push('## 8. Budget Summary', '', '- **Total Digital Investment:** ' + total);
+  (t ? t.rows.filter(r => r.addedValue) : []).forEach(r => L.push('- **' + cell(r.name) + ':** Added value' + (r.vol ? ' (' + cell(r.vol) + ')' : '')));
+  L.push('- **Creative Services:** [confirm creative fee or in-kind value]', '');
+  L.push('## 9. Approvals', '', '| | Client: ' + cell(c.name) + ' | Vendor: Townsquare Ignite |', '|---|---|---|',
+    '| Name | | |', '| Title | | |', '| Signature | | |', '| Date | | |', '');
+  return L.join('\n');
+}
+function _basicSowMd() {
+  const t = _pricedMediaTable();
+  const c = (S.proposalContext && S.proposalContext.client) || {};
+  const cf = (S.qualification || {}).campaignFlight || {};
+  const flight = cf.label || [cf.start, cf.end].filter(Boolean).map(fmtDateText).join(' to ') || 'TBD';
   let deliverables = '_Build the Media Plan table in the Workspace to populate deliverables._', total = '';
   if (t) {
-    deliverables = t.rows.map(r => '- **' + r.name + '**' + (r.goal ? ' — ' + r.goal : '') + (r.media ? ' (' + r.media + ')' : '') + (r.flight ? ' · ' + r.flight : '')).join('\n');
-    total = '\n\n**Total investment:** $' + t.total.toLocaleString() + ' for the flight above (added-value / in-kind excluded).';
+    deliverables = t.rows.map(r => '- **' + r.name + '**' + (r.goal ? ': ' + r.goal : '') + (r.media ? ' (' + r.media + ')' : '') + (r.flight ? ' · ' + r.flight : '')).join('\n');
+    total = '\n\n**Total investment:** $' + t.total.toLocaleString() + ' for the flight above (added value and in-kind lines excluded).';
   }
-  ta.value = _ioHeaderMd('STATEMENT OF WORK')
+  return _ioHeaderMd('STATEMENT OF WORK')
     + '\n## 1. Overview\n\nTownsquare Ignite (the "Agency") will plan, execute, and manage the digital advertising program described below for ' + (c.name || 'the Advertiser') + (c.market ? ' in the ' + c.market + ' market' : '') + '. This Statement of Work defines the scope, deliverables, timeline, and investment for the engagement.\n'
     + '\n## 2. Scope & Deliverables\n\nThe Agency will deliver and manage the following solutions:\n\n' + deliverables + total + '\n'
-    + '\n## 3. Timeline\n\nCampaign flight: **' + flight + '**. Setup and launch begin on execution of this SOW / Insertion Order; reporting is provided on the Agency\'s standard cadence.\n'
+    + '\n## 3. Timeline\n\nCampaign flight: **' + flight + '**. Setup and launch begin on execution of this SOW and Insertion Order; reporting is provided on the Agency\'s standard cadence.\n'
     + '\n## 4. Responsibilities\n\n**Agency:** campaign setup, creative trafficking, optimization, and reporting for the solutions above. **Advertiser:** timely provision of assets, approvals, and any required access. Rates, volumes, and totals are per the accompanying Insertion Order.\n'
     + '\n## 5. Acceptance\n\n| | |\n|---|---|\n| Advertiser: ________________________ | Date: __________ |\n| Townsquare Ignite: ________________________ | Date: __________ |\n';
-  try { showToast('Statement of Work loaded — download or export below'); } catch (e) {}
 }
 
 function finalizeProposal() {
   if (S.rfpId) saveRfpState('ready'); // pr-v2-7: reaching finalize means the draft is ready to submit
   S.finalMd = assembleMarkdown();
+  _modalSeq++;
   const ta = document.getElementById('export-modal-body'); if (ta) ta.value = S.finalMd;
   const m = document.getElementById('modal-export'); if (m) m.style.display = 'flex';
+}
+function exportBaseName(md) {
+  const c = (S.proposalContext && S.proposalContext.client) || {};
+  const head = String(md || '').split('\n')[0];
+  const kind = /STATEMENT OF WORK/i.test(head) ? 'sow' : /INSERTION ORDER/i.test(head) ? 'insertion-order' : /OPS HANDOFF/i.test(head) ? 'ops-handoff' : 'proposal';
+  return (c.name || 'proposal').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() + '-' + kind;
 }
 function downloadFinalMd() {
   const md = document.getElementById('export-modal-body').value;
   const blob = new Blob([md], { type: 'text/markdown' }); const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = (S.proposalContext.client.name || 'proposal').replace(/\s+/g, '-').toLowerCase() + '-proposal.md'; a.click(); URL.revokeObjectURL(url);
+  const a = document.createElement('a'); a.href = url; a.download = exportBaseName(md) + '.md'; a.click(); URL.revokeObjectURL(url);
 }
 function exportFinalPdf(mdArg) {
   const md = (typeof mdArg === 'string') ? mdArg : document.getElementById('export-modal-body').value;
-  const c = S.proposalContext.client;
-  if (!(window.jspdf && window.jspdf.jsPDF)) { alert('PDF library still loading — try again in a moment.'); return; }
+  if (!(window.jspdf && window.jspdf.jsPDF)) { alert('PDF library still loading. Try again in a moment.'); return; }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'pt', format: 'letter' });
-  const margin = 56, maxW = 500; let y = margin;
-  md.split('\n').forEach(raw => {
+  const margin = 56, maxW = 500, bottom = 740; let y = margin;
+  const clean = x => String(x).replace(/\*\*(.+?)\*\*/g, '$1').replace(/(^|\s)_(\S(?:.*?\S)?)_(?=\s|$)/g, '$1$2').replace(/\s+$/, '');
+  const need = h => { if (y + h > bottom) { doc.addPage(); y = margin; } };
+  const lines = md.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i];
+    if (/^\s*\|/.test(raw)) {   // markdown table: draw real columns
+      const blk = [];
+      while (i < lines.length && /^\s*\|/.test(lines[i])) { blk.push(lines[i]); i++; }
+      i--;
+      let rows = blk.filter(l => !/^\s*\|[\s:|-]+\|\s*$/.test(l))
+        .map(l => l.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(x => clean(x.trim())));
+      if (!rows.length) continue;
+      // Drop columns nobody filled in (an unpriced plan has empty Flight and Rate) so the rest can breathe.
+      const width = Math.max(...rows.map(r => r.length));
+      const keep = Array.from({ length: width }, (_, k) => k).filter(k => rows.length < 2 || rows.slice(1).some(r => String(r[k] || '').trim()));
+      rows = rows.map(r => keep.map(k => r[k] || ''));
+      const n = keep.length || 1, colW = maxW / n;
+      doc.setFontSize(9);
+      rows.forEach((r, ri) => {
+        doc.setFont('helvetica', ri === 0 ? 'bold' : 'normal');
+        const wrapped = Array.from({ length: n }, (_, k) => doc.splitTextToSize(r[k] || '', colW - 6));
+        const h = Math.max(1, ...wrapped.map(w => w.length)) * 11 + 6;
+        need(h);
+        wrapped.forEach((w, k) => { if (w.length) doc.text(w, margin + k * colW + 2, y + 9); });
+        y += h;
+        doc.setDrawColor(215); doc.line(margin, y - 2, margin + maxW, y - 2);
+      });
+      y += 10;
+      continue;
+    }
     let line = raw, size = 11, bold = false;
     if (/^# /.test(raw)) { line = raw.slice(2); size = 20; bold = true; }
     else if (/^## /.test(raw)) { line = raw.slice(3); size = 14; bold = true; y += 10; }
-    else if (/^_.*_\s*$/.test(raw)) { line = raw.replace(/_/g, ''); size = 10; }
+    else if (/^### /.test(raw)) { line = raw.slice(4); size = 12; bold = true; y += 4; }
+    else if (/^_.*_\s*$/.test(raw.trim())) { line = raw.trim().replace(/^_|_$/g, ''); size = 10; }
+    else if (/^\*\*[^*]+\*\*\s*$/.test(raw.trim())) { bold = true; }
+    else if (/^\s*[-*] /.test(raw)) { line = '•  ' + raw.replace(/^\s*[-*] /, ''); }
+    line = clean(line);
     doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(size);
-    const wrapped = doc.splitTextToSize(line, maxW);
-    wrapped.forEach(w => { if (y > 740) { doc.addPage(); y = margin; } doc.text(w, margin, y); y += size + 4; });
+    doc.splitTextToSize(line, maxW).forEach(w => { need(size + 4); doc.text(w, margin, y); y += size + 4; });
     if (!raw.trim()) y += 6;
-  });
-  doc.save((c.name || 'proposal').replace(/\s+/g, '-').toLowerCase() + '-proposal.pdf');
+  }
+  doc.save(exportBaseName(md) + '.pdf');
 }
 
 // ─── Presentation Deck (HTML → HTML / PDF / PPTX) ─────────────────────────────
@@ -3576,6 +3914,7 @@ Object.assign(window, {
   sectionAssist, applySectionAssist, sendItemChat,
   editTableCell, addTableRow, removeTableRow, generateMediaPlan, validateMediaPlan,
   downloadFinalMd, exportFinalPdf, exportFinalPdfFor, openSow, ackItem, markItemReviewed, hostById,
+  setItemStatus, editItemText, startFreeform, insertChatReply, reviewMediaPlan, editScanField, confirmScan, loadDocFields,
   loadInsertionOrder, loadOpsHandoff, loadSOW,
   buildDeck, renderDeck, deckNav, exportDeckHtml, exportDeckPdf, exportDeckPptx,
 });
