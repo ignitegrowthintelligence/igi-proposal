@@ -438,6 +438,164 @@ nav { background: var(--bg-nav); height: 52px; display: flex; align-items: cente
 .bw-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); }
 @media (max-width: 860px) { .bw { grid-template-columns: 1fr; } .bw-left { position: static; } }
 
+/* ── Draft screen v3 (Erin 2026-09-16, "Project Oak" layout: rail + one open item + evidence rule) ── */
+.d3 { --d3-fig: #9fdde3; --d3-ink2: #c6c9cd; --d3-sunk: #141417; --d3-line: rgba(255,255,255,.13); --d3-hair: rgba(255,255,255,.08); --d3-good: #9ad84a; --d3-warn: #e0a44a; --d3-stop: #f08a7e;
+  max-width: 1180px; margin: 0 auto; font-size: 14px; line-height: 1.5; }
+[data-theme="light"] .d3 { --d3-fig: #00808c; --d3-ink2: #333333; --d3-sunk: #f0f0f1; --d3-line: rgba(0,0,0,.14); --d3-hair: rgba(0,0,0,.08); --d3-good: #4d8a0c; --d3-warn: #a8660b; --d3-stop: #c0392b; }
+.d3 a { color: var(--d3-fig); text-decoration: none; }
+.d3 a:hover { text-decoration: underline; }
+.d3 button { font-family: 'Inter', sans-serif; cursor: pointer; }
+.d3 button:focus-visible, .d3 a:focus-visible, .d3 summary:focus-visible, .d3 label:focus-within { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.d3-top { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; border-bottom: 1px solid var(--d3-line); margin-bottom: 18px; }
+.d3-tabs { display: flex; gap: 2px; }
+.d3-tab { background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--text-muted); font-size: 12.5px; font-weight: 500; padding: 11px 14px; white-space: nowrap; font-family: 'Inter', sans-serif; }
+.d3-tab.on { color: var(--text); border-bottom-color: var(--cyan); }
+button.d3-tab:hover { color: var(--text); }
+.d3-client { font-size: 13px; color: var(--text-muted); margin-right: auto; min-width: 0; }
+.d3-topact { display: flex; gap: 8px; flex-wrap: wrap; padding: 6px 0; }
+.d3-vstrip { padding: 6px 0 20px; margin-bottom: 20px; border-bottom: 1px solid var(--d3-line); }
+.d3-vtop { display: flex; gap: 22px; align-items: flex-start; }
+.d3-score { font-size: 30px; font-weight: 400; line-height: 1; display: flex; flex-direction: column; gap: 6px; flex: 0 0 auto; }
+.d3-score.green { color: var(--d3-good); }
+.d3-score.amber { color: var(--d3-warn); }
+.d3-score.red { color: var(--d3-stop); }
+.d3-score span { font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--text-muted); }
+.d3-lead { flex: 1 1 auto; min-width: 0; font-size: 16px; line-height: 1.55; color: var(--d3-ink2); padding-top: 2px; }
+.d3-lead b { color: var(--text); font-weight: 500; }
+.d3-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
+.d3-stat { background: var(--bg-card); border: 1px solid var(--d3-line); border-radius: 4px; padding: 12px 14px; min-width: 0; }
+.d3-sl { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); }
+.d3-sv { font-size: 19px; color: var(--text); margin-top: 5px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.d3-ss { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
+.d3-back { font-size: 11.5px; color: var(--text-muted); margin-top: 14px; }
+.d3-assign { background: var(--bg-card); border: 1px solid var(--d3-line); border-radius: 4px; padding: 14px 16px; margin-bottom: 24px; }
+.d3-seg, .d3-seglab { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.d3-seg div { border: 1px solid var(--text-muted); border-radius: 2px; height: 5px; }
+.d3-seg div.on { background: var(--cyan); border-color: var(--cyan); }
+.d3-seglab { margin-top: 6px; }
+.d3-seglab span { font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); }
+.d3-seglab span.on { color: var(--d3-fig); }
+.d3-nextup { font-size: 12.5px; color: var(--d3-ink2); margin-top: 9px; }
+.d3-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 32px; align-items: start; }
+.d3-side { position: sticky; top: 70px; min-width: 0; }
+.d3-rail { display: flex; flex-direction: column; min-width: 0; max-height: calc(100vh - 190px); overflow-y: auto; }
+.d3-rband { font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; color: var(--text-muted); padding: 0 0 6px 14px; margin-top: 18px; }
+.d3-rband:first-child { margin-top: 0; }
+.d3 .d3-rnav { display: block; text-align: left; background: none; border: none; border-left: 2px solid var(--d3-line); padding: 8px 4px 8px 14px; color: var(--text-muted); width: 100%; font-size: 13.5px; font-family: 'Roboto', sans-serif; }
+.d3-rnav:hover { color: var(--text); }
+.d3 .d3-rnav.on { border-left-color: var(--cyan); color: var(--text); }
+.d3-rn { display: flex; align-items: flex-start; gap: 8px; line-height: 1.3; }
+.d3-rt { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.d3-rdot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; margin-top: 5px; box-sizing: border-box; }
+.d3-rdot.m { background: var(--cyan); }
+.d3-rdot.d { border: 1.5px dashed var(--cyan); }
+.d3-rdot.n { border: 1px solid var(--text-muted); }
+.d3-rdot.u { border: 1px solid var(--d3-line); }
+.d3-rck { color: var(--d3-good); font-size: 11px; flex: 0 0 auto; }
+.d3-rbar { margin-top: 18px; border-top: 1px solid var(--d3-line); padding-top: 12px; }
+.d3-rcount { font-size: 11.5px; color: var(--text-muted); line-height: 1.6; }
+.d3-rcount b { color: var(--text); font-weight: 400; }
+.d3-rfoot { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.d3-main { min-width: 0; }
+.d3-empty { padding: 60px 0; text-align: center; color: var(--text-muted); }
+.d3-empty h3 { color: var(--d3-ink2); font-weight: 400; font-size: 15px; margin-bottom: 6px; }
+.d3-rh { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; padding-bottom: 12px; border-bottom: 1px solid var(--d3-line); margin-bottom: 18px; }
+.d3-rht { font-size: 21px; color: var(--text); font-weight: 400; overflow-wrap: anywhere; }
+.d3-rhs { font-size: 12px; color: var(--text-muted); flex: 1 1 auto; }
+.d3-asks { margin-bottom: 16px; }
+.d3-lbl { display: block; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 6px; }
+.d3-quote { border-left: 3px solid var(--cyan); padding-left: 12px; margin: 6px 0 10px; font-size: 13px; color: var(--d3-ink2); font-style: italic; overflow-wrap: anywhere; }
+.d3-noquote { font-size: 11.5px; color: var(--text-muted); margin-top: 4px; font-style: italic; }
+.d3-ev { position: relative; padding-left: 16px; margin-bottom: 14px; }
+.d3-ev::before { content: ''; position: absolute; left: 0; top: 2px; bottom: 2px; width: 3px; border-radius: 2px; }
+.d3-ev-m::before { background: var(--cyan); }
+.d3-ev-d::before { background: repeating-linear-gradient(to bottom, var(--cyan) 0 4px, transparent 4px 9px); }
+.d3-ev-n::before { width: 1px; background: var(--text-muted); }
+.d3-evw { display: block; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: .11em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+.d3-evw.m { color: var(--d3-fig); }
+.d3-evw.d { color: var(--cyan); }
+.d3-rule, .d3-note { font-size: 12.5px; color: var(--text-muted); background: var(--d3-sunk); border: 1px solid var(--d3-hair); border-radius: 4px; padding: 10px 12px; margin-bottom: 16px; line-height: 1.55; }
+.d3-note { margin-bottom: 0; }
+.d3-rule b, .d3-note b { color: var(--d3-ink2); font-weight: 500; }
+.d3-note code { color: var(--cyan); font-size: 12px; }
+.d3-fld { display: block; width: 100%; background: var(--bg-card); border: 1px solid var(--d3-line); border-radius: 4px; padding: 12px 14px; font-family: 'Roboto', sans-serif; font-size: 14.5px; line-height: 1.6; color: var(--text); resize: vertical; min-height: 280px; outline: none; }
+.d3-fld[readonly] { color: var(--d3-ink2); background: var(--d3-sunk); min-height: 200px; }
+.d3-fld:focus { border-color: var(--cyan); }
+.d3-act { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
+.d3-btn { background: var(--d3-fig); color: #0d0d0f; border: none; border-radius: 4px; min-height: 32px; padding: 0 16px; font-size: 12.5px; font-weight: 500; }
+[data-theme="light"] .d3-btn { color: #fff; }
+.d3-q { background: none; border: 1px solid var(--d3-line); color: var(--d3-ink2); border-radius: 4px; min-height: 32px; padding: 0 14px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none !important; font-family: 'Inter', sans-serif; }
+.d3-q:hover:not([disabled]) { border-color: var(--cyan); color: var(--text); }
+.d3-ok { background: none; border: 1px solid var(--d3-good); color: var(--d3-good); border-radius: 4px; min-height: 32px; padding: 0 14px; font-size: 12.5px; }
+.d3-ok.done { background: var(--d3-good); color: #0d0d0f; }
+[data-theme="light"] .d3-ok.done { color: #fff; }
+.d3 .d3-btn[disabled], .d3 .d3-q[disabled], .d3 .d3-ok[disabled] { opacity: .45; cursor: not-allowed; }
+.d3-sm { background: none; border: 1px solid var(--d3-line); color: var(--text-muted); border-radius: 12px; min-height: 26px; padding: 0 11px; font-size: 11.5px; }
+.d3-sm:hover { border-color: var(--cyan); color: var(--d3-fig); }
+.d3-x { background: none; border: none; color: var(--text-muted); padding: 4px 8px; font-size: 13px; }
+.d3-x:hover { color: var(--d3-stop); }
+.d3-linkcard { border: 1px solid var(--d3-line); border-radius: 4px; padding: 12px 14px; background: var(--bg-card); display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.d3-lu { font-size: 13.5px; color: var(--d3-fig); overflow-wrap: anywhere; min-width: 0; }
+.d3-muted { font-size: 12px; color: var(--text-muted); }
+.d3-teamrow, .d3-filerow { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--d3-hair); }
+.d3-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--d3-sunk); border: 1px solid var(--d3-line); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text-muted); flex: 0 0 auto; }
+.d3-tinfo, .d3-finfo { flex: 1 1 auto; min-width: 0; }
+.d3-tname, .d3-fname { font-size: 14px; color: var(--text); overflow-wrap: anywhere; }
+.d3-trole, .d3-fsize { font-size: 12px; color: var(--text-muted); }
+.d3-tli { font-size: 12px; white-space: nowrap; }
+.d3-ficon { width: 28px; height: 28px; border-radius: 6px; background: var(--d3-sunk); border: 1px solid var(--d3-line); display: flex; align-items: center; justify-content: center; font-size: 13px; flex: 0 0 auto; }
+.d3-addteam { border: 1px dashed var(--d3-line); border-radius: 4px; padding: 14px; margin-top: 12px; display: none; }
+.d3-addteam.open { display: block; }
+.d3-addteam input, .d3-inline input, .d3-fmted input, .d3-fmted select { background: var(--bg-card); border: 1px solid var(--d3-line); border-radius: 4px; padding: 8px 10px; font-size: 13px; color: var(--text); font-family: 'Roboto', sans-serif; max-width: 100%; }
+.d3-addteam input { display: block; width: 100%; margin-bottom: 8px; }
+.d3-err { color: var(--d3-stop); font-size: 12px; margin: 0 0 6px; }
+.d3-err:empty { display: none; }
+.d3-upload { display: block; border: 1px dashed var(--d3-line); border-radius: 4px; padding: 14px; text-align: center; margin-top: 12px; color: var(--text-muted); font-size: 12.5px; cursor: pointer; }
+.d3-upload:hover { border-color: var(--cyan); color: var(--d3-fig); }
+.d3-inline { display: flex; gap: 8px; margin-top: 10px; }
+.d3-inline input { flex: 1; min-width: 0; }
+.d3-pnote { border: 1px solid var(--d3-hair); background: var(--d3-sunk); border-radius: 4px; padding: 14px 16px; font-size: 13px; color: var(--d3-ink2); line-height: 1.55; margin-bottom: 10px; }
+.d3-pnote b { color: var(--text); font-weight: 500; }
+.d3-pricegrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 10px; }
+.d3-pfield label { display: block; font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin-bottom: 6px; }
+.d3-pfield input { width: 100%; background: var(--bg-card); border: 1px solid var(--d3-line); border-radius: 4px; padding: 9px 11px; font-size: 14px; color: var(--text); }
+.d3-fmthead { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.d3-fmtl { font-size: 13.5px; color: var(--text); }
+.d3-fmtv { font-size: 13.5px; color: var(--d3-ink2); }
+.d3-fmtcap { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); margin-top: 3px; }
+.d3-fmted { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+.d3-fmted label { font-size: 11.5px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 6px; }
+.d3-fmted input[type=number] { width: 84px; }
+.d3-okline { font-size: 12.5px; color: var(--d3-good); }
+.d3-ask { margin-top: 22px; border-top: 1px solid var(--d3-hair); padding-top: 14px; }
+.d3-ask summary { list-style: none; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 11.5px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 6px; }
+.d3-ask summary::-webkit-details-marker { display: none; }
+.d3-ask summary:hover { color: var(--d3-fig); }
+.d3-car { display: inline-block; transition: transform .15s; }
+.d3-ask[open] .d3-car { transform: rotate(90deg); }
+.d3-askbody { margin-top: 12px; }
+.d3 .d3-askfeed { height: auto; max-height: 260px; background: var(--d3-sunk); border-radius: 6px; margin-bottom: 8px; }
+.d3 .d3-askfeed:empty { display: none; }
+.d3-notes { margin-top: 18px; }
+.d3-notes summary { cursor: pointer; font-size: 12.5px; color: var(--text-muted); }
+@media (max-width: 860px) {
+  .d3-layout { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .d3-side { position: static; }
+  .d3-rail { flex-direction: row; overflow-x: auto; max-height: none; gap: 4px; padding-bottom: 4px; }
+  .d3-rband { display: none; }
+  .d3 .d3-rnav { flex: 0 0 auto; width: auto; max-width: 220px; border-left: none; border-bottom: 2px solid var(--d3-line); padding: 6px 12px 8px; }
+  .d3 .d3-rnav.on { border-bottom-color: var(--cyan); }
+  .d3-stats, .d3-pricegrid { grid-template-columns: minmax(0, 1fr); }
+  .d3-vtop { flex-direction: column; gap: 10px; }
+  .d3-client { flex-basis: 100%; order: 3; }
+}
+/* Phone width: the top nav scrolls inside itself instead of widening the page. */
+@media (max-width: 700px) {
+  nav { overflow-x: auto; gap: 8px; padding: 0 16px; }
+  nav .nav-logo, nav .nav-btn { flex: 0 0 auto; }
+  #app { padding: 16px; }
+}
+
 /* ── Misc ── */
 .empty-state { text-align: center; padding: 60px 24px; color: var(--text-muted); }
 .empty-state h3 { font-size: 16px; margin-bottom: 8px; color: var(--text); }
@@ -485,7 +643,7 @@ nav { background: var(--bg-nav); height: 52px; display: flex; align-items: cente
 <div id="modal-export" class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
   <div class="modal-box" style="max-width:760px;width:92%">
     <h3>Export Final Proposal</h3>
-    <p style="font-size:13px;color:var(--text-muted);margin:-8px 0 12px">Only items marked Complete are included. Edit the markdown below, then export to PDF.</p>
+    <p style="font-size:13px;color:var(--text-muted);margin:-8px 0 12px">Only items marked reviewed are included. Edit the markdown below, then export to PDF.</p>
     <textarea id="export-modal-body" style="width:100%;height:46vh;background:var(--bg-sec);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:monospace;font-size:12.5px;line-height:1.6;padding:12px 14px;resize:vertical;outline:none"></textarea>
     <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">
       <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-export').style.display='none'">Close</button>
@@ -1403,7 +1561,7 @@ function renderQualify() {
     const dt = docTypeForRequirement(r);
     const doc = dt && libraryDocFor(dt).doc;
     const linkCell = doc
-      ? `<a href="${docHref(doc) ? esc(docHref(doc)) : LIBRARY_URL}" target="_blank" rel="noopener" style="color:var(--cyan);font-size:12px">🔗 ${esc(String(docLabel(doc) || 'prepared doc').slice(0, 32))}</a>`
+      ? `<a href="${docHref(doc) ? esc(docHref(doc)) : LIBRARY_URL + '?module=proposal'}" target="_blank" rel="noopener" style="color:var(--cyan);font-size:12px">🔗 ${esc(String(docLabel(doc) || 'prepared doc').slice(0, 32))}</a>`
       : `<button class="btn btn-ghost btn-sm" onclick="uploadReqDoc(${i})">⬆ Upload</button>`;
     return `<tr>
       <td><strong>${esc(r.name || '')}</strong></td>
@@ -1430,9 +1588,13 @@ function renderQualify() {
 
   // ── CTA ──
   const cta = [];
+  // A draft already exists: go back to it. Logging the pitch again would rebuild it from scratch.
+  const hasDraft = !!(S.proposalContext && S.proposalContext.entryPoint === 'rfp' && Array.isArray(S.rfpSections) && S.rfpSections.length);
   if (gaps.length) cta.push(`<button class="btn btn-ghost" onclick="connectPartner()">🤝 Connect partner</button>`);
-  if (doNotPursueRec) { cta.push(`<button class="btn btn-danger" onclick="logPass()">Log as a Pass</button>`); cta.push(`<button class="btn btn-ghost" onclick="logPitchAndBuild()">Override &amp; Build →</button>`); }
+  if (doNotPursueRec) { cta.push(`<button class="btn btn-danger" onclick="logPass()">Log as a Pass</button>`); if (!hasDraft) cta.push(`<button class="btn btn-ghost" onclick="logPitchAndBuild()">Override &amp; Build →</button>`); }
+  else if (hasDraft) { cta.push(`<button class="btn btn-ghost" onclick="logPass()">Log as a Pass</button>`); }
   else { cta.push(`<button class="btn btn-ghost" onclick="logPass()">Log as a Pass</button>`); cta.push(`<button class="btn btn-primary" onclick="logPitchAndBuild()">Log as a Pitch → Build</button>`); }
+  if (hasDraft) cta.push(`<button class="btn btn-primary" onclick="setView('workspace')">Back to Draft →</button>`);
   const nb = (n) => n ? `<span class="section-confidence conf-generated">${n}</span>` : '';
 
   return `
@@ -1521,8 +1683,9 @@ function updateReqStatus(i, val) {
   if (S.qualification && S.qualification.submissionRequirements && S.qualification.submissionRequirements[i]) {
     const r = S.qualification.submissionRequirements[i];
     r.status = val;
-    const k = { 'Complete': 'complete', 'In Progress': 'in-progress', 'Not Started': 'not-started' }[val];
-    if (k) { r._status = k; r._forceComplete = false; }
+    // v3: the tracker marks the draft item that carries this requirement reviewed, or not.
+    const it = buildItems().find(x => (x.parts || []).some(p => p.ref.kind === 'requirement' && p.ref.idx === i));
+    if (it) setReviewed(it, val === 'Complete');
   }
   const pin = document.getElementById('qual-pin-inner');
   if (pin) pin.innerHTML = renderQualPinInner();
@@ -1616,6 +1779,7 @@ async function saveRfpState(status) {
   } catch (e) { console.warn('[IGI Proposal] rfp save failed:', e.message); }
 }
 function autoSaveRfp(status) {
+  if (status === 'building' && S._lastRfpStatus === 'ready' && S.view === 'workspace' && allRequiredReviewed()) status = 'ready';
   clearTimeout(_rfpSaveTimer);
   _rfpSaveTimer = setTimeout(() => saveRfpState(status), 900);
 }
@@ -1893,9 +2057,7 @@ function renderWorkspace() {
 </div>`;
 }
 
-// ═══ Phase 4–8: Guided Build Workspace (checklist ⟷ work pane) ═══════════════════
-// Build items unify RFP required sections (Type B AI-draft / Type C guided Q&A) and
-// submission requirements (Type A fixed library doc / Type C guided Q&A).
+// ═══ RFP Draft screen: shared helpers (the v3 item model is further down) ═══════════════════════
 
 function docTypeForRequirement(r) {
   const n = ((r.name || '') + ' ' + (r.type || '')).toLowerCase();
@@ -1971,58 +2133,145 @@ function sameTitle(a, b) {
   return sm.length >= 2 && sm.every(w => lg.includes(w));
 }
 
+// ═══ Draft screen v3 (Erin, 2026-09-16: "Project Oak" layout) ═══════════════════════════════════
+// Every RFP ask becomes one item with a `kind` that picks its UI. Several asks about the same thing
+// (Terms, security, pricing, the submission file) merge into one item whose state lives in
+// qualification._v3[id]; the rest keep their state on the section or requirement they came from.
+const STORAGE_URL = LIBRARY_URL + '?module=proposal';     // Proposal Storage: W-9, COI, security, Company Identity
+const CASE_STUDY_URL = LIBRARY_URL + '?module=training';  // Training Hub, where approved case studies live
+const TERMS_URL = 'https://townsquareignite.com/terms-of-service/';
+const RX_TERMS = /\bterms\s*(?:and|&)\s*conditions\b|\bterms\s+of\s+(?:service|use)\b/i;
+const RX_VALIDITY = /\bvalidity\b|\bvalid\s+for\b|\bremain\s+valid\b/i;
+const RX_SECURITY = /cyber|information security|\binfosec\b|data (?:protection|security|privacy)|\bprivacy\b|incident response|security (?:program|policy|policies|questionnaire|incident|controls?|overview|practices)|\bsoc ?2\b|\bpii\b/i;
+const RX_TEAM = /key personnel|team structure|staffing plan|account team|project team|team bios?\b|key staff/i;
+const RX_CASES = /case stud|work samples|sample work|portfolio/i;
+const RX_TEMPLATE_REQ = /\b(?:workbook|template)\b/i;
+function plainTitle(t) { return String(t || '').replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim(); }
+function isCompanyOverview(t) {
+  const s = plainTitle(t).replace(/[^a-z ]/gi, ' ').replace(/\s+/g, ' ').trim();
+  return /^(?:company|firm|agency|corporate|organization(?:al)?|vendor|business) (?:overview|background|profile|description|information|summary)$/i.test(s);
+}
+// Mirrors the engine's isPricingTitle, on the title without its parenthetical, with whole words.
+function isPricingTitle(t) {
+  const s = plainTitle(t);
+  return /\bpric|\bbudget|\bcosts?\b|\bfees?\b|\binvestment\b|rate card|compensation/i.test(s) && !/media\s*(?:plan|schedule)|allocation|flowchart/i.test(s);
+}
+function isStubText(t) { return /didn't auto-generate on this run/i.test(String(t || '')); }
+const BAND_ORDER = ['Submission', 'Proposal Content', 'Deadlines'];
+const SUB_KIND_ORDER = { submission: 0, doc: 1, link: 2, security: 3 };
+const MERGED = {
+  submission: { id: 'submission', title: 'Submission Package', band: 'Submission', fixed: true },
+  link:       { id: 'terms', title: 'Terms and Conditions', band: 'Submission', fixed: true },
+  security:   { id: 'cyber', title: 'Cyber Security & Data Protection', band: 'Submission', fixed: true },
+  locked:     { id: 'company', title: 'Company Overview', band: 'Proposal Content' },
+  team:       { id: 'team', title: 'Key Personnel / Team Structure', band: 'Proposal Content' },
+  files:      { id: 'cases', title: 'Case Studies / References', band: 'Proposal Content' },
+  pricing:    { id: 'pricing', title: 'Pricing Structure', band: 'Proposal Content' },
+};
+const EV_WORD = { m: 'From source', d: 'Drafted · review before sending', n: 'Not found · needs input', u: 'Not started' };
+
+function v3Box(id) {
+  if (!S.qualification) S.qualification = {};
+  const q = S.qualification;
+  if (!q._v3 || typeof q._v3 !== 'object') q._v3 = {};
+  if (!q._v3[id]) q._v3[id] = {};
+  return q._v3[id];
+}
+function refObj(ref) {
+  if (!ref) return null;
+  const q = S.qualification || {};
+  if (ref.kind === 'box') return v3Box(ref.id);
+  if (ref.kind === 'timeline') return (q.timeline || [])[ref.idx] || null;
+  if (ref.kind === 'section') return (S.rfpSections || [])[ref.idx] || null;
+  return (q.submissionRequirements || [])[ref.idx] || null;
+}
+function itemObj(item) { return item ? refObj(item.ref) : null; }
+function partObjs(item) { return ((item && item.parts) || []).map(p => refObj(p.ref)).filter(Boolean); }
+function itemById(id) { return buildItems().find(x => x.id === id) || null; }
+function hostById(id) { const it = itemById(id); return it ? itemObj(it) : null; }
+
 function buildItems() {
   const q = S.qualification || {};
   const secs = S.rfpSections || [], reqs = q.submissionRequirements || [];
   let media = null;
   secs.forEach((s, i) => { const sc = mediaScore(s && s.title); if (sc && (!media || sc > media.score)) media = { kind: 'section', idx: i, score: sc }; });
   reqs.forEach((r, i) => { const sc = mediaScore(r && r.name); if (sc && (!media || sc > media.score)) media = { kind: 'requirement', idx: i, score: sc }; });
-  const isMediaHost = (kind, i) => !!media && media.kind === kind && media.idx === i;
   const hasRows = o => !!(o && o._table && Array.isArray(o._table.rows) && o._table.rows.length);
-  const items = [];
+  const items = [], merged = {};
+  let mediaItem = null;
   const reqDocTypes = new Set(reqs.map(r => docTypeForRequirement(r)).filter(Boolean));
   const secMeta = t => (q.requiredProposalSections || []).find(x => x && typeof x === 'object' && sameTitle(x.title, t)) || {};
+  const addPart = (kind, part, ord) => {
+    const m = MERGED[kind];
+    let it = merged[kind];
+    if (!it) {
+      it = merged[kind] = { id: m.id, kind, type: kind, band: m.band, title: m.title, required: true, ord, parts: [], ref: { kind: 'box', id: m.id }, src: '' };
+      items.push(it);
+    }
+    if (part) it.parts.push(part);
+    it.ord = Math.min(it.ord, ord);
+  };
+
   secs.forEach((s, i) => {
+    if (!s) return;
     const title = s.title || ('Section ' + (i + 1));
+    const pt = plainTitle(title);
     const meta = secMeta(title);
-    const base = { id: 'sec-' + i, group: 'Proposal sections', title, required: true, src: meta.sourcePage || '',
-      aiCan: meta.aiCanDraft !== false, ref: { kind: 'section', idx: i } };
-    // A section that already holds a filled table keeps it (older saves could have more than one).
-    if (isMediaHost('section', i) || hasRows(s)) { items.push({ ...base, type: 'table' }); return; }
-    // A "section" that is really a standing document (W-9, COI, security policy) is listed once:
-    // the matching submission requirement carries it, and with none the section attaches the doc itself.
+    const part = { ref: { kind: 'section', idx: i }, title, src: meta.sourcePage || '' };
+    const base = { id: 'sec-' + i, title, rfpTitle: title, src: part.src, ord: i, ref: part.ref, parts: [part], required: true, aiCan: meta.aiCanDraft !== false };
+    const isMedia = !!media && media.kind === 'section' && media.idx === i;
+    if (isMedia || hasRows(s)) { const it = { ...base, kind: 'table', type: 'table', band: 'Proposal Content' }; items.push(it); if (isMedia) mediaItem = it; return; }
+    if (RX_VALIDITY.test(pt)) return;                        // Proposal Validity is not a checklist item (Erin)
+    if (RX_TERMS.test(pt)) { addPart('link', part, i); return; }
     const sdt = docTypeForRequirement({ name: title });
-    if (sdt && reqDocTypes.has(sdt)) return;
-    if (sdt) { items.push({ ...base, type: 'A', docType: sdt }); return; }
-    // A section the engine drafted with placeholders ("scaffold") still has text: open it in the editor.
-    // Only a section with no real text, or one already on the guided path, uses guided questions.
-    const text = String(s.content || '').trim();
-    const hasText = !!text && !/didn't auto-generate on this run/i.test(text);
-    const guidedStarted = !!s._guided || typeof s._draft === 'string';
-    const scaffold = s.coverage !== 'full';
-    items.push({ ...base, type: guidedStarted ? 'C' : (!scaffold || hasText) ? 'B' : 'C', scaffold, needs: s.needsInput || '' });
+    if (sdt === 'security' || RX_SECURITY.test(pt)) { addPart('security', part, i); return; }
+    // A standing document listed as a "section" shows once: the matching requirement carries it.
+    if (sdt) { if (!reqDocTypes.has(sdt)) items.push({ ...base, kind: 'doc', type: 'A', docType: sdt, band: 'Submission' }); return; }
+    if (isPricingTitle(title)) { addPart('pricing', part, i); return; }
+    if (isCompanyOverview(title)) { addPart('locked', part, i); return; }
+    if (RX_TEAM.test(pt)) { addPart('team', part, i); return; }
+    if (RX_CASES.test(pt)) { addPart('files', part, i); return; }
+    items.push({ ...base, kind: 'text', type: 'B', band: 'Proposal Content', scaffold: s.coverage !== 'full', needs: s.needsInput || '' });
   });
-  const shownSecTitles = items.filter(it => it.ref.kind === 'section').map(it => it.title);
+
+  const shownSecTitles = items.filter(it => it.kind === 'text' || it.kind === 'table').map(it => it.rfpTitle);
   let hasDeadlineReq = false, hasQuestionsReq = false;
   reqs.forEach((r, i) => {
+    if (!r) return;
     const title = r.name || ('Requirement ' + (i + 1));
-    const base = { id: 'req-' + i, group: 'Submission requirements', title, required: true, src: r.sourcePage || '',
-      aiCan: !!r.aiCanComplete, ref: { kind: 'requirement', idx: i } };
-    if (isMediaHost('requirement', i) || hasRows(r)) { items.push({ ...base, type: 'table' }); return; }
-    if (media && mediaScore(title) === 3) return;   // a second "media plan" ask: same table, don't list it twice
-    if (isFinalPdfReq(r)) { items.push({ ...base, type: 'F' }); return; }
+    const pt = plainTitle(title);
+    const ord = 1000 + i;
+    const part = { ref: { kind: 'requirement', idx: i }, title, src: r.sourcePage || '' };
+    const base = { id: 'req-' + i, title, rfpTitle: title, src: part.src, ord, ref: part.ref, parts: [part], required: true, aiCan: !!r.aiCanComplete };
+    const isMedia = !!media && media.kind === 'requirement' && media.idx === i;
+    if (isMedia || hasRows(r)) { const it = { ...base, kind: 'table', type: 'table', band: 'Proposal Content' }; items.push(it); if (isMedia) mediaItem = it; return; }
+    if (media && mediaScore(title) === 3) { if (mediaItem) mediaItem.parts.push(part); return; }   // same table, listed once
+    if (RX_VALIDITY.test(pt)) return;
+    if (RX_TERMS.test(pt)) { addPart('link', part, ord); return; }
+    const dt = docTypeForRequirement(r);
+    if (dt === 'security' || RX_SECURITY.test(pt)) { addPart('security', part, ord); return; }
+    if (isFinalPdfReq(r)) { addPart('submission', part, ord); return; }
     if (isInstructionReq(r)) {
-      const deadline = DEADLINE_RX.test(title);
-      if (deadline) hasDeadlineReq = true;
       if (/question/i.test(title)) hasQuestionsReq = true;
-      items.push({ ...base, type: 'D', deadline, required: false });
+      if (DEADLINE_RX.test(title)) {
+        hasDeadlineReq = true;
+        items.push({ ...base, kind: 'deadline', type: 'D', deadline: true, band: 'Deadlines', required: false });
+      } else addPart('submission', { ...part, rule: true }, ord);   // format rules sit on the Submission Package
       return;
     }
-    const dt = docTypeForRequirement(r);
-    // Same ask already listed as a proposal section: keep the section (it carries the draft).
-    if (!dt && shownSecTitles.some(t => sameTitle(t, title))) return;
-    items.push({ ...base, type: dt ? 'A' : 'C', docType: dt });
+    if (RX_TEMPLATE_REQ.test(title) || (String(r.type || '').toLowerCase() === 'form' && /\b(?:columns?|tabs?)\b/i.test(title))) {
+      addPart('submission', { ...part, template: true }, ord); return;
+    }
+    if (dt) { items.push({ ...base, kind: 'doc', type: 'A', docType: dt, band: 'Submission' }); return; }
+    if (isPricingTitle(title)) { addPart('pricing', part, ord); return; }
+    if (isCompanyOverview(title)) { addPart('locked', part, ord); return; }
+    if (RX_TEAM.test(pt)) { addPart('team', part, ord); return; }
+    if (RX_CASES.test(pt)) { addPart('files', part, ord); return; }
+    if (shownSecTitles.some(t => sameTitle(t, title))) return;   // same ask as a section: the section carries it
+    items.push({ ...base, kind: 'text', type: 'C', band: 'Proposal Content' });
   });
+  addPart('submission', null, -1);   // every RFP gets a Submission Package, named or not
+
   // Key dates from the RFP timeline, unless a requirement already covers them.
   (q.timeline || []).forEach((t, i) => {
     const ev = String((t && t.event) || '');
@@ -2030,244 +2279,411 @@ function buildItems() {
     const isQ = /question/i.test(ev) && /due|deadline|submi/i.test(ev);
     const isP = /(proposal|response|submission)s?\s*(due|deadline)/i.test(ev);
     if (!(isQ || isP) || (isQ && hasQuestionsReq) || (isP && hasDeadlineReq)) return;
-    items.push({ id: 'tl-' + i, group: 'Deadlines', title: ev + ' ' + fmtDateText(t.date), type: 'D', deadline: true, due: t.date,
-      required: false, src: 'RFP timeline', ref: { kind: 'timeline', idx: i } });
+    items.push({ id: 'tl-' + i, kind: 'deadline', type: 'D', deadline: true, due: t.date, band: 'Deadlines', required: false,
+      title: ev + ' ' + fmtDateText(t.date), rfpTitle: ev, src: 'RFP timeline', ord: 2000 + i, ref: { kind: 'timeline', idx: i }, parts: [] });
   });
+
+  Object.values(merged).forEach(it => {
+    const m = MERGED[it.kind], first = it.parts.find(p => !p.rule && !p.template);
+    const pt = first ? plainTitle(first.title) : '';
+    if (!m.fixed && pt && pt.length <= 48) it.title = pt;
+    it.rfpTitle = [...new Set(it.parts.filter(p => !p.rule && !p.template).map(p => p.title))].join(' · ');
+    it.src = (it.parts.find(p => p.src) || {}).src || '';
+  });
+  if (merged.submission) merged.submission.ord = -1;
+
+  const bandIdx = b => { const k = BAND_ORDER.indexOf(b); return k < 0 ? 9 : k; };
+  const kindIdx = it => (it.band === 'Submission' && SUB_KIND_ORDER[it.kind] != null) ? SUB_KIND_ORDER[it.kind] : 9;
+  items.sort((a, b) => bandIdx(a.band) - bandIdx(b.band) || (a.band === 'Submission' ? kindIdx(a) - kindIdx(b) : 0) || a.ord - b.ord);
   return items;
 }
 
-function hostById(id) { const it = buildItems().find(x => x.id === id); return it ? itemObj(it) : null; }
-
-function itemObj(item) {
-  if (item.ref.kind === 'timeline') return ((S.qualification && S.qualification.timeline) || [])[item.ref.idx];
-  return item.ref.kind === 'section'
-    ? (S.rfpSections || [])[item.ref.idx]
-    : ((S.qualification && S.qualification.submissionRequirements) || [])[item.ref.idx];
+// ── Item state: drafted, reviewed, evidence ──
+// Text drafts live in `content` for engine-drafted sections and in `_draft` for everything else.
+function textHost(ref) {
+  const item = (ref && typeof ref === 'object') ? ref
+    : (typeof ref === 'number') ? { id: 'sec-' + ref, kind: 'text', ref: { kind: 'section', idx: ref }, title: ((S.rfpSections || [])[ref] || {}).title }
+    : itemById(ref);
+  if (!item) return null;
+  const o = itemObj(item); if (!o) return null;
+  const key = (typeof o._draft === 'string') ? '_draft' : (item.ref.kind === 'section' ? 'content' : '_draft');
+  return { o, key, title: item.rfpTitle || item.title, item };
+}
+function itemText(item) {
+  const h = textHost(item); if (!h) return '';
+  const t = String(h.o[h.key] || '');
+  return isStubText(t) ? '' : t;
+}
+function securityDocs() {
+  const docs = S.libraryDocs || [];
+  const isFaq = d => /faq/i.test(d.name || '') && /security|privacy/i.test(d.name || '');
+  const faq = docs.find(isFaq) || null;
+  const progs = docs.filter(d => !isFaq(d) && (d.doc_type === 'security' || (d.doc_type === 'other' && DOC_NAME_HINTS.security.test(d.name || ''))));
+  const prog = progs[0] || null;
+  return { faq, prog, doc: faq || prog };
+}
+function identityOverview() {
+  const md = String(S.identity || '');
+  if (!md.trim()) return '';
+  const chunks = {};
+  md.split(/^##\s+/m).slice(1).forEach(c => {
+    const nl = c.indexOf('\n');
+    chunks[(nl < 0 ? c : c.slice(0, nl)).trim().toLowerCase()] = (nl < 0 ? '' : c.slice(nl + 1)).trim();
+  });
+  const who = chunks['who we are'] || '';
+  let mission = chunks['mission'] || chunks['our mission'] || '';
+  if (mission && !/^our mission/i.test(mission)) mission = 'Our mission is to ' + mission.charAt(0).toLowerCase() + mission.slice(1);
+  const out = [who, mission].filter(Boolean).join('\n\n');
+  if (out) return out;
+  return (md.replace(/^#.*$/gm, '').trim().split(/\n\s*\n/)[0] || '').trim();
+}
+function loadIdentity(force) {
+  // A failed load waits for "Try again"; retrying on every render would loop.
+  if (S._identityLoading || (!force && (S.identity != null || S.identityErr))) return;
+  S._identityLoading = true; S.identityErr = null;
+  api('/proposal/config/identity', undefined, 'GET')
+    .then(r => { S.identity = (r && typeof r.content === 'string') ? r.content : ''; if (!S.identity.trim()) S.identityErr = 'Company Identity is empty'; })
+    .catch(e => { S.identityErr = (e && e.message) || 'could not load'; })
+    .finally(() => { S._identityLoading = false; if (S.view === 'workspace') render(); });
 }
 
-// Status: an explicit choice (dropdown, checkbox, qualify tracker) wins over the derived one.
-function itemProgress(item) {
-  const o = itemObj(item); if (!o) return 0;
-  if (o._status === 'complete' || o._forceComplete) return 100;
-  if (o._status === 'not-started') return 0;
-  const p = derivedProgress(item, o);
-  if (o._status === 'in-progress') return Math.min(90, Math.max(10, p));
-  return p;
-}
-function derivedProgress(item, o) {
-  if (item.type === 'A') return (o._attached || o._manual) ? 100 : 0;
-  if (o._reviewed || o._done) return 100;
-  if (item.type === 'table') return (o._table && Array.isArray(o._table.rows) && o._table.rows.length) ? 70 : 0;
-  if (item.type === 'D' || item.type === 'F') return 0;
-  if (item.type === 'C') {
-    if (typeof o._draft === 'string' && o._draft.trim()) return 70;
-    const g = o._guided; if (!g) return 0;
-    const answered = (o._answers || []).filter(a => a != null).length;
-    return (g.questions && g.questions.length) ? Math.round(60 * answered / g.questions.length) : 0;
+function itemDrafted(item) {
+  const o = itemObj(item) || {};
+  switch (item.kind) {
+    case 'text': return !!itemText(item).trim();
+    case 'table': return !!(o._table && Array.isArray(o._table.rows) && o._table.rows.length);
+    case 'doc': return !!libraryDocFor(item.docType).doc || !!o._manual;
+    case 'link': case 'deadline': return true;
+    case 'security': return !!securityDocs().doc || !!o._manual;
+    case 'locked': return !!identityOverview();
+    case 'team': return !!(o._team && o._team.length);
+    case 'files': return !!(o._files && o._files.length);
+    case 'pricing': return pricingItemized(item) ? PRICE_FIELDS.every(([k]) => String((o._fees || {})[k] || '').trim()) : true;
+    case 'submission': return !!o._formatConfirmed && (submissionFormat(item).template.value ? !!o._templateFile : true);
   }
-  // Type B section: drafted by the engine but not yet reviewed (a placeholder draft counts for less)
-  return (o.content && String(o.content).trim()) ? (item.scaffold ? 30 : 70) : 0;
+  return false;
 }
+function _legacyDone(o, kind) {
+  if (!o || o._status === 'not-started') return false;
+  if (o._status === 'complete' || o._forceComplete) return true;
+  if (o._reviewed === false) return false;
+  if (o._reviewed === true || o._done) return true;
+  return kind === 'doc' && !!(o._attached || o._manual || o._confirmed);
+}
+// Reviewed is a human decision. Saves from before v3 count through their old "complete" flags.
+function itemReviewed(item) {
+  if (item.kind === 'locked') return !!identityOverview();   // managed centrally, nothing to review here
+  const o = itemObj(item); if (!o) return false;
+  if (item.ref.kind !== 'box') return _legacyDone(o, item.kind);
+  if (o._reviewed != null) return o._reviewed === true;
+  // Before v3 these asks were separate checklist items; one of them marked complete carries over.
+  if (item.kind === 'link' || item.kind === 'security') return partObjs(item).some(p => _legacyDone(p, item.kind === 'security' ? 'doc' : 'text'));
+  return false;
+}
+function itemEvidence(item) {
+  const o = itemObj(item) || {};
+  const nu = o._opened ? 'n' : 'u';
+  switch (item.kind) {
+    case 'text': return itemText(item).trim() ? 'd' : nu;
+    case 'table': return itemDrafted(item) ? 'm' : nu;
+    case 'doc': return libraryDocFor(item.docType).doc ? 'm' : nu;
+    case 'link': case 'deadline': return 'm';
+    case 'security': return securityDocs().doc ? 'm' : nu;
+    case 'locked': return identityOverview() ? 'm' : nu;
+    case 'team': return (o._team || []).length ? 'd' : nu;
+    case 'files': return (o._files || []).length ? 'd' : nu;
+    case 'pricing':
+      if (pricingItemized(item)) return Object.values(o._fees || {}).some(v => String(v || '').trim()) ? 'd' : nu;
+      return _pricedMediaTable() ? 'm' : nu;
+    case 'submission': {
+      const f = submissionFormat(item), cs = [f.fileType, f.template, f.pageLimit].map(x => x.confidence);
+      return cs.includes('m') ? 'm' : cs.some(c => c === 'd' || c === 'set') ? 'd' : nu;
+    }
+  }
+  return nu;
+}
+function itemProgress(item) { return itemReviewed(item) ? 100 : itemDrafted(item) ? 60 : itemEvidence(item) === 'd' ? 30 : 0; }
 function statusKey(p) { return p >= 100 ? 'complete' : p > 0 ? 'in-progress' : 'not-started'; }
 const STATUS_LABEL = { 'complete': 'Complete', 'in-progress': 'In Progress', 'not-started': 'Not Started' };
-const STATUS_CLS = { 'complete': 'st-complete', 'in-progress': 'st-inprog', 'not-started': 'st-notstarted' };
-// Any real work on an item lifts a manual "Not Started".
+// Any real work on an item lifts an old manual "Not Started".
 function touch(o) { if (o && o._status === 'not-started') delete o._status; }
-
+function allRequiredReviewed() { const req = buildItems().filter(i => i.required); return req.length > 0 && req.every(itemReviewed); }
 function overallProgress() {
-  const items = buildItems(); if (!items.length) return 0;
+  const items = buildItems().filter(it => it.required); if (!items.length) return 0;
   return Math.round(items.reduce((s, it) => s + itemProgress(it), 0) / items.length);
 }
 
-// Phase A (Erin redesign): working canvas on the LEFT, AI Assistant + Checklist on the RIGHT.
-function renderRfpWorkspace() {
-  const ctx = S.proposalContext, c = ctx.client;
-  const items = buildItems();
-  if (S.buildSel && !items.find(it => it.id === S.buildSel)) S.buildSel = null;
-  const overall = overallProgress();
-  const done = items.filter(it => itemProgress(it) >= 100).length;
-  const sel = items.find(it => it.id === S.buildSel);
-  const empty = `<div class="bw-empty"><div class="bw-empty-glyph">✎</div><h3>Select an item to start working</h3><p>Click anything in the RFP Checklist on the right — it opens here so you and the AI assistant can draft it together.</p></div>`;
-  return `
-<div class="bw">
-  <div class="bw-canvas">
-    <div class="bw-canvas-top">
-      <div class="bw-doc-title">${esc(c.name)} — <b>Working Draft</b></div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-ghost btn-sm" onclick="buildDeck()">▧ Build Presentation</button>
-        <button class="btn btn-primary btn-sm" onclick="finalizeProposal()"${done ? '' : ' disabled style="opacity:.5;cursor:not-allowed"'}>⇩ Export Final Proposal</button>
-      </div>
-    </div>
-    <div class="bw-canvas-body" id="bw-pane">${sel ? renderBuildPane(sel) : empty}</div>
-  </div>
-  <div class="bw-side">
-    <div class="panel-card">
-      <div class="panel-header"><span class="panel-icon">🤖</span><h3>AI Assistant</h3></div>
-      <div class="chat-messages" id="chat-messages" style="height:200px">
-        <div class="chat-msg ai"><div class="chat-bubble">Hi! Click any checklist item to open it on the left, or ask me anything here — RFP compliance, rewrites, strategy.</div></div>
-      </div>
-      <div class="chat-input-row">
-        <input class="chat-input" id="chat-input" placeholder="Ask me anything…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){sendChat();event.preventDefault()}" />
-        <button class="chat-send" onclick="sendChat()">↑</button>
-      </div>
-    </div>
-    <div class="panel-card">
-      <div class="panel-header"><span class="panel-icon">📋</span><h3>RFP Checklist</h3></div>
-      <div style="padding:12px 16px 4px">
-        <div class="bw-bar"><div class="bw-bar-fill" style="width:${overall}%"></div></div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:6px">${done} of ${items.length} complete</div>
-      </div>
-      <div class="bw-list">${renderBuildChecklist(items)}</div>
-      <div class="bw-left-foot">
-        <button class="btn btn-ghost btn-sm" onclick="runTechCheck()">✅ Tech Check</button>
-        <button class="btn btn-ghost btn-sm" onclick="saveProposal()">💾 Save</button>
-      </div>
-    </div>
-  </div>
-</div>`;
-}
-
-function renderBuildChecklist(items) {
-  const groups = {};
-  items.forEach(it => { (groups[it.group] = groups[it.group] || []).push(it); });
-  return Object.entries(groups).map(([g, its]) => `
-    <div class="bw-group">${esc(g)}</div>
-    ${its.map(it => { const p = itemProgress(it); const on = it.id === S.buildSel;
-      const label = STATUS_LABEL[statusKey(p)];
-      const cls = STATUS_CLS[statusKey(p)];
-      return `<div class="bw-item${on ? ' sel' : ''}" onclick="selectBuildItem('${it.id}')">
-        <span class="bw-check${p >= 100 ? ' done' : ''}" onclick="event.stopPropagation();toggleItemComplete('${it.id}')"></span>
-        <span class="bw-item-main"><span class="bw-item-title">${esc(it.title)}${it.deadline ? ' <span class="bw-mini deadline">Deadline</span>' : ''}${it.type === 'F' ? ' <span class="bw-mini final">Final file</span>' : ''}${it.required ? ' <span class="bw-mini required">Required</span>' : ''}</span><span class="bw-pill ${cls}">${label}</span></span>
-      </div>`; }).join('')}`).join('');
-}
-
-// The checkbox flips between Complete and Not Started for ANY item (it used to be unable to
-// uncheck something that was complete because it was reviewed or attached).
-function toggleItemComplete(id) {
-  const item = buildItems().find(it => it.id === id); if (!item) return;
+function setReviewed(item, on) {
   const o = itemObj(item); if (!o) return;
-  const done = itemProgress(item) >= 100;
-  o._forceComplete = false;
-  o._status = done ? 'not-started' : 'complete';
+  [o, ...partObjs(item)].forEach(x => { delete x._status; x._forceComplete = false; });
+  o._reviewed = !!on;
+  if (item.kind === 'deadline') o._done = !!on;
+  if (item.kind === 'doc') {
+    const d = libraryDocFor(item.docType).doc;
+    if (on) {
+      if (d) { o._attached = d.id; if (SCAN_SPECS[item.docType]) { _ownScanFields(item, o, d); o._confirmed = true; } }
+      else o._manual = true;
+    } else { o._confirmed = false; o._attached = false; o._manual = false; }
+  }
+  if (item.kind === 'security') { const d = securityDocs().doc; if (on && d) o._attached = d.id; if (on && !d) o._manual = true; }
   S.isDirty = true;
+}
+const REVIEW_GATE = {
+  submission: (it, o) => o._formatConfirmed ? '' : 'Confirm the detected format first',
+  team: it => itemDrafted(it) ? '' : 'Add at least one team member first',
+  files: it => itemDrafted(it) ? '' : 'List at least one file first',
+  pricing: it => itemDrafted(it) ? '' : 'Fill in all four fields first',
+};
+function toggleReviewed(id) {
+  const item = itemById(id); if (!item) return;
+  const o = itemObj(item); if (!o) return;
+  const on = !itemReviewed(item);
+  if (on && REVIEW_GATE[item.kind] && REVIEW_GATE[item.kind](item, o)) return;
+  setReviewed(item, on);
   refreshBuild();
 }
-function setItemStatus(id, val) {
-  const o = hostById(id); if (!o) return;
-  o._forceComplete = false;
-  if (STATUS_LABEL[val]) o._status = val;
-  S.isDirty = true; refreshBuild();
+function reviewBtn(item, onLabel, offLabel) {
+  const r = itemReviewed(item);
+  const why = (!r && REVIEW_GATE[item.kind]) ? REVIEW_GATE[item.kind](item, itemObj(item) || {}) : '';
+  return `<button class="d3-ok${r ? ' done' : ''}" onclick="toggleReviewed('${item.id}')"${why ? ` disabled title="${esc(why)}"` : ''}>${r ? '✓ ' + esc(onLabel || 'Reviewed') : esc(offLabel || 'Mark reviewed')}</button>`;
 }
-// Keep the qualify-screen tracker in step with the build.
+// Older callers (checkbox, status dropdown) now map onto reviewed.
+function toggleItemComplete(id) { toggleReviewed(id); }
+function setItemStatus(id, val) { const it = itemById(id); if (!it) return; setReviewed(it, val === 'complete'); refreshBuild(); }
+// Keep the qualify-screen tracker in step with the draft.
 function syncReqStatuses() {
   try {
-    buildItems().forEach(it => { if (it.ref.kind !== 'requirement') return; const o = itemObj(it); if (o) o.status = STATUS_LABEL[statusKey(itemProgress(it))]; });
+    buildItems().forEach(it => {
+      const st = STATUS_LABEL[statusKey(itemProgress(it))];
+      (it.parts || []).forEach(p => { if (p.ref.kind !== 'requirement') return; const r = refObj(p.ref); if (r) r.status = st; });
+    });
   } catch (e) {}
 }
 
 function refreshBuild() { if (S.view === 'workspace') { syncReqStatuses(); render(); } autoSaveRfp('building'); }
+function selectBuildItem(id) {
+  S.buildSel = id;
+  const it = itemById(id), o = it && itemObj(it);
+  if (o && !o._opened) { o._opened = true; S.isDirty = true; }
+  refreshBuild();
+}
+function setAskOpen(open) { S._askOpen = !!open; }
 
-function selectBuildItem(id) { S.buildSel = id; refreshBuild(); }
-
-function renderBuildPane(item) {
-  const o = itemObj(item);
-  let inner;
-  if (item.type === 'table') inner = renderPaneTable(item, o);
-  else if (item.type === 'F') inner = renderPaneFinal(item, o);
-  else if (item.type === 'D') inner = renderPaneInstruction(item, o);
-  else if (item.type === 'A') inner = renderPaneFixedDoc(item, o);
-  else if (item.ref.kind === 'section' && item.type !== 'C') inner = renderPaneSection(item, o);
-  else inner = renderPaneGuided(item, o);
-  inner = paneMeta(item, inner);
-  if (item.type === 'D') return inner;   // a deadline has nothing to draft
-  return inner + renderItemChat(item);   // Phase C: per-item "work on this together" chat on every pane
+// ── Header, readiness bar, rail ──
+function firstSentences(text, n, max) {
+  const s = String(text || '').trim(); if (!s) return '';
+  const parts = s.match(/[^.!?]+[.!?]+(?=\s|$)/g) || [s];
+  let out = parts.slice(0, n).join(' ').trim();
+  if (out.length > max) out = out.slice(0, max).replace(/\s+\S*$/, '') + '…';
+  return out;
+}
+function capText(s, n) { s = String(s || '').trim(); return s.length > n ? s.slice(0, n - 1).replace(/\s+\S*$/, '') + '…' : s; }
+function compactMoney(s) {
+  return String(s || '').replace(/\$\s?(\d{1,3}(?:,\d{3})+)(?:\.\d+)?/g, (m, n) => {
+    const v = +n.replace(/,/g, '');
+    return v >= 1e6 ? '$' + (+(v / 1e6).toFixed(1)) + 'M' : v >= 1e3 ? '$' + (+(v / 1e3).toFixed(1)) + 'K' : '$' + v;
+  }).replace(/\s*[–—]\s*|\s+-\s+/g, '–');
+}
+function budgetStat(b) {
+  const raw = String((b && (b.mediaBudget || b.statedFee)) || '').trim();
+  if (!raw) return { v: 'Not stated', s: 'No budget in the RFP' };
+  const tot = raw.match(/\btotal\b[^$\d|;]{0,12}(\$\s?[\d,]+(?:\.\d+)?\s?[kKmM]?)/i);
+  if (tot) return { v: compactMoney(tot[1]), s: 'Total, per RFP' };
+  const head = raw.split(/\s*[(|;]\s*/)[0].trim();
+  const paren = (raw.match(/\(([^)]+)\)/) || [])[1] || '';
+  return { v: capText(compactMoney(head), 30), s: paren ? capText(paren, 70) : 'Per RFP' };
+}
+function termStat(f) {
+  f = f || {};
+  const a = parseDue(f.start), z = parseDue(f.end);
+  const mo = d => d.toLocaleDateString('en-US', { month: 'short' }) + " '" + String(d.getFullYear()).slice(2);
+  if (a && z && z > a) {
+    const months = Math.max(1, Math.round((z - a) / (30.44 * 86400000)));
+    return { v: mo(a) + '–' + mo(z), s: months + '-month flight' };
+  }
+  if (f.label) return { v: capText(f.label, 30), s: 'Per RFP' };
+  return { v: 'Not stated', s: 'No dates in the RFP' };
+}
+function needsStat(q) {
+  const cm = (q && q.capabilityMatrix) || [];
+  if (!cm.length) return { v: 'Not listed', s: 'See the analysis' };
+  const sup = cm.filter(c => c && c.supported);
+  const short = c => plainTitle(c.service || '').split(/\s*\/\s*/)[0];
+  return { v: sup.length + ' tactic' + (sup.length === 1 ? '' : 's'), s: sup.slice(0, 3).map(short).join(', ') + (sup.length > 3 ? ` +${sup.length - 3} more` : '') };
+}
+function draftHeaderHtml() {
+  const q = S.qualification || {}, qual = q.qualification || {};
+  const rec = qual.recommendation || '';
+  const fit = qual.fitScore != null ? String(qual.fitScore) : '';
+  const lead = qual.tldr || firstSentences(qual.rationale, 2, 380);
+  const bold = fit ? (/^\d/.test(fit) ? 'Fit ' + fit : fit + ' fit') + (rec ? ' · ' + rec : '') : rec;
+  const stat = (l, x) => `<div class="d3-stat"><div class="d3-sl">${l}</div><div class="d3-sv">${esc(x.v)}</div><div class="d3-ss">${esc(x.s)}</div></div>`;
+  return `
+  <div class="d3-vstrip">
+    <div class="d3-vtop">
+      <div class="d3-score ${recColor(rec)}">${esc(fit || rec || '—')}<span>Fit score</span></div>
+      <div class="d3-lead">${bold ? `<b>${esc(bold)}.</b> ` : ''}${esc(lead)}</div>
+    </div>
+    <div class="d3-stats">${stat('Budget range', budgetStat(q.budgetConstraint))}${stat('Campaign term', termStat(q.campaignFlight))}${stat('Needs identified', needsStat(q))}</div>
+    <div class="d3-back">Pulled from the analysis. <a href="#" onclick="setView('qualify');return false">Open the full breakdown ↗</a></div>
+  </div>`;
+}
+function readinessHtml(items) {
+  const req = items.filter(i => i.required);
+  const drafted = req.filter(itemDrafted).length, reviewed = req.filter(itemReviewed).length;
+  const t2 = req.length > 0 && drafted === req.length, t3 = req.length > 0 && reviewed === req.length;
+  const on = [true, true, t2, t3];
+  const labels = ['Analyzed', 'Logged as Pitch', 'Drafted', 'Reviewed'];
+  const left = req.length - drafted;
+  const msg = t3 ? `All ${req.length} required items are reviewed. Ready to export.`
+    : t2 ? `${reviewed} of ${req.length} required items reviewed. Everything is drafted, so finish reviewing on the left.`
+    : `Drafting in progress. ${left} required item${left === 1 ? '' : 's'} still need${left === 1 ? 's' : ''} content.`;
+  const next = t3 ? null : (req.find(i => !itemDrafted(i)) || req.find(i => !itemReviewed(i)));
+  return `
+  <div class="d3-assign">
+    <div class="d3-seg">${on.map(x => `<div class="${x ? 'on' : ''}"></div>`).join('')}</div>
+    <div class="d3-seglab">${labels.map((l, k) => `<span class="${on[k] ? 'on' : ''}">${l}</span>`).join('')}</div>
+    <div class="d3-nextup">${esc(msg)}${next && next.id !== S.buildSel ? ` <a href="#" onclick="selectBuildItem('${next.id}');return false">Next: ${esc(railTitle(next))} →</a>` : ''}</div>
+  </div>`;
+}
+function railTitle(it) { const t = plainTitle(it.title) || it.title || ''; return t.length > 64 ? t.slice(0, 62).trim() + '…' : t; }
+function renderRail(items) {
+  let html = '', band = null;
+  items.forEach(it => {
+    if (it.band !== band) { band = it.band; html += `<div class="d3-rband">${esc(band)}</div>`; }
+    const ev = itemEvidence(it), rv = itemReviewed(it);
+    html += `<button class="d3-rnav${it.id === S.buildSel ? ' on' : ''}" data-id="${it.id}" onclick="selectBuildItem('${it.id}')" title="${esc(it.rfpTitle || it.title)}"><span class="d3-rn"><span class="d3-rdot ${ev}"></span><span class="d3-rt">${esc(railTitle(it))}</span>${rv ? '<span class="d3-rck" aria-label="Reviewed">✓</span>' : ''}</span></button>`;
+  });
+  return html;
 }
 
-function itemSub(item) {
+function renderRfpWorkspace() {
+  const ctx = S.proposalContext, c = ctx.client || {};
+  const items = buildItems();
+  if (S.buildSel && !items.find(it => it.id === S.buildSel)) S.buildSel = null;
+  const req = items.filter(i => i.required);
+  const reviewedN = req.filter(itemReviewed).length;
+  const sel = items.find(it => it.id === S.buildSel);
+  const empty = `<div class="d3-empty"><h3>Select a requirement to start</h3><p>Sourced items are already filled in. The rest just need a draft.</p></div>`;
+  return `
+<div class="d3">
+  <div class="d3-top">
+    <div class="d3-tabs"><button class="d3-tab" onclick="setView('qualify')">← Analysis</button><span class="d3-tab on">Draft</span></div>
+    <div class="d3-client">${esc(c.name || '')}${c.market ? ' · ' + esc(c.market) : ''}</div>
+    <div class="d3-topact">
+      <button class="d3-q" onclick="buildDeck()">▧ Build Presentation</button>
+      <button class="d3-btn" onclick="finalizeProposal()"${reviewedN ? '' : ' disabled title="Mark at least one item reviewed first"'}>⇩ Export Final Proposal</button>
+    </div>
+  </div>
+  ${draftHeaderHtml()}
+  ${readinessHtml(items)}
+  <div class="d3-layout">
+    <div class="d3-side">
+      <div class="d3-rail" role="navigation" aria-label="RFP requirements">${renderRail(items)}</div>
+      <div class="d3-rbar">
+        <div class="d3-rcount"><b>${reviewedN}</b> of <b>${req.length}</b> required items reviewed</div>
+        <div class="d3-rfoot"><button class="d3-sm" onclick="runTechCheck()">✅ Tech Check</button><button class="d3-sm" onclick="saveProposal()">💾 Save</button></div>
+      </div>
+    </div>
+    <div class="d3-main" id="bw-pane">${sel ? renderBuildPane(sel) : empty}</div>
+  </div>
+</div>`;
+}
+
+// ── The working pane ──
+function evWrap(ev, caption, body) {
+  return `<div class="d3-ev d3-ev-${ev}">${caption ? `<span class="d3-evw ${ev}">${esc(caption)}</span>` : ''}${body}</div>`;
+}
+function paneHead(item) {
   const src = String(item.src || '').trim();
   const where = src ? (/^(rfp|section|sec\.|p\.|page|part|attachment|appendix|exhibit)/i.test(src) ? (/^rfp/i.test(src) ? src : 'RFP ' + src) : 'From ' + src) : '';
-  const what = item.type === 'A' ? 'Standing document from the Library'
-    : item.type === 'D' ? (item.deadline ? 'A deadline to meet' : 'A submission instruction')
-    : item.type === 'F' ? 'The file you submit'
-    : item.type === 'table' ? 'Built from Library products'
-    : item.scaffold ? ('Placeholder draft' + (item.needs ? ' · needs ' + item.needs : ''))
-    : item.aiCan ? 'IGI can draft this' : 'Needs input from your team';
-  return [where, what].filter(Boolean).join(' · ');
+  const sub = [item.required ? 'Required' : 'Not counted toward readiness', where].filter(Boolean).join(' · ');
+  return `<div class="d3-rh"><span class="d3-rht">${esc(item.title)}</span><span class="d3-rhs">${esc(sub)}</span></div>`;
 }
-// Mockup header: group eyebrow with badges above the title, status dropdown and a one-line "what this is" below it.
-function paneMeta(item, inner) {
-  const st = statusKey(itemProgress(item));
-  const eyebrow = `<div class="bw-eyebrow">${esc(item.group)}${item.required ? '<span class="bw-mini required">Required</span>' : ''}${item.deadline ? '<span class="bw-mini deadline">Deadline</span>' : ''}</div>`;
-  const row = `<div class="bw-status-row"><select class="bw-status-select ${STATUS_CLS[st]}" aria-label="Status" onchange="setItemStatus('${item.id}', this.value)">${['not-started', 'in-progress', 'complete'].map(k => `<option value="${k}"${k === st ? ' selected' : ''}>${STATUS_LABEL[k]}</option>`).join('')}</select><span class="bw-sub">${esc(itemSub(item))}</span></div>`;
-  const m = inner.match(/<div class="bw-pane-head">[\s\S]*?<\/div>/);
-  return m ? eyebrow + inner.replace(m[0], () => m[0] + row) : eyebrow + row + inner;
+function asksFor(item) {
+  const seen = new Set([String(item.title || '').toLowerCase()]);
+  const ts = (item.parts || []).filter(p => !p.rule && !p.template).map(p => p.title)
+    .filter(t => { const k = String(t || '').toLowerCase(); if (!k || seen.has(k)) return false; seen.add(k); return true; });
+  if (!ts.length) return '';
+  return `<div class="d3-asks"><span class="d3-lbl">The RFP asks for</span>${ts.map(t => `<div class="d3-quote">${esc(t)}</div>`).join('')}</div>`;
+}
+// Build text a merged item's source sections carried (reference only; it never exports).
+function draftNotes(item) {
+  const txt = partObjs(item).map(o => String(o.content || '').trim()).filter(t => t && !isStubText(t)).join('\n\n');
+  if (!txt) return '';
+  return `<details class="d3-notes"><summary>IGI's draft notes from Build (reference only, not exported)</summary><div class="bw-note" style="margin-top:8px;white-space:pre-wrap;max-height:320px;overflow:auto">${esc(txt)}</div></details>`;
+}
+function renderBuildPane(item) {
+  const o = itemObj(item) || {};
+  let body;
+  switch (item.kind) {
+    case 'table': body = renderPaneTable(item, o); break;
+    case 'doc': body = renderPaneFixedDoc(item, o); break;
+    case 'deadline': body = renderPaneInstruction(item, o); break;
+    case 'submission': body = renderPaneSubmission(item, o); break;
+    case 'link': body = renderPaneLink(item, o); break;
+    case 'security': body = renderPaneSecurity(item, o); break;
+    case 'locked': body = renderPaneLocked(item, o); break;
+    case 'team': body = renderPaneTeam(item, o); break;
+    case 'files': body = renderPaneFiles(item, o); break;
+    case 'pricing': body = renderPanePricing(item, o); break;
+    default: body = renderPaneText(item, o);
+  }
+  return paneHead(item) + asksFor(item) + body + (item.kind === 'deadline' ? '' : renderItemChat(item));
 }
 
-// Text drafts live in `content` for engine-drafted sections and in `_draft` for guided items.
-function textHost(ref) {
-  if (typeof ref === 'number') { const o = (S.rfpSections || [])[ref]; return o ? { o, key: 'content', title: o.title } : null; }
-  const it = buildItems().find(x => x.id === ref); if (!it) return null;
-  const o = itemObj(it); if (!o) return null;
-  return { o, key: it.type === 'C' ? '_draft' : 'content', title: it.title };
+// kind text: an editable draft with AI actions.
+function renderPaneText(item) {
+  const text = itemText(item);
+  const ev = itemEvidence(item);
+  const reviewed = itemReviewed(item);
+  const cap = text.trim() ? (item.scaffold ? 'Placeholder draft' + (item.needs ? ' · needs ' + item.needs : '') : EV_WORD.d) : EV_WORD[ev];
+  const note = (item.scaffold && text.trim() && !reviewed)
+    ? `<div class="d3-rule">IGI didn't have what it needed to finish this one${item.needs ? ` (${esc(item.needs)} to complete)` : ''}. Replace anything in brackets, such as [Validate on Call] or [Finance to confirm], before you mark it reviewed.</div>` : '';
+  return note + evWrap(ev, cap, `<textarea class="d3-fld" id="bw-ed-${item.id}" aria-label="${esc(item.title)}" oninput="editItemText('${item.id}', this.value)" placeholder="Write or draft this section…">${esc(text)}</textarea>`) + `
+  <div id="bw-assist-${item.id}"></div>
+  <div class="d3-act">
+    <button class="d3-btn" onclick="sectionAssist('${item.id}','draft')">Draft with AI</button>
+    <button class="d3-q" onclick="sectionAssist('${item.id}','tighten')">Tighten language</button>
+    <button class="d3-q" onclick="sectionAssist('${item.id}','compliance')">Check RFP compliance</button>
+    ${reviewBtn(item)}
+  </div>`;
 }
 function editItemText(id, val) {
   const h = textHost(id); if (!h) return;
   h.o[h.key] = val; touch(h.o); S.isDirty = true; autoSaveRfp('building');
 }
-function startFreeform(id) {
-  const o = hostById(id); if (!o) return;
-  o._freeform = true; if (typeof o._draft !== 'string') o._draft = '';
-  touch(o); S.isDirty = true; refreshBuild();
-}
-
-// B1: text section — editable draft + Draft / Tighten / Compliance AI actions.
-function renderPaneSection(item, s) {
-  const reviewed = !!s._reviewed;
-  const idx = item.ref.idx;
-  return `
-  <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence ${reviewed ? 'conf-confirmed' : item.scaffold ? 'conf-validate' : 'conf-generated'}">${reviewed ? 'Reviewed' : item.scaffold ? 'Placeholder draft' : 'Draft'}</span></div>
-  ${item.scaffold && !reviewed ? `<div class="bw-note" style="margin-bottom:12px">IGI didn't have what it needed to finish this one${item.needs ? ` (${esc(item.needs)} to complete)` : ''}. Replace anything in brackets, such as [Validate on Call] or [Finance to confirm], before you mark it reviewed.</div>` : ''}
-  <textarea class="bw-editor" id="bw-ed-${idx}" oninput="editRfpSection(${idx}, this.value)" placeholder="Write or paste here, or use the buttons below to draft this with AI…">${esc(String(s.content || ''))}</textarea>
-  <div id="bw-assist-${idx}"></div>
-  <div class="bw-actions">
-    <button class="btn btn-primary btn-sm" onclick="sectionAssist(${idx},'draft')">✨ Draft this with AI</button>
-    <button class="btn btn-ghost btn-sm" onclick="sectionAssist(${idx},'tighten')">Tighten language</button>
-    <button class="btn btn-ghost btn-sm" onclick="sectionAssist(${idx},'compliance')">Check RFP compliance</button>
-    <button class="btn btn-ghost btn-sm" onclick="markSectionReviewed(${idx})">✓ Mark reviewed</button>
-  </div>`;
-}
 
 let _assistBuf = {};
 async function sectionAssist(ref, mode) {
   const h = textHost(ref); if (!h) return;
-  const boxId = 'bw-assist-' + ref;
+  const key = (typeof ref === 'number') ? 'sec-' + ref : String(ref);
+  const boxId = 'bw-assist-' + key;
   let box = document.getElementById(boxId);
   if (box) box.innerHTML = '<div class="bw-assist-out" style="color:var(--text-muted)">Working…</div>';
-  const arg = (typeof ref === 'number') ? String(ref) : `'${ref}'`;
   try {
-    const r = await api('/proposal/section-assist', { title: h.title, content: h.o[h.key] || '', mode,
+    const r = await api('/proposal/section-assist', { title: h.title, content: itemText(h.item) || '', mode,
       rfpText: S.rfpIntake?.rfpText || S.proposalContext?.rfpText || '', clientName: S.proposalContext?.client?.name, market: S.proposalContext?.client?.market });
     box = document.getElementById(boxId); if (!box) return;
     if (mode === 'compliance') {
       box.innerHTML = `<div class="bw-assist-out"><div class="bw-assist-label">Compliance review</div><div style="white-space:pre-wrap;font-size:13px;line-height:1.6">${esc(r.content || '')}</div></div>`;
     } else {
-      _assistBuf[ref] = r.content || '';
-      box.innerHTML = `<div class="bw-assist-out"><div class="bw-assist-label">${mode === 'draft' ? 'Suggested draft' : 'Tightened text'}</div><div style="white-space:pre-wrap;font-size:13px;line-height:1.6">${esc(r.content || '')}</div><button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="applySectionAssist(${arg})">↳ Use this</button></div>`;
+      _assistBuf[key] = r.content || '';
+      box.innerHTML = `<div class="bw-assist-out"><div class="bw-assist-label">${mode === 'draft' ? 'Suggested draft' : 'Tightened text'}</div><div style="white-space:pre-wrap;font-size:13px;line-height:1.6">${esc(r.content || '')}</div><button class="d3-btn" style="margin-top:10px" onclick="applySectionAssist('${key}')">↳ Use this</button></div>`;
     }
   } catch (e) { box = document.getElementById(boxId); if (box) box.innerHTML = `<div class="bw-assist-out" style="color:var(--red)">Failed: ${esc(e.message)}</div>`; }
 }
 function applySectionAssist(ref) {
-  const t = _assistBuf[ref]; if (t == null) return;
-  const h = textHost(ref); if (!h) return;
-  h.o[h.key] = t;
-  if (h.key === 'content') h.o._reviewed = false; else h.o._freeform = true;
+  const key = (typeof ref === 'number') ? 'sec-' + ref : String(ref);
+  const t = _assistBuf[key]; if (t == null) return;
+  const h = textHost(key); if (!h) return;
+  h.o[h.key] = t; h.o._reviewed = false;
   touch(h.o); S.isDirty = true; refreshBuild();
 }
 
-// B2 + D: editable Media Plan table with auto-total, Library generation, and validation flags.
-// pr9: priced media plan — product × Flight × Rate × Volume × Budget(line total). 'Budget' stays the column
-// name (the engine /proposal/validate rate-sanity check and the footer both key on it), functioning as the
-// line total = Rate × Volume; Flight (date range) + Rate (unit price) make it a rate-card structure.
+// kind table: editable Media Plan with auto-total, Library generation, and validation flags.
+// 'Budget' stays the column name (the engine's rate check and the footer key on it) and holds the line
+// total = Rate × Volume; Flight and Rate make it a rate-card layout.
 const MEDIA_COLS = ['Solution Name', 'Solution Goal', 'Audience Detail', 'Solution Footprint', 'Flight', 'Media Delivered', 'Rate', 'Volume', 'Budget'];
 function renderPaneTable(item, s) {
   if (!s._table) s._table = { cols: MEDIA_COLS.slice(), rows: [] };
@@ -2276,28 +2692,27 @@ function renderPaneTable(item, s) {
   const autoFill = !t.rows.length && !s._autoPlanTried;
   if (autoFill) { s._autoPlanTried = true; setTimeout(() => generateMediaPlan(item.id, true), 0); }
   const written = String(s.content || '').trim();
-  const writtenHtml = (written && !/didn't auto-generate on this run/i.test(written))
-    ? `<details class="bw-written" style="margin-top:16px"><summary style="cursor:pointer;font-size:12.5px;color:var(--text-muted)">IGI's written media recommendation from Build (reference only; the table above is what exports)</summary><div class="bw-note" style="margin-top:8px;white-space:pre-wrap;max-height:360px;overflow:auto">${esc(written)}</div></details>` : '';
+  const writtenHtml = (written && !isStubText(written))
+    ? `<details class="d3-notes"><summary>IGI's written media recommendation from Build (reference only; the table above is what exports)</summary><div class="bw-note" style="margin-top:8px;white-space:pre-wrap;max-height:360px;overflow:auto">${esc(written)}</div></details>` : '';
   const flags = s._flags || [];
   const budI = t.cols.indexOf('Budget');
   let total = 0;
   t.rows.forEach(r => { const b = parseFloat(String(r[budI] || '').replace(/[^0-9.]/g, '')) || 0; if (!/added value|in-?kind/i.test(String(r[budI] || ''))) total += b; });
   const flagHtml = flags.length ? `<div class="bw-flags">${flags.map(f => `<div class="bw-flag ${f.level}">${f.level === 'error' ? '⛔' : '⚠'} ${esc(f.msg)}</div>`).join('')}</div>` : '';
   const rowsHtml = t.rows.map((r, ri) => `<tr>${t.cols.map((c, ci) => `<td data-editable><div contenteditable="true" oninput="editTableCell('${item.id}',${ri},${ci},this.textContent)">${esc(r[ci] || '')}</div></td>`).join('')}<td><span class="row-remove" onclick="removeTableRow('${item.id}',${ri})">✕</span></td></tr>`).join('');
-  return `
-  <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence conf-generated">Editable</span></div>
-  ${flagHtml}
-  <div class="table-wrap"><table class="media-table">
+  const ev = itemEvidence(item);
+  const table = `<div class="table-wrap"><table class="media-table">
     <thead><tr>${t.cols.map(c => `<th>${esc(c)}</th>`).join('')}<th></th></tr></thead>
     <tbody>${rowsHtml || `<tr><td colspan="${t.cols.length + 1}" style="padding:16px;color:var(--text-muted)">${(autoFill || _planLoading.has(item.id)) ? 'Building a plan from Library products… (about 20 seconds)' : 'No rows yet. Generate a plan from the Library, or add a row.'}</td></tr>`}</tbody>
     <tfoot><tr><td colspan="${t.cols.length - 1}">Total Investment</td><td>$${total.toLocaleString()}</td><td></td></tr></tfoot>
-  </table></div>
-  <div class="bw-actions">
-    <button class="btn btn-primary btn-sm" onclick="generateMediaPlan('${item.id}')">✨ Generate plan from Library</button>
-    <button class="btn btn-ghost btn-sm" onclick="addTableRow('${item.id}')">+ Add row</button>
-    <button class="btn btn-ghost btn-sm" onclick="validateMediaPlan('${item.id}')">✓ Validate</button>
-    <button class="btn btn-ghost btn-sm" onclick="reviewMediaPlan('${item.id}')">✨ Ask AI to review this plan</button>
-    <button class="btn btn-ghost btn-sm" onclick="markItemReviewed('${item.id}')">✓ Mark reviewed</button>
+  </table></div>`;
+  return flagHtml + evWrap(ev, ev === 'm' ? 'Built from Library products' : EV_WORD[ev], table) + `
+  <div class="d3-act">
+    <button class="d3-btn" onclick="generateMediaPlan('${item.id}')">Generate plan from Library</button>
+    <button class="d3-q" onclick="addTableRow('${item.id}')">+ Add row</button>
+    <button class="d3-q" onclick="validateMediaPlan('${item.id}')">Validate</button>
+    <button class="d3-q" onclick="reviewMediaPlan('${item.id}')">Ask AI to review this plan</button>
+    ${reviewBtn(item)}
   </div>
   ${writtenHtml}`;
 }
@@ -2306,8 +2721,7 @@ function editTableCell(i, ri, ci, val) {
   const host = hostById(i); const t = host && host._table;
   if (t && t.rows[ri]) {
     t.rows[ri][ci] = val; touch(host);
-    // pr9: line Budget (total) = Rate × Volume when both are numeric. The AE can still type Budget directly
-    // (rows without a rate/volume — e.g. a flat package — keep their entered Budget).
+    // Line Budget (total) = Rate × Volume when both are numeric. A flat package keeps its typed Budget.
     const rateI = t.cols.indexOf('Rate'), volI = t.cols.indexOf('Volume'), budI = t.cols.indexOf('Budget');
     if (budI !== -1 && rateI !== -1 && volI !== -1 && (ci === rateI || ci === volI)) {
       const rate = parseFloat(String(t.rows[ri][rateI] || '').replace(/[^0-9.]/g, ''));
@@ -2326,8 +2740,7 @@ async function generateMediaPlan(i, auto) {
   try {
     const b = S.qualification?.budgetConstraint || {};
     const r = await api('/proposal/media-plan', { clientName: S.proposalContext?.client?.name, market: S.proposalContext?.client?.market, category: S.proposalContext?.client?.category, budget: b.mediaBudget || b.statedFee || '', rfpText: S.rfpIntake?.rfpText || '' });
-    // pr9: normalize the engine's plan (still 7-col: …/Volume/Budget) into the priced layout by column NAME —
-    // Budget carries over as the line total, Flight + Rate start blank for the AE to price. Non-breaking.
+    // Map the engine's 7-column plan into the priced layout by column name; Flight and Rate start blank.
     const inCols = (r.cols && r.cols.length) ? r.cols : ['Solution Name', 'Solution Goal', 'Audience Detail', 'Solution Footprint', 'Media Delivered', 'Volume', 'Budget'];
     const rows = (r.rows || []).map(row => { const byName = {}; inCols.forEach((c, ci) => { byName[c] = row[ci]; }); return MEDIA_COLS.map(c => (byName[c] != null ? byName[c] : '')); });
     s._table = { cols: MEDIA_COLS.slice(), rows }; touch(s);
@@ -2345,10 +2758,10 @@ async function validateMediaPlanSilent(i) {
   catch (e) { s._flags = []; }
 }
 
-// Phase C: per-item chat ("work on this section together").
+// "Ask AI about this": a collapsible per-item chat.
 function itemChatHtml(id) {
-  const it = buildItems().find(x => x.id === id);
-  const canInsert = !!it && (it.type === 'B' || it.type === 'C');
+  const it = itemById(id);
+  const canInsert = !!it && it.kind === 'text';
   return ((S.itemChats || {})[id] || []).map((m, k) => {
     const ins = (canInsert && m.role === 'ai' && !m.pending && m.insert)
       ? `<br><span class="chat-insert" onclick="insertChatReply('${id}', ${k})">↳ Insert into draft</span>` : '';
@@ -2357,33 +2770,47 @@ function itemChatHtml(id) {
 }
 function renderItemChat(item) {
   S.itemChats = S.itemChats || {};
-  const hint = item.type === 'table' ? 'e.g. shift more budget into streaming TV…' : 'e.g. make this more concrete about our media reach…';
+  const hint = item.kind === 'table' ? 'e.g. shift more budget into streaming TV…' : 'e.g. make this more concrete…';
+  const open = !!S._askOpen || ((S.itemChats[item.id] || []).length > 0);
   return `
-  <div class="bw-itemchat">
-    <div class="bw-itemchat-label"><span class="bw-dot"></span> Work on this section together</div>
-    <div class="chat-messages" id="bw-itemchat-feed" style="height:auto;max-height:260px;background:var(--bg-sec);border-radius:8px">${itemChatHtml(item.id)}</div>
-    <div class="chat-input-row">
-      <input class="chat-input" id="bw-itemchat-input" placeholder="${hint}" onkeydown="if(event.key==='Enter'){sendItemChat('${item.id}');event.preventDefault()}" />
-      <button class="chat-send" onclick="sendItemChat('${item.id}')">↑</button>
+  <details class="d3-ask"${open ? ' open' : ''} ontoggle="setAskOpen(this.open)">
+    <summary><span class="d3-car">›</span> Ask AI about this</summary>
+    <div class="d3-askbody">
+      <div class="chat-messages d3-askfeed" id="bw-itemchat-feed">${itemChatHtml(item.id)}</div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="bw-itemchat-input" aria-label="Ask AI about this item" placeholder="${hint}" onkeydown="if(event.key==='Enter'){sendItemChat('${item.id}');event.preventDefault()}" />
+        <button class="chat-send" aria-label="Send" onclick="sendItemChat('${item.id}')">↑</button>
+      </div>
     </div>
-  </div>`;
+  </details>`;
+}
+function itemContextText(item) {
+  const o = itemObj(item) || {};
+  switch (item.kind) {
+    case 'table': return o._table ? JSON.stringify({ columns: o._table.cols, rows: o._table.rows }) : '';
+    case 'text': return itemText(item);
+    case 'locked': return identityOverview();
+    case 'team': return (o._team || []).map(m => m.name + (m.role ? ', ' + m.role : '')).join('\n');
+    case 'files': return (o._files || []).map(f => f.name).join('\n');
+    case 'pricing': return pricingItemized(item) ? PRICE_FIELDS.map(([k, l]) => l + ': ' + ((o._fees || {})[k] || '')).join('\n') : 'Pricing follows the standard Media Plan.';
+    case 'submission': { const f = submissionFormat(item); return `File type: ${f.fileType.value}. Template provided: ${f.template.value ? 'yes' : 'no'}. Page limit: ${f.pageLimit.count || 'none stated'}.`; }
+    default: return item.rfpTitle || item.title;
+  }
 }
 async function sendItemChat(id, preset) {
-  const item = buildItems().find(it => it.id === id); if (!item) return;
+  const item = itemById(id); if (!item) return;
   const input = document.getElementById('bw-itemchat-input');
   const text = String(preset || (input && input.value) || '').trim(); if (!text) return;
   if (input && !preset) input.value = '';
+  S._askOpen = true;
+  const d = document.querySelector('#bw-pane .d3-ask'); if (d) d.open = true;
   S.itemChats = S.itemChats || {}; S.itemChats[id] = S.itemChats[id] || [];
   S.itemChats[id].push({ role: 'user', text });
   S.itemChats[id].push({ role: 'ai', text: 'Thinking…', pending: true });
   updateItemChatFeed(id);
-  const o = itemObj(item) || {};
-  const content = (item.type === 'table')
-    ? (o._table ? JSON.stringify({ columns: o._table.cols, rows: o._table.rows }) : '')
-    : String(o._draft || o.content || '');
   try {
     const hist = S.itemChats[id].filter(m => !m.pending).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }));
-    const r = await api('/proposal/chat', { proposalContext: S.proposalContext, sections: { [item.title]: content }, messages: hist });
+    const r = await api('/proposal/chat', { proposalContext: S.proposalContext, sections: { [item.title]: itemContextText(item) }, messages: hist });
     const up = (r && r.updateSection && typeof r.updateSection.content === 'string') ? r.updateSection.content : '';
     S.itemChats[id] = S.itemChats[id].filter(m => !m.pending);
     S.itemChats[id].push({ role: 'ai', text: (r && r.response) || up || '(no response)', insert: up || (r && r.response) || '' });
@@ -2391,6 +2818,7 @@ async function sendItemChat(id, preset) {
   updateItemChatFeed(id);
 }
 function updateItemChatFeed(id) {
+  if (S.buildSel !== id) return;
   const feed = document.getElementById('bw-itemchat-feed'); if (!feed) return;
   feed.innerHTML = itemChatHtml(id);
   feed.scrollTop = feed.scrollHeight;
@@ -2398,8 +2826,7 @@ function updateItemChatFeed(id) {
 function insertChatReply(id, k) {
   const m = ((S.itemChats || {})[id] || [])[k]; if (!m || !m.insert) return;
   const h = textHost(id); if (!h) return;
-  h.o[h.key] = m.insert;
-  if (h.key === 'content') h.o._reviewed = false; else h.o._freeform = true;
+  h.o[h.key] = m.insert; h.o._reviewed = false;
   touch(h.o); S.isDirty = true; refreshBuild();
 }
 function reviewMediaPlan(id) {
@@ -2407,8 +2834,8 @@ function reviewMediaPlan(id) {
 }
 
 function editRfpSection(i, val) { if (S.rfpSections[i]) { S.rfpSections[i].content = val; touch(S.rfpSections[i]); S.isDirty = true; autoSaveRfp('building'); } }
-function markSectionReviewed(i) { const o = S.rfpSections[i]; if (o) { o._reviewed = true; if (o._status !== 'complete') delete o._status; S.isDirty = true; } refreshBuild(); }
-function markItemReviewed(id) { const o = hostById(id); if (o) { o._reviewed = true; if (o._status !== 'complete') delete o._status; S.isDirty = true; } refreshBuild(); }
+function markSectionReviewed(i) { markItemReviewed('sec-' + i); }
+function markItemReviewed(id) { const it = itemById(id); if (it) setReviewed(it, true); refreshBuild(); }
 
 async function regenRfpSection(i) {
   const s = S.rfpSections[i]; if (!s) return;
@@ -2421,9 +2848,9 @@ async function regenRfpSection(i) {
   refreshBuild();
 }
 
-// Type D — a deadline or submission instruction: confirm it, nothing to write.
-function renderPaneInstruction(item, o) {
-  const done = !!(o && (o._done || o._forceComplete));
+// kind deadline: confirm it, nothing to write.
+function renderPaneInstruction(item) {
+  const done = itemReviewed(item);
   let when = '';
   const d = parseDue(item.due);
   if (d) {
@@ -2433,101 +2860,396 @@ function renderPaneInstruction(item, o) {
     const col = days < 0 ? 'var(--text-muted)' : days <= 3 ? 'var(--orange)' : 'var(--text)';
     when = `<div style="margin-top:8px;font-weight:600;color:${col}">Due ${esc(d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }))}${tag}</div>`;
   }
-  const what = item.deadline ? 'This is a deadline, not a document to write.' : 'This is a submission instruction, not a document to write.';
-  return `
-  <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence ${done ? 'conf-confirmed' : 'conf-validate'}">${done ? 'Covered' : 'Confirm'}</span></div>
-  <div class="bw-note">${what} Make sure the team has it covered, then check it off.${when}</div>
-  <div class="bw-actions"><button class="btn ${done ? 'btn-ghost' : 'btn-primary'} btn-sm" onclick="ackItem('${item.id}')">${done ? '✓ Covered (undo)' : '✓ Got it'}</button></div>`;
+  return evWrap('m', 'From the RFP', `<div class="d3-note">This is a deadline, not a document to write. Make sure the team has it covered, then check it off.${when}</div>`) +
+    `<div class="d3-act">${reviewBtn(item, 'Covered', 'Got it')}</div>`;
 }
-function ackItem(id) {
-  const it = buildItems().find(x => x.id === id); const o = it && itemObj(it); if (!o) return;
-  const done = itemProgress(it) >= 100;
-  o._forceComplete = false;
-  if (done) { o._done = false; o._status = 'not-started'; } else { o._done = true; delete o._status; }
-  S.isDirty = true; refreshBuild();
-}
+function ackItem(id) { toggleReviewed(id); }
 
-// Type F — the single combined PDF the RFP asks for: compile and export, not a section to write.
-function renderPaneFinal(item, o) {
-  const items = buildItems().filter(it => it.type !== 'F' && it.type !== 'D');
-  const open = items.filter(it => itemProgress(it) < 100);
-  const ready = items.length - open.length;
-  const exported = !!(o && o._done);
-  const off = ready ? '' : ' disabled style="opacity:.5;cursor:not-allowed"';
-  const openList = open.length
-    ? ` Still open: ${open.slice(0, 4).map(it => esc(String(it.title).replace(/\s*\(.*$/, '').slice(0, 60))).join(', ')}${open.length > 4 ? ` and ${open.length - 4} more` : ''}.`
-    : ' Everything is checked off.';
-  return `
-  <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence ${exported ? 'conf-confirmed' : 'conf-generated'}">${exported ? 'Exported' : 'Final file'}</span></div>
-  <div class="bw-note">This is the finished proposal itself: every item you check off, compiled in RFP order into one PDF. Standing documents (W-9, insurance) are listed in it, so send their files along with it.
-    <div style="margin-top:10px;color:var(--text)"><b>${ready} of ${items.length}</b> items ready.${openList}</div>
-  </div>
-  <div class="bw-actions" style="flex-wrap:wrap">
-    <button class="btn btn-primary btn-sm" onclick="exportFinalPdfFor('${item.id}')"${off}>⇩ Export as PDF</button>
-    <button class="btn btn-ghost btn-sm" onclick="finalizeProposal()"${off}>Preview and edit first</button>
-    <button class="btn btn-ghost btn-sm" onclick="openSow()">Statement of Work</button>
-  </div>`;
-}
-function exportFinalPdfFor(id) {
-  exportFinalPdf(assembleMarkdown());
-  const o = hostById(id);
-  if (o) { o._done = true; if (o._status !== 'complete') delete o._status; S.isDirty = true; }
-  refreshBuild();
-}
+function exportFinalPdfFor() { exportFinalPdf(assembleMarkdown()); }
 function openSow() { const m = document.getElementById('modal-export'); if (m) m.style.display = 'flex'; loadSOW(); }
 
-// Type A — fixed library document (Phase 5)
+// kind link: Terms and Conditions always point at the standing Terms of Service. No drafting, ever.
+function renderPaneLink(item) {
+  return evWrap('m', 'Standing link', `<div class="d3-linkcard"><span class="d3-lu">${esc(TERMS_URL)}</span><a class="d3-q" href="${TERMS_URL}" target="_blank" rel="noopener">Open ↗</a></div>`) +
+    `<div class="d3-rule">This item always links to the standing Terms of Service. It never accepts a draft or free text.</div>
+    <div class="d3-act">${reviewBtn(item, 'Confirmed link', 'Confirm link is correct')}</div>`;
+}
+
+// kind security: every cyber security, data protection, or incident response ask lands here.
+function renderPaneSecurity(item, o) {
+  const { faq, doc } = securityDocs();
+  const rule = `<div class="d3-rule"><b>Standing rule:</b> any RFP language about cyber security, data protection, or incident response, however it's worded (including a standalone list of questions), routes here and is answered from the Security &amp; Privacy FAQ in Proposal Storage.</div>`;
+  const storage = `<a class="d3-q" href="${STORAGE_URL}" target="_blank" rel="noopener">Open in Proposal Storage ↗</a>`;
+  if (!doc) {
+    const ev = o._opened ? 'n' : 'u';
+    return rule + evWrap(ev, EV_WORD.n, `<div class="d3-note">No security document is in Proposal Storage yet. Add the Security &amp; Privacy FAQ there, or handle this one manually.</div>`) +
+      `<div class="d3-act">${storage}${reviewBtn(item, 'Handled manually', 'Mark handled manually')}</div>`;
+  }
+  const next = faq
+    ? `Answer the RFP's security questions from this FAQ. Question by question drafting is coming next.`
+    : `Question by question answers turn on once the Security &amp; Privacy FAQ is in Proposal Storage. Until then, attach this document and answer any RFP security questions from it.`;
+  return rule + evWrap('m', 'From Proposal Storage', `<div class="d3-linkcard"><span class="d3-lu">📎 ${esc(docLabel(doc))}</span>${storage}</div><div class="d3-note" style="margin-top:12px">${next}</div>`) +
+    `<div class="d3-act">${reviewBtn(item, 'Reviewed and attached', 'Mark reviewed')}</div>`;
+}
+
+// kind locked: Company Overview comes from the Company Identity and is edited only at the source.
+function renderPaneLocked(item, o) {
+  const text = identityOverview();
+  const edit = `<a href="${STORAGE_URL}" target="_blank" rel="noopener">Edit in Proposal Storage ↗</a>`;
+  if (!text) {
+    const loading = !!S._identityLoading || (S.identity == null && !S.identityErr);
+    return evWrap(o._opened ? 'n' : 'u', loading ? 'Loading' : EV_WORD.n,
+      `<div class="d3-note">${loading ? 'Loading the Company Identity…' : `Couldn't load the Company Identity (${esc(S.identityErr || 'empty')}). ${edit}`}</div>`) +
+      (loading ? '' : `<div class="d3-act"><button class="d3-q" onclick="loadIdentity(true)">Try again</button></div>`);
+  }
+  return evWrap('m', 'Sourced from Company Identity', `<textarea class="d3-fld" readonly rows="9" aria-label="Company Overview">${esc(text)}</textarea>`) +
+    `<div class="d3-rule">Managed centrally so every proposal stays consistent. To change the wording, update the Company Identity. ${edit}</div>` + draftNotes(item);
+}
+
+// kind team: a roster, one person at a time.
+function initials(n) { return String(n || '').trim().split(/\s+/).map(w => w[0] || '').join('').slice(0, 2).toUpperCase(); }
+function safeUrl(u) { const s = String(u || '').trim(); return /^https?:\/\/[^\s"'<>`]+$/i.test(s) ? s : ''; }
+function renderPaneTeam(item, o) {
+  const team = o._team || [];
+  const ev = itemEvidence(item);
+  const rows = team.length ? team.map((m, k) => `<div class="d3-teamrow"><div class="d3-avatar" aria-hidden="true">${esc(initials(m.name))}</div><div class="d3-tinfo"><div class="d3-tname">${esc(m.name)}</div><div class="d3-trole">${esc(m.role || 'Team member')}</div></div>${safeUrl(m.linkedin) ? `<a class="d3-tli" href="${esc(safeUrl(m.linkedin))}" target="_blank" rel="noopener">LinkedIn ↗</a>` : ''}<button class="d3-x" aria-label="Remove ${esc(m.name)}" onclick="removeTeamMember('${item.id}',${k})">✕</button></div>`).join('')
+    : `<div class="d3-note">No team members added yet.</div>`;
+  const open = !!S._teamForm || !team.length;
+  return evWrap(ev, team.length ? 'Entered by your team · confirm before sending' : EV_WORD[ev], rows) + `
+  <div class="d3-addteam${open ? ' open' : ''}" id="d3-addteam">
+    <input id="tm-name" placeholder="Name" maxlength="80" aria-label="Name">
+    <input id="tm-role" placeholder="Role on this account" maxlength="80" aria-label="Role on this account">
+    <input id="tm-li" placeholder="LinkedIn profile URL (https://…)" maxlength="300" aria-label="LinkedIn profile URL">
+    <div class="d3-err" id="tm-err" role="alert"></div>
+    <button class="d3-q" onclick="addTeamMember('${item.id}')">Add to roster</button>
+  </div>
+  <div class="d3-act">${team.length ? `<button class="d3-q" onclick="toggleTeamForm()">+ Add team member</button>` : ''}${reviewBtn(item, 'Confirmed roster', 'Confirm roster')}</div>` + draftNotes(item);
+}
+function toggleTeamForm() { const el = document.getElementById('d3-addteam'); if (!el) return; S._teamForm = !el.classList.contains('open'); el.classList.toggle('open', S._teamForm); if (S._teamForm) { const n = document.getElementById('tm-name'); if (n) n.focus(); } }
+function addTeamMember(id) {
+  const o = hostById(id); if (!o) return;
+  const val = k => ((document.getElementById(k) || {}).value || '').trim();
+  const name = val('tm-name'), role = val('tm-role'), li = val('tm-li');
+  const err = document.getElementById('tm-err');
+  if (!name) { if (err) err.textContent = 'Add a name.'; return; }
+  if (li && !safeUrl(li)) { if (err) err.textContent = 'The LinkedIn link should start with https://'; return; }
+  o._team = o._team || [];
+  o._team.push({ name, role, linkedin: li });
+  o._reviewed = false; S._teamForm = false; S.isDirty = true; refreshBuild();
+}
+function removeTeamMember(id, k) { const o = hostById(id); if (!o || !o._team) return; o._team.splice(k, 1); o._reviewed = false; S.isDirty = true; refreshBuild(); }
+
+// kind files: case studies as a checklist of files to attach. Nothing uploads from this page.
+function fmtSize(n) { n = Number(n) || 0; if (!n) return ''; return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+function renderPaneFiles(item, o) {
+  const files = o._files || [];
+  const ev = itemEvidence(item);
+  const rows = files.length ? files.map((f, k) => `<div class="d3-filerow"><div class="d3-ficon" aria-hidden="true">📄</div><div class="d3-finfo"><div class="d3-fname">${esc(f.name)}</div>${f.size ? `<div class="d3-fsize">${esc(fmtSize(f.size))}</div>` : ''}</div><button class="d3-x" aria-label="Remove ${esc(f.name)}" onclick="removeCaseFile('${item.id}',${k})">✕</button></div>`).join('')
+    : `<div class="d3-note">No case study files listed yet.</div>`;
+  return `<div class="d3-rule">List the case study files you'll attach to the submission. Nothing uploads from here, and the files stay on your computer. Approved case studies are in the <a href="${CASE_STUDY_URL}" target="_blank" rel="noopener">Library ↗</a>.</div>` +
+    evWrap(ev, files.length ? 'Listed by your team · confirm before sending' : EV_WORD[ev], rows) + `
+  <label class="d3-upload">+ Add case study files<input type="file" multiple style="display:none" onchange="pickCaseFiles('${item.id}', this)"></label>
+  <div class="d3-inline"><input id="cs-name" placeholder="Or type a file name" maxlength="160" aria-label="File name" onkeydown="if(event.key==='Enter'){addCaseFile('${item.id}');event.preventDefault()}"><button class="d3-q" onclick="addCaseFile('${item.id}')">Add</button></div>
+  <div class="d3-act">${reviewBtn(item, 'Confirmed case studies', 'Confirm case studies')}</div>` + draftNotes(item);
+}
+function pickCaseFiles(id, input) {
+  const o = hostById(id); if (!o || !input || !input.files) return;
+  o._files = o._files || [];
+  Array.from(input.files).forEach(f => { if (!o._files.some(x => x.name === f.name)) o._files.push({ name: f.name, size: f.size }); });
+  input.value = ''; o._reviewed = false; S.isDirty = true; refreshBuild();
+}
+function addCaseFile(id) {
+  const o = hostById(id); const el = document.getElementById('cs-name'); if (!o || !el) return;
+  const name = el.value.trim(); if (!name) return;
+  o._files = o._files || [];
+  if (!o._files.some(x => x.name === name)) o._files.push({ name, size: 0 });
+  o._reviewed = false; S.isDirty = true; refreshBuild();
+}
+function removeCaseFile(id, k) { const o = hostById(id); if (!o || !o._files) return; o._files.splice(k, 1); o._reviewed = false; S.isDirty = true; refreshBuild(); }
+
+// ── Detection from the RFP text (read in code; every "found" value carries its sentence) ──
+let _sentCache = { src: null, list: [] };
+function rfpSentences() {
+  const txt = String((S.rfpIntake && S.rfpIntake.rfpText) || (S.proposalContext && S.proposalContext.rfpText) || '');
+  if (_sentCache.src === txt) return _sentCache.list;
+  const list = [];
+  txt.split(/\r?\n/).forEach(line => {
+    const l = line.replace(/={3}\s*(?:END\s+)?FILE:[^=]*={3}/gi, ' ').replace(/\s+/g, ' ').trim();
+    if (!l || /^={3}|^-{3}\s*Sheet/i.test(l)) return;
+    l.split(/(?<=[.!?])\s+(?=[A-Z0-9"“(])/).forEach(s => { const x = s.trim(); if (x.length >= 12 && x.length <= 1500) list.push(x); });
+  });
+  _sentCache = { src: txt, list };
+  return list;
+}
+// The strongest supporting sentence: the key phrase, then must/shall wording, then a readable length.
+function bestSentence(list, strong) {
+  let best = null, bestScore = -1;
+  list.forEach(x => {
+    const sc = (strong && strong.test(x) ? 4 : 0) + (/\b(?:must|shall|should|required?)\b/i.test(x) ? 2 : 0) + (x.length <= 240 ? 1 : 0);
+    if (sc > bestScore) { best = x; bestScore = sc; }
+  });
+  return best;
+}
+// PDF text runs sentences together; quote only the clause around the match.
+function quoteAround(x, rx) {
+  x = String(x || '');
+  if (x.length <= 240) return x;
+  const at = Math.max(0, x.search(rx));
+  let a = 0, z = x.length;
+  const re = /[.;:!?]\s+|\s+(?=\d\)\s)|\S+@\S+\.[a-z]{2,}\s+/gi; let m;
+  while ((m = re.exec(x))) { const end = m.index + m[0].length; if (end <= at) a = end; else if (m.index >= at) { z = m.index + 1; break; } }
+  let q = x.slice(a, z).trim();
+  if (q.length > 240) { const off = Math.max(0, at - a - 80); q = (off ? '…' : '') + q.slice(off, off + 230).trim() + '…'; }
+  return q;
+}
+// Sentences that match, each cut down to the clause around the match.
+function rfpClauses(rx) { return rfpSentences().filter(x => rx.test(x)).map(x => quoteAround(x, rx)); }
+const _detCache = new WeakMap();   // qualification object → { key: { src, sig, val } }
+function _detected(item, key, fn) {
+  const q = S.qualification || {};
+  const src = rfpSentences();
+  const sig = (item.parts || []).map(p => p.title).join('|') + '|' + JSON.stringify(q.submissionProcess || null);
+  let byKey = _detCache.get(q);
+  if (!byKey) { byKey = {}; _detCache.set(q, byKey); }
+  const c = byKey[key];
+  if (c && c.src === src && c.sig === sig) return c.val;
+  const val = fn();
+  byKey[key] = { src, sig, val };
+  return val;
+}
+
+// Pricing: itemized only when the RFP asks for a breakdown of fees; otherwise the Media Plan is the pricing.
+const RX_ITEMIZE = /itemi[sz]e|broken out|break\s?-?\s?down (?:of|by)|fee (?:schedule|breakdown)|line[- ]items?\b|fees? and (?:mark-?ups?|commissions?)|mark-?ups?\b|(?:disclose|identify|list|state|detail)\w* (?:all |each |any )?(?:fees|costs)\b|(?:fees|costs) (?:must|shall|should|will) be (?:fully |clearly |separately )?(?:disclosed|identified|listed|itemized|broken out)|management fee|agency fee|creative fee|hourly rates?/i;
+const RX_ITEMIZE_STRONG = /itemi[sz]e|broken out|break\s?-?\s?down|fees? and mark-?ups?|(?:fees|costs) (?:must|shall|should|will) be|(?:disclose|identify|list|detail)\w* (?:all |each |any )?(?:fees|costs)\b/i;
+const RX_MONEYISH = /fee|cost|pric|budget|mark-?up|commission|rate|line items?|spend/i;
+const PRICE_FIELDS = [['management', 'Management Fee'], ['creative', 'Creative Fee'], ['other', 'Other Fees'], ['media', 'Media Cost']];
+function pricingDetect(item) {
+  return _detected(item, 'pricing', () => {
+    const hit = bestSentence(rfpClauses(RX_ITEMIZE).filter(c => RX_ITEMIZE.test(c) && RX_MONEYISH.test(c)), RX_ITEMIZE_STRONG);
+    if (hit) return { itemized: true, quote: hit, confidence: 'm' };
+    const t = (item.parts || []).map(p => p.title).find(x => RX_ITEMIZE.test(x));
+    if (t) return { itemized: true, quote: null, from: t, confidence: 'd' };
+    return { itemized: false, quote: null, confidence: 'n' };
+  });
+}
+function pricingItemized(item) { const o = itemObj(item) || {}; return (o._itemized === true || o._itemized === false) ? o._itemized : pricingDetect(item).itemized; }
+function renderPanePricing(item, o) {
+  const det = pricingDetect(item);
+  const itemized = pricingItemized(item);
+  const overridden = (o._itemized === true || o._itemized === false) && o._itemized !== det.itemized;
+  const t = _pricedMediaTable();
+  const mediaItem = buildItems().find(i => i.kind === 'table');
+  const total = t ? ` Media Plan total: <b>$${Math.round(t.total).toLocaleString('en-US')}</b>.` : '';
+  const openMedia = mediaItem ? ` <a href="#" onclick="selectBuildItem('${mediaItem.id}');return false">Open the Media Plan →</a>` : '';
+  const note = itemized
+    ? `<b>${overridden ? 'Itemized breakdown, set by you.' : 'Itemized breakdown detected.'}</b> This RFP asks for pricing broken out by category, so fill in the fields below.`
+    : `<b>${overridden ? 'Standard Media Plan, set by you.' : 'Not detected.'}</b> ${overridden ? '' : 'This RFP does not ask for an itemized fee breakdown. '}Submitting the standard Media Plan as your pricing section is enough.${total}${openMedia}`;
+  const quote = overridden ? '' : det.quote ? `<div class="d3-quote">"${esc(det.quote)}"</div>` : det.from ? `<div class="d3-quote">${esc(det.from)}</div><div class="d3-noquote">Read from the requirement list; no exact sentence found in the RFP</div>` : '';
+  const fees = o._fees || {};
+  const ev = itemEvidence(item);
+  const grid = !itemized ? '' : evWrap(ev, ev === 'd' ? 'Entered by your team · confirm before sending' : EV_WORD[ev],
+    `<div class="d3-pricegrid">${PRICE_FIELDS.map(([k, l]) => `<div class="d3-pfield"><label for="fee-${k}">${l}</label><input id="fee-${k}" value="${esc(fees[k] || '')}" placeholder="$0" oninput="editFee('${item.id}','${k}',this.value)" onchange="refreshBuild()"></div>`).join('')}</div>` +
+    (t ? `<button class="d3-sm" onclick="useMediaTotal('${item.id}')">Use the Media Plan total for Media Cost</button>` : ''));
+  return `<div class="d3-pnote">${note}</div>${quote}
+  <div class="d3-act" style="margin:8px 0 16px"><button class="d3-sm" onclick="toggleItemized('${item.id}')">${itemized ? 'Actually, use the standard Media Plan instead' : 'Actually, this RFP does require an itemized breakdown'}</button></div>
+  ${grid}
+  <div class="d3-act">${reviewBtn(item)}</div>` + draftNotes(item);
+}
+function editFee(id, k, val) { const o = hostById(id); if (!o) return; o._fees = o._fees || {}; o._fees[k] = val; o._reviewed = false; S.isDirty = true; autoSaveRfp('building'); }
+function toggleItemized(id) { const it = itemById(id); if (!it) return; const o = itemObj(it); o._itemized = !pricingItemized(it); o._reviewed = false; S.isDirty = true; refreshBuild(); }
+function useMediaTotal(id) { const o = hostById(id), t = _pricedMediaTable(); if (!o || !t) return; o._fees = o._fees || {}; o._fees.media = '$' + Math.round(t.total).toLocaleString('en-US'); o._reviewed = false; S.isDirty = true; refreshBuild(); }
+
+// Submission Package: file type, template, and page limit, each read from the RFP with its sentence.
+const FILE_TYPE_LABEL = { pdf: 'PDF', pptx: 'PowerPoint', pdf_or_pptx: 'PDF or PowerPoint', docx: 'Word', xlsx: 'Excel' };
+const SCOPE_LABEL = { entire_submission: 'entire submission', narrative_only: 'narrative only', appendix_only: 'appendix only', none_stated: 'no limit stated' };
+const NUMW = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, fifteen: 15, twenty: 20, 'twenty-five': 25, thirty: 30, forty: 40, fifty: 50 };
+function typeFromText(t) {
+  const s = String(t || '');
+  const pdf = /\bpdf\b/i.test(s), ppt = /power\s?point|\bpptx?\b/i.test(s);
+  const xls = /\bexcel\b|\bxlsx?\b|\bworkbook\b|\bspreadsheet\b/i.test(s);
+  const doc = /\b(?:ms|microsoft) word\b|\bword (?:document|format|file)\b|\.docx?\b|\bdocx\b/i.test(s);
+  if (pdf && ppt) return 'pdf_or_pptx';
+  if (pdf) return 'pdf';
+  if (ppt) return 'pptx';
+  if (xls) return 'xlsx';
+  if (doc) return 'docx';
+  return null;
+}
+const RX_FILETYPE = /\bpdf\b|power\s?point|\bpptx?\b|\bexcel\b|\bxlsx?\b|\bworkbook\b|\bspreadsheet\b|\b(?:ms|microsoft) word\b|\bword (?:document|format|file)\b|\bdocx?\b/i;
+const RX_TPL_SENT = /\b(?:workbook|template)s?\b|\b(?:use|complete|fill (?:in|out))\s+(?:the\s+)?(?:attached|provided|enclosed)\s+(?:\w+\s+)?(?:form|spreadsheet)\b/i;
+const RX_PAGES = /(?:not\s+(?:to\s+)?exceed|no\s+(?:more|longer)\s+than|maximum\s+of|limited\s+to|limit\s+of|up\s+to|max(?:imum)?\.?)\s+(\d{1,3}|[a-z]+(?:-[a-z]+)?)\s*(?:\(\d{1,3}\)\s*)?(?:total\s+|single[- ]sided\s+|double[- ]sided\s+|typed\s+|printed\s+)?pages?\b|\b(\d{1,3}|[a-z]+)[- ]page\s+(?:limit|maximum|max)\b|\bpage\s+limit\s*(?:of|is|:)?\s*(\d{1,3}|[a-z]+)\b/i;
+function pageCount(w) { if (!w) return null; const n = /^\d+$/.test(w) ? parseInt(w, 10) : NUMW[String(w).toLowerCase()]; return (n && n > 0 && n < 500) ? n : null; }
+function tplRef(s) {
+  const m = String(s || '').match(/((?:[A-Z][\w&/-]*\s+){0,4}(?:Workbook|Template))\b/) || String(s || '').match(/((?:\w+\s+){0,2}(?:workbook|template))\b/i);
+  return m ? m[1].replace(/^(?:the|a|an|use|complete)\s+/i, '').trim() : '';
+}
+function detectFormat(item) {
+  return _detected(item, 'format', () => {
+    const sp = (S.qualification || {}).submissionProcess || {};
+    const spFormats = Array.isArray(sp.fileFormats) ? sp.fileFormats.join(', ') : String(sp.fileFormats || '');
+    const partTitles = (item.parts || []).map(p => p.title);
+    const out = {};
+    // File type
+    const fmt = rfpClauses(RX_FILETYPE).filter(c => typeFromText(c) && /submi|proposals?\b|respons/i.test(c) && !/\b(?:creative|artwork|logos?|briefs?|banners?)\b/i.test(c));
+    const types = [...new Set(fmt.map(typeFromText))];
+    const fromParts = partTitles.map(typeFromText).find(Boolean);
+    if (fmt.length) {
+      const one = types.length === 1;
+      const q = bestSentence(fmt, /submi/i);
+      out.fileType = { value: one ? types[0] : (types.includes('pdf') ? 'pdf' : typeFromText(q)), confidence: one ? 'm' : 'd', quote: q };
+    } else if (typeFromText(spFormats) || fromParts) {
+      out.fileType = { value: typeFromText(spFormats) || fromParts, confidence: 'd', quote: null };
+    } else out.fileType = { value: 'pdf', confidence: 'n', quote: null };
+    // Template provided
+    const tpl = rfpClauses(RX_TPL_SENT).filter(c => RX_TPL_SENT.test(c) && /propos|respon|submi|pricing|budget|\btabs?\b|format/i.test(c));
+    const tplParts = (item.parts || []).filter(p => p.template);
+    const ref = (tplParts[0] ? String(tplParts[0].title).split(/\s+[—–-]\s+/)[0].trim() : '') || tplRef(spFormats);
+    if (tpl.length) { const q = bestSentence(tpl, /\b(?:use|complete|identical|provided|attached|accompanying)\b/i); out.template = { value: true, confidence: 'm', quote: q, reference: tplRef(q) || ref }; }
+    else if (tplParts.length || /workbook|template/i.test(spFormats)) out.template = { value: true, confidence: 'd', quote: null, reference: ref };
+    else out.template = { value: false, confidence: 'n', quote: null, reference: '' };
+    // Page limit
+    const pg = rfpClauses(RX_PAGES).find(c => { const m = c.match(RX_PAGES); return m && pageCount(m[1] || m[2] || m[3]); });
+    if (pg) {
+      const m = pg.match(RX_PAGES);
+      const scope = /exclud|exclusive of|not includ|does not count|do not count|not count toward/i.test(pg) ? 'narrative_only'
+        : (/appendi|attachment|exhibit/i.test(pg) && !/includ/i.test(pg)) ? 'appendix_only' : 'entire_submission';
+      out.pageLimit = { count: pageCount(m[1] || m[2] || m[3]), scope, confidence: /propos|respons|submi/i.test(pg) ? 'm' : 'd', quote: pg };
+    } else out.pageLimit = { count: null, scope: 'none_stated', confidence: 'n', quote: null };
+    return out;
+  });
+}
+// The detected format with the seller's corrections laid over it.
+function submissionFormat(item) {
+  const det = detectFormat(item), o = itemObj(item) || {}, f = o._fmt || {};
+  const r = { fileType: { ...det.fileType }, template: { ...det.template }, pageLimit: { ...det.pageLimit } };
+  if (f.fileType && FILE_TYPE_LABEL[f.fileType]) r.fileType = { value: f.fileType, confidence: 'set', quote: null };
+  if (f.template === true || f.template === false) r.template = { value: f.template, confidence: 'set', quote: null, reference: f.templateRef != null ? f.templateRef : det.template.reference };
+  else if (f.templateRef != null) r.template.reference = f.templateRef;
+  if ('count' in f || f.scope) {
+    const count = ('count' in f) ? f.count : det.pageLimit.count;
+    r.pageLimit = { count, scope: count ? (f.scope || (det.pageLimit.scope !== 'none_stated' ? det.pageLimit.scope : 'entire_submission')) : 'none_stated', confidence: 'set', quote: null };
+  }
+  return r;
+}
+function setFmt(id, key, val) {
+  const o = hostById(id); if (!o) return;
+  o._fmt = o._fmt || {};
+  if (key === 'template') o._fmt.template = (val === 'yes');
+  else if (key === 'count') { const n = parseInt(val, 10); o._fmt.count = (n > 0 && n < 500) ? n : null; }
+  else o._fmt[key] = String(val || '').slice(0, 120);
+  o._formatConfirmed = false; o._reviewed = false; S.isDirty = true; refreshBuild();
+}
+function confirmFormat(id, on) { const o = hostById(id); if (!o) return; o._formatConfirmed = !!on; if (!on) o._reviewed = false; S.isDirty = true; refreshBuild(); }
+function pickTemplateFile(id, input) {
+  const o = hostById(id); const f = input && input.files && input.files[0]; if (!o || !f) return;
+  o._templateFile = { name: f.name, size: f.size }; input.value = ''; o._reviewed = false; S.isDirty = true; refreshBuild();
+}
+function clearTemplateFile(id) { const o = hostById(id); if (!o) return; delete o._templateFile; o._reviewed = false; S.isDirty = true; refreshBuild(); }
+function renderPaneSubmission(item, o) {
+  const f = submissionFormat(item);
+  const confirmed = !!o._formatConfirmed;
+  const ft = f.fileType, tp = f.template, pl = f.pageLimit;
+  const sp = (S.qualification || {}).submissionProcess || {};
+  const evOf = c => c === 'm' ? 'm' : c === 'n' ? 'n' : 'd';
+  const capOf = x => x.confidence === 'm' ? 'Found in the RFP' : x.confidence === 'set' ? 'Set by you' : x.confidence === 'd' ? 'Read less directly · check it' : 'Not found · using the safest default';
+  const ftLabel = ft.confidence === 'n' ? 'Not specified, so a single PDF' : (FILE_TYPE_LABEL[ft.value] || 'PDF');
+  const plLabel = pl.count ? `${pl.count} pages · ${SCOPE_LABEL[pl.scope] || 'entire submission'}` : 'No limit stated';
+  const row = (label, x, valueText, editor) => `
+  <div class="d3-ev d3-ev-${evOf(x.confidence)}">
+    <div class="d3-fmthead"><span class="d3-fmtl">${label}</span><span class="d3-fmtv">${esc(valueText)}</span></div>
+    <div class="d3-fmtcap">${esc(capOf(x))}</div>
+    ${x.quote ? `<div class="d3-quote">"${esc(x.quote)}"</div>` : x.confidence === 'set' ? '' : `<div class="d3-noquote">No supporting sentence found in the RFP</div>`}
+    ${confirmed ? '' : `<div class="d3-fmted">${editor}</div>`}
+  </div>`;
+  const edFt = `<label>Change <select aria-label="File type" onchange="setFmt('${item.id}','fileType',this.value)">${Object.entries(FILE_TYPE_LABEL).map(([k, l]) => `<option value="${k}"${k === ft.value ? ' selected' : ''}>${l}</option>`).join('')}</select></label>`;
+  const edTp = `<label>Change <select aria-label="Template provided" onchange="setFmt('${item.id}','template',this.value)"><option value="no"${tp.value ? '' : ' selected'}>No template</option><option value="yes"${tp.value ? ' selected' : ''}>Template provided</option></select></label>` +
+    (tp.value ? `<input aria-label="Template name" placeholder="Template name" value="${esc(tp.reference || '')}" onchange="setFmt('${item.id}','templateRef',this.value)">` : '');
+  const edPl = `<label>Pages <input type="number" min="1" max="499" aria-label="Page limit" value="${pl.count || ''}" placeholder="none" onchange="setFmt('${item.id}','count',this.value)"></label>` +
+    (pl.count ? `<label>Counts <select aria-label="What the limit covers" onchange="setFmt('${item.id}','scope',this.value)">${['entire_submission', 'narrative_only', 'appendix_only'].map(k => `<option value="${k}"${k === pl.scope ? ' selected' : ''}>${SCOPE_LABEL[k]}</option>`).join('')}</select></label>` : '');
+  const confirmRow = confirmed
+    ? `<span class="d3-okline">✓ Detected format confirmed</span><button class="d3-sm" onclick="confirmFormat('${item.id}',false)">Change</button>`
+    : `<button class="d3-btn" onclick="confirmFormat('${item.id}',true)">Confirm detected format</button>`;
+  const rules = (item.parts || []).filter(p => p.rule);
+  const rulesHtml = (rules.length || sp.portalOrEmail) ? `<div class="d3-asks"><span class="d3-lbl">Submission rules from the RFP</span>
+    ${sp.portalOrEmail ? `<div class="d3-quote">Submit via: ${esc(sp.portalOrEmail)}</div>` : ''}${rules.map(p => `<div class="d3-quote">${esc(p.title)}</div>`).join('')}</div>` : '';
+  let body;
+  if (tp.value) {
+    const tparts = (item.parts || []).filter(p => p.template);
+    body = `<div class="d3-linkcard"><span class="d3-lu">📎 ${esc(tp.reference || 'Template provided with the RFP')}</span><span class="d3-muted">Use the copy that came with the RFP</span></div>
+    ${tparts.length ? `<div class="d3-asks" style="margin-top:14px"><span class="d3-lbl">Parts of the template to complete</span>${tparts.map(p => `<div class="d3-quote">${esc(p.title)}</div>`).join('')}</div>` : ''}
+    <div class="d3-rule" style="margin-top:14px">A template was detected, so this is fill in the template rather than draft from empty, the same pattern as the W-9. Attach the completed template once it's filled in. It stays on your computer; this only records the file name.</div>
+    ${o._templateFile ? `<div class="d3-filerow"><div class="d3-ficon" aria-hidden="true">📄</div><div class="d3-finfo"><div class="d3-fname">${esc(o._templateFile.name)}</div><div class="d3-fsize">${esc(fmtSize(o._templateFile.size))}</div></div><button class="d3-x" aria-label="Remove file" onclick="clearTemplateFile('${item.id}')">✕</button></div>` : ''}
+    <label class="d3-upload">+ ${o._templateFile ? 'Replace the' : 'Attach'} completed template<input type="file" style="display:none" onchange="pickTemplateFile('${item.id}', this)"></label>`;
+  } else {
+    const others = buildItems().filter(i => i.required && i.kind !== 'submission');
+    const open = others.filter(i => !itemReviewed(i));
+    const ready = others.length - open.length;
+    const convert = (ft.value === 'docx' || ft.value === 'xlsx') ? `<div class="d3-rule">The RFP asks for a ${FILE_TYPE_LABEL[ft.value]} file. Export the PDF or the .md, then move the content into that format.</div>` : '';
+    body = `${pl.count ? `<div class="d3-rule">Keep the ${esc(SCOPE_LABEL[pl.scope] || 'submission')} under <b>${pl.count} pages</b>.</div>` : ''}${convert}
+    <div class="d3-note">The finished proposal compiles every reviewed item, in RFP order, into one file. Standing documents (W-9, insurance, security) are listed in it, so send their files along with it.
+      <div style="margin-top:8px"><b>${ready} of ${others.length}</b> items reviewed.${open.length ? ` Still open: ${open.slice(0, 4).map(i => esc(railTitle(i))).join(', ')}${open.length > 4 ? ` and ${open.length - 4} more` : ''}.` : ' Everything is reviewed.'}</div>
+    </div>
+    <div class="d3-act">
+      <button class="d3-q" onclick="exportFinalPdfFor('${item.id}')"${ready ? '' : ' disabled'}>⇩ Export as PDF</button>
+      ${/pptx/.test(ft.value) ? `<button class="d3-q" onclick="buildDeck()">▧ Build Presentation</button>` : ''}
+      <button class="d3-q" onclick="finalizeProposal()"${ready ? '' : ' disabled'}>Preview and edit first</button>
+      <button class="d3-q" onclick="openSow()">Statement of Work</button>
+    </div>`;
+  }
+  return `<div class="d3-rule">Read from the RFP text. A solid line means a supporting sentence was found. A dashed line means it was read less directly, so check it. A thin line means nothing was found and the tool uses the safest option.</div>
+  ${row('File type', ft, ftLabel, edFt)}
+  ${row('Template provided', tp, tp.value ? 'Yes' + (tp.reference ? ' · ' + tp.reference : '') : 'No', edTp)}
+  ${row('Page limit', pl, plLabel, edPl)}
+  <div class="d3-act" style="margin:4px 0 20px">${confirmRow}</div>
+  ${rulesHtml}
+  ${body}
+  <div class="d3-act">${reviewBtn(item)}</div>`;
+}
+
+// kind doc: a standing document from Proposal Storage (W-9 and insurance get a confirm card).
 function renderPaneFixedDoc(item, r) {
   const pick = libraryDocFor(item.docType);
   const doc = pick.doc;
   const mkt = (S.rfpIntake && S.rfpIntake.market) || (S.proposalContext && S.proposalContext.client && S.proposalContext.client.market) || '';
   const matchNote = pick.matched === 'market' ? `Matched to the ${esc(mkt)} market.`
-    : (pick.matched === 'corporate' || pick.matched === 'first') ? `No ${esc(mkt || 'market')} copy on file, so this shows ${esc(docLabel(doc))}. Add the market copy in the Library if the RFP needs it.` : '';
+    : (pick.matched === 'corporate' || pick.matched === 'first') ? `No ${esc(mkt || 'market')} copy on file, so this shows ${esc(docLabel(doc))}. Add the market copy in Proposal Storage if the RFP needs it.` : '';
   if (!doc) {
-    return `<div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence conf-validate">No file on record</span></div>
-      <div class="bw-note">This is a standing document (<code>${esc(item.docType || 'certification')}</code>). No matching file is in your document library yet — add one to the library so it auto-attaches next time, or mark it handled manually.</div>
-      <div class="bw-actions"><button class="btn btn-primary btn-sm" onclick="markReqManual('${item.id}')">Mark handled manually</button></div>`;
+    const loading = S.libraryDocs == null;
+    return evWrap(r._opened ? 'n' : 'u', loading ? 'Loading' : EV_WORD.n,
+      `<div class="d3-note">${loading ? 'Loading Proposal Storage…' : `This is a standing document (<code>${esc(item.docType || 'certification')}</code>). No matching file is in Proposal Storage yet. Add one there so it attaches next time, or handle it manually.`}</div>`) +
+      `<div class="d3-act"><a class="d3-q" href="${STORAGE_URL}" target="_blank" rel="noopener">Open Proposal Storage ↗</a>${reviewBtn(item, 'Handled manually', 'Mark handled manually')}</div>`;
   }
   const expired = doc.expires_on && new Date(doc.expires_on) < new Date();
-  const attached = !!r._attached;
   const isScan = !!SCAN_SPECS[item.docType];
   const cf = (S.qualification || {}).campaignFlight || {};
   const flightEnd = parseDue(cf.end), docEnd = parseDue(doc.expires_on);
   // A W-9's date in the Library is a review date, not an expiry, so only warn for documents that lapse.
   const lapses = item.docType !== 'w9' && !expired && flightEnd && docEnd && docEnd < flightEnd;
-  return `
-  <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence conf-confirmed">On file</span></div>
+  const card = `
   <div class="bw-doc">
     <div style="font-weight:600">${esc(docLabel(doc))}</div>
     ${doc.note && doc.note !== docLabel(doc) ? `<div style="font-size:13px;color:var(--text-muted);margin-top:4px">${esc(doc.note)}</div>` : ''}
     ${matchNote ? `<div style="font-size:12px;color:${pick.matched === 'market' ? 'var(--text-muted)' : 'var(--orange)'};margin-top:6px">${matchNote}</div>` : ''}
-    ${expired ? `<div style="color:var(--red);font-size:12px;margin-top:8px">⚠ On file but expired ${esc(doc.expires_on)} — update before submitting.</div>`
-      : (doc.expires_on ? `<div style="font-size:12px;color:var(--text-muted);margin-top:8px">Valid through ${esc(doc.expires_on)}</div>` : '')}
+    ${expired ? `<div style="color:var(--red);font-size:12px;margin-top:8px">⚠ On file but expired ${esc(doc.expires_on)}. Update it before submitting.</div>`
+      : (doc.expires_on && item.docType !== 'w9' ? `<div style="font-size:12px;color:var(--text-muted);margin-top:8px">Valid through ${esc(doc.expires_on)}</div>` : '')}
     ${lapses ? `<div style="font-size:12px;color:var(--orange);margin-top:6px">⚠ Expires before the campaign ends (${esc(fmtDateText(cf.end))}). Plan to send the renewed copy.</div>` : ''}
-    <div style="margin-top:14px;display:flex;gap:12px;align-items:center">
-      ${docHref(doc) ? `<a href="${esc(docHref(doc))}" target="_blank" rel="noopener" style="color:var(--cyan);font-size:13px">📄 Open ${esc(docLabel(doc))} ↗</a>` : `<a href="${LIBRARY_URL}" target="_blank" rel="noopener" style="color:var(--cyan);font-size:13px">📄 Open in the Library ↗</a>`}
-      <div style="flex:1"></div>
-      ${isScan ? '' : `<button class="btn ${attached ? 'btn-ghost' : 'btn-primary'} btn-sm" onclick="attachLibraryDoc('${item.id}')">${attached ? '✓ Attached' : 'Attach to proposal'}</button>`}
+    <div class="d3-act" style="margin-top:14px">
+      <a class="d3-q" href="${STORAGE_URL}" target="_blank" rel="noopener">⬇ Download for submission (Proposal Storage) ↗</a>
+      ${isScan ? '' : reviewBtn(item, 'Attached to proposal', 'Attach to proposal')}
     </div>
-  </div>
-  ${isScan ? renderScanCard(item, r, doc) : ''}`;
+  </div>`;
+  return evWrap('m', 'From Proposal Storage', card) + (isScan ? renderScanCard(item, r, doc) : '');
 }
 
 // Accepts an item id ('req-3', 'sec-4') or a bare requirement index (older callers).
 function _itemRef(i) {
-  const id = (typeof i === 'number') ? 'req-' + i : String(i);
-  const item = buildItems().find(it => it.id === id);
+  const item = itemById((typeof i === 'number') ? 'req-' + i : String(i));
   return { item, o: item ? itemObj(item) : null };
 }
-function attachLibraryDoc(i) {
-  const { item, o } = _itemRef(i); if (!o) return;
-  const doc = libraryDocFor(item.docType).doc;
-  o._attached = doc ? doc.id : true; if (o._status !== 'complete') delete o._status; S.isDirty = true;
-  refreshBuild();
-}
-function markReqManual(i) { const { o } = _itemRef(i); if (o) { o._manual = true; if (o._status !== 'complete') delete o._status; S.isDirty = true; } refreshBuild(); }
+function attachLibraryDoc(i) { const { item } = _itemRef(i); if (item) setReviewed(item, true); refreshBuild(); }
+function markReqManual(i) { const { item, o } = _itemRef(i); if (o) { o._manual = true; setReviewed(item, true); } refreshBuild(); }
 
-// bw4: confirm cards for standing documents. The engine reads the fields off the Library PDF once
+// Confirm cards for W-9 and insurance. The engine reads the fields off the Library PDF once
 // (cached on the row); the seller checks them, edits if needed, and confirms.
 const SCAN_SPECS = {
   w9: [['name', 'Name (line 1)'], ['business_name', 'Business name (line 2)'], ['tax_class', 'Tax classification'],
@@ -2563,7 +3285,7 @@ function renderScanCard(item, o, doc) {
   const loading = !fields && !err && !!(S._fieldsLoading || {})[doc.id];
   const failed = !fields && !loading;
   if (!fields) fields = blankScanFields(item.docType);
-  const confirmed = !!(o._confirmed && o._fieldsDocId === doc.id);
+  const confirmed = itemReviewed(item);
   const holder = item.docType === 'insurance' ? String((fields.find(f => f.key === 'holder') || {}).value || '').trim() : '';
   const head = loading ? `Reading the fields from ${esc(docLabel(doc))}…`
     : failed ? `Couldn't read this file automatically (${esc(err || 'no fields')}). Fill in the fields from the document.`
@@ -2574,7 +3296,7 @@ function renderScanCard(item, o, doc) {
     ${holder ? `<div class="bw-flag warn" style="margin:10px 14px 0">Certificate holder on this copy: ${esc(holder)}. If the RFP names an additional insured, request a project certificate from Finance.</div>` : ''}
     <div class="scan-fields">${fields.map(f => `<div class="scan-field"><label for="scan-${item.id}-${f.key}">${esc(f.label)}</label><input id="scan-${item.id}-${f.key}" value="${esc(f.value)}"${loading ? ' disabled' : ''} oninput="editScanField('${item.id}','${f.key}',this.value)" /></div>`).join('')}</div>
     <div class="scan-foot"><span class="bw-sub">${confirmed ? '✓ Confirmed and attached to the proposal.' : 'Confirming attaches this document to the proposal.'}</span>
-      <button class="btn ${confirmed ? 'btn-ghost' : 'btn-primary'} btn-sm"${loading ? ' disabled style="opacity:.5"' : ''} onclick="confirmScan('${item.id}')">${confirmed ? '✓ Confirmed' : '✓ Confirm correct'}</button></div>
+      <button class="d3-ok${confirmed ? ' done' : ''}"${loading ? ' disabled' : ''} onclick="confirmScan('${item.id}')">${confirmed ? '✓ Confirmed correct' : 'Confirm correct'}</button></div>
   </div>`;
 }
 function _ownScanFields(item, o, doc) {
@@ -2592,121 +3314,54 @@ function editScanField(id, key, val) {
 }
 function confirmScan(id) {
   const { item, o } = _itemRef(id); if (!o) return;
-  const doc = libraryDocFor(item.docType).doc; if (!doc) return;
-  _ownScanFields(item, o, doc);
-  o._confirmed = true; o._attached = doc.id; if (o._status !== 'complete') delete o._status;
-  S.isDirty = true; refreshBuild();
-}
-
-// Type C — guided button-click Q&A (Phase 6)
-function renderPaneGuided(item, o) {
-  const g = o._guided;
-  const hasDraft = typeof o._draft === 'string' && o._draft.trim() !== '';
-  const writing = hasDraft || !!o._freeform;
-  const editor = writing ? `
-  <label class="bw-lbl" for="bw-ed-${item.id}">Draft</label>
-  <textarea class="bw-editor" id="bw-ed-${item.id}" oninput="editItemText('${item.id}', this.value)" placeholder="Write the response here, or use the buttons below…">${esc(String(o._draft || ''))}</textarea>
-  <div id="bw-assist-${item.id}"></div>
-  <div class="bw-actions">
-    <button class="btn btn-ghost btn-sm" onclick="sectionAssist('${item.id}','draft')">✨ Draft this with AI</button>
-    <button class="btn btn-ghost btn-sm" onclick="sectionAssist('${item.id}','tighten')">Tighten language</button>
-    <button class="btn btn-ghost btn-sm" onclick="sectionAssist('${item.id}','compliance')">Check RFP compliance</button>
-    <button class="btn btn-ghost btn-sm" onclick="markItemReviewed('${item.id}')">✓ Mark reviewed</button>
-  </div>` : '';
-  if (!g) {
-    const pill = writing ? '<span class="section-confidence conf-generated">Draft</span>' : '<span class="section-confidence conf-validate">Needs input</span>';
-    const intro = writing ? '' : `
-      <div class="bw-note">This response needs specifics only your team can confirm. IGI can turn the RFP's language into a few quick questions and draft the response from your answers, or you can draft it now and edit.</div>
-      <div id="bw-assist-${item.id}"></div>
-      <div class="bw-actions">
-        <button class="btn btn-primary btn-sm" id="bw-genq" onclick="generateGuided('${item.id}')">Generate guided questions →</button>
-        <button class="btn btn-ghost btn-sm" onclick="sectionAssist('${item.id}','draft')">✨ Draft this with AI</button>
-        <button class="btn btn-ghost btn-sm" onclick="startFreeform('${item.id}')">Write it myself</button>
-      </div>`;
-    return `<div class="bw-pane-head"><h3>${esc(item.title)}</h3>${pill}</div>${intro}${editor}`;
-  }
-  const answers = o._answers || [];
-  const qs = g.questions.map((qq, qi) => `
-    <div class="bw-q">
-      <div class="bw-q-prompt">${qi + 1}. ${esc(qq.prompt)}</div>
-      <div class="bw-q-opts">${(qq.options && qq.options.length ? qq.options : ['Yes', 'No']).map((opt, oi) =>
-        `<button class="bw-opt${answers[qi] === opt ? ' sel' : ''}" onclick="answerGuided('${item.id}',${qi},${oi})">${esc(opt)}</button>`).join('')}</div>
-    </div>`).join('');
-  const allAnswered = g.questions.length && g.questions.every((_, qi) => answers[qi] != null);
-  return `
-  <div class="bw-pane-head"><h3>${esc(item.title)}</h3><span class="section-confidence ${hasDraft ? 'conf-confirmed' : 'conf-validate'}">${hasDraft ? 'Drafted' : 'Answer to draft'}</span></div>
-  <div class="bw-qs">${qs}</div>
-  <div class="bw-actions">
-    <button class="btn btn-primary btn-sm"${allAnswered ? '' : ' disabled style="opacity:.5"'} onclick="composeGuided('${item.id}')">${hasDraft ? '↺ Re-draft from answers' : 'Draft response from answers'}</button>
-    ${writing ? '' : `<button class="btn btn-ghost btn-sm" onclick="startFreeform('${item.id}')">Skip the questions, write it myself</button>`}
-  </div>
-  ${editor}`;
-}
-
-async function generateGuided(id) {
-  const item = buildItems().find(it => it.id === id); if (!item) return;
-  const o = itemObj(item);
-  const btn = document.getElementById('bw-genq'); if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
-  try {
-    const r = await api('/proposal/guided-questions', { itemTitle: item.title, rfpText: S.rfpIntake?.rfpText || S.proposalContext?.rfpText || '' });
-    o._guided = { questions: Array.isArray(r.questions) ? r.questions : [] };
-    o._answers = [];
-  } catch (e) { alert('Could not generate questions: ' + e.message); }
+  if (!libraryDocFor(item.docType).doc) return;
+  setReviewed(item, !itemReviewed(item));
   refreshBuild();
 }
 
-function answerGuided(id, qi, oi) {
-  const item = buildItems().find(it => it.id === id); if (!item) return;
-  const o = itemObj(item); const g = o._guided; if (!g) return;
-  const opts = (g.questions[qi].options && g.questions[qi].options.length) ? g.questions[qi].options : ['Yes', 'No'];
-  o._answers = o._answers || []; o._answers[qi] = opts[oi];
-  touch(o); S.isDirty = true; refreshBuild();
-}
-
-async function composeGuided(id) {
-  const item = buildItems().find(it => it.id === id); if (!item) return;
-  const o = itemObj(item); const g = o._guided; if (!g) return;
-  const qa = g.questions.map((qq, qi) => ({ prompt: qq.prompt, answer: (o._answers || [])[qi] || '' }));
-  const pane = document.getElementById('bw-pane'); if (pane) pane.style.opacity = '.5';
-  try {
-    const r = await api('/proposal/guided-compose', { itemTitle: item.title, qa, rfpText: S.rfpIntake?.rfpText || '' });
-    o._draft = r.draft || ''; o._done = true; if (o._status !== 'complete') delete o._status;
-    o._answeredBy = S.rfpIntake?.aeEmail || S.rfpIntake?.aeName || 'user';
-    o._answeredAt = new Date().toISOString();
-    S.isDirty = true;
-  } catch (e) { alert('Draft failed: ' + e.message); }
-  refreshBuild();
-}
-
-// Phase 7 — Finalize / prose assembler
-// Phase E: assemble every COMPLETE item into one markdown kit; edit in-platform; export PDF.
+// Finalize: every reviewed item, Proposal Content first, then the standing documents.
 function assembleMarkdown() {
   const items = buildItems(); const c = S.proposalContext.client;
   const parts = [`# ${c.name} — Proposal`, `_${c.market || ''}${c.aeName ? ' · Prepared by ' + c.aeName : ''}_\n`];
-  items.forEach(it => {
-    if (itemProgress(it) < 100) return;
-    const o = itemObj(it);
-    if (it.type === 'table' && o._table && o._table.rows.length) {
-      const t = o._table;
-      parts.push(`## ${it.title}\n\n| ${t.cols.join(' | ')} |\n| ${t.cols.map(() => '---').join(' | ')} |\n${t.rows.map(r => `| ${r.join(' | ')} |`).join('\n')}\n`);
-    } else if (it.type === 'A') {
-      const doc = libraryDocFor(it.docType).doc;
-      const conf = (o._confirmed && Array.isArray(o._fields))
-        ? o._fields.filter(f => String(f.value || '').trim()).map(f => `- **${f.label}:** ${f.value}`).join('\n') : '';
-      parts.push(`## ${it.title}\n\n${doc ? docLabel(doc) + ' (attached as a separate file).' : 'Attached separately.'}\n${conf ? '\n' + conf + '\n' : ''}`);
-    } else {
-      let content = (o._draft || o.content || '').trim();
-      content = content.replace(/^#{1,6}\s+.*(?:\r?\n)+/, '');   // drop a leading heading the model may have added (avoids doubled title)
-      if (content.trim()) parts.push(`## ${it.title}\n\n${content.trim()}\n`);
+  const order = [...items.filter(i => i.band === 'Proposal Content'), ...items.filter(i => i.band === 'Submission')];
+  order.forEach(it => {
+    if (it.kind === 'submission' || it.kind === 'deadline' || !itemReviewed(it)) return;
+    const o = itemObj(it) || {};
+    const add = body => { if (String(body || '').trim()) parts.push(`## ${it.title}\n\n${String(body).trim()}\n`); };
+    switch (it.kind) {
+      case 'table': {
+        const t = o._table;
+        if (t && t.rows.length) add(`| ${t.cols.join(' | ')} |\n| ${t.cols.map(() => '---').join(' | ')} |\n${t.rows.map(r => `| ${r.join(' | ')} |`).join('\n')}`);
+        break;
+      }
+      case 'doc': {
+        const doc = libraryDocFor(it.docType).doc;
+        const conf = (o._confirmed && Array.isArray(o._fields))
+          ? o._fields.filter(f => String(f.value || '').trim()).map(f => `- **${f.label}:** ${f.value}`).join('\n') : '';
+        add(`${doc ? docLabel(doc) + ' (attached as a separate file).' : 'Attached separately.'}${conf ? '\n\n' + conf : ''}`);
+        break;
+      }
+      case 'link': add(`Townsquare Ignite's standard Terms of Service apply: ${TERMS_URL}`); break;
+      case 'security': { const d = securityDocs().doc; add(d ? `${docLabel(d)} (attached as a separate file).` : 'Provided separately.'); break; }
+      case 'locked': add(identityOverview()); break;
+      case 'team': add((o._team || []).map(m => `- **${m.name}**${m.role ? ', ' + m.role : ''}${safeUrl(m.linkedin) ? ' (' + safeUrl(m.linkedin) + ')' : ''}`).join('\n')); break;
+      case 'files': add('Case studies are attached as separate files:\n\n' + (o._files || []).map(f => '- ' + f.name).join('\n')); break;
+      case 'pricing': {
+        if (pricingItemized(it)) add(PRICE_FIELDS.map(([k, l]) => `- **${l}:** ${(o._fees || {})[k] || ''}`).join('\n'));
+        else { const t = _pricedMediaTable(); add('Pricing follows the Media Plan in this proposal' + (t ? `, a total investment of $${Math.round(t.total).toLocaleString('en-US')}.` : '.')); }
+        break;
+      }
+      // Drop a leading heading the model may have added, and keep its inner headings below the item title.
+      default: add(itemText(it).trim().replace(/^#{1,6}\s+.*(?:\r?\n)+/, '').replace(/^#{1,2}(?=\s)/gm, '###'));
     }
   });
-  if (parts.length <= 2) parts.push('_No items marked complete yet — check items off in the RFP Checklist to include them here._');
+  if (parts.length <= 2) parts.push('_No items marked reviewed yet. Mark items reviewed on the left to include them here._');
   return parts.join('\n');
 }
 // ═══ pr9 part 2 — Insertion Order + Ops-Handoff exports (from the priced media plan) ═══════════════
 // Turns the priced Media Plan table into signable/actionable docs, reusing the export modal (Download .md / PDF).
 function _pricedMediaTable() {
-  const hosts = buildItems().filter(it => it.type === 'table').map(it => itemObj(it));
+  const hosts = buildItems().filter(it => it.kind === 'table').map(it => itemObj(it));
   const sec = hosts.find(s => s && s._table && Array.isArray(s._table.rows)
     && s._table.rows.some(r => (r || []).some(c => String(c || '').trim())));
   if (!sec) return null;
@@ -2782,9 +3437,9 @@ async function loadSOW() {
   const c = (S.proposalContext && S.proposalContext.client) || {};
   const cf = (S.qualification || {}).campaignFlight || {};
   const flight = cf.label || [cf.start, cf.end].filter(Boolean).map(fmtDateText).join(' to ') || '';
-  const sections = buildItems().filter(it => it.type === 'B' || it.type === 'C')
-    .map(it => { const o = itemObj(it) || {}; return { title: it.title, content: String(o._draft || o.content || '') }; })
-    .filter(x => x.content.trim() && !/didn't auto-generate/i.test(x.content));
+  const sections = buildItems().filter(it => it.kind === 'text')
+    .map(it => ({ title: it.title, content: itemText(it) }))
+    .filter(x => x.content.trim());
   let n = null;
   try {
     n = await api('/proposal/sow', {
@@ -2844,7 +3499,7 @@ function _basicSowMd() {
 }
 
 function finalizeProposal() {
-  if (S.rfpId) saveRfpState('ready'); // pr-v2-7: reaching finalize means the draft is ready to submit
+  if (S.rfpId) { clearTimeout(_rfpSaveTimer); saveRfpState(allRequiredReviewed() ? 'ready' : 'building'); }
   S.finalMd = assembleMarkdown();
   _modalSeq++;
   const ta = document.getElementById('export-modal-body'); if (ta) ta.value = S.finalMd;
@@ -2990,12 +3645,17 @@ async function buildDeck() {
   const ctx = S.proposalContext; if (!ctx) return;
   const c = ctx.client || {};
   const secs = [];
-  (S.rfpSections || []).forEach(s => {
-    if (s._table) { secs.push({ kind: 'media', title: s.title || 'Media Plan' }); }
-    else { const content = (s._draft || s.content || ''); if (content.trim()) secs.push({ kind: 'text', title: s.title, content }); }
-  });
   const t = _pricedMediaTable();
-  if (t && !secs.some(x => x.kind === 'media')) secs.push({ kind: 'media', title: t.title });   // table lives on a requirement
+  if (ctx.entryPoint === 'rfp' && Array.isArray(S.rfpSections)) {
+    buildItems().filter(it => it.band === 'Proposal Content').forEach(it => {
+      const o = itemObj(it) || {};
+      if (it.kind === 'table') { if (t && !secs.some(x => x.kind === 'media')) secs.push({ kind: 'media', title: it.title }); return; }
+      const content = it.kind === 'text' ? itemText(it) : it.kind === 'locked' ? identityOverview()
+        : it.kind === 'team' ? (o._team || []).map(m => m.name + (m.role ? ', ' + m.role : '')).join('\n') : '';
+      if (content.trim()) secs.push({ kind: 'text', title: it.title, content });
+    });
+  }
+  if (t && !secs.some(x => x.kind === 'media')) secs.push({ kind: 'media', title: t.title });
   const media = t ? { rows: t.rows, total: t.total } : null;
   const cf = (S.qualification || {}).campaignFlight || {};
   let flight = cf.label || [cf.start, cf.end].filter(Boolean).map(x => { try { return fmtDate(x); } catch (e) { return x; } }).join(' – ') || '';
@@ -3411,6 +4071,7 @@ function attachWorkspace() {
   if (isRfp) {
     // Guided Build Workspace (Phase 4) — load the document library once for Type-A auto-attach (Phase 5).
     loadLibraryDocs('workspace');
+    loadIdentity();
     return;
   }
   const first = document.getElementById('sc-executiveSummary');
@@ -3929,15 +4590,18 @@ Object.assign(window, {
   proceedToBuild, updateReqStatus, toggleRfpEdit, saveRfpEdit,
   logPitchAndBuild, logPass, connectPartner, fmtDate,
   selectBuildItem, editRfpSection, markSectionReviewed, regenRfpSection,
-  attachLibraryDoc, markReqManual, generateGuided, answerGuided, composeGuided,
+  attachLibraryDoc, markReqManual,
   finalizeProposal, openPartnerDirectory,
   loadRfps, resumeRfp, saveRfpState,
   uploadReqDoc, buildQuestionsMailto,
-  toggleItemComplete, renderBuildChecklist,
+  toggleItemComplete,
   sectionAssist, applySectionAssist, sendItemChat,
   editTableCell, addTableRow, removeTableRow, generateMediaPlan, validateMediaPlan,
   downloadFinalMd, exportFinalPdf, exportFinalPdfFor, openSow, ackItem, markItemReviewed, hostById,
-  setItemStatus, editItemText, startFreeform, insertChatReply, reviewMediaPlan, editScanField, confirmScan, loadDocFields,
+  setItemStatus, editItemText, insertChatReply, reviewMediaPlan, editScanField, confirmScan, loadDocFields,
+  toggleReviewed, setAskOpen, loadIdentity, toggleTeamForm, addTeamMember, removeTeamMember,
+  pickCaseFiles, addCaseFile, removeCaseFile, editFee, toggleItemized, useMediaTotal,
+  setFmt, confirmFormat, pickTemplateFile, clearTemplateFile, buildItems, itemById, itemReviewed, itemDrafted, itemEvidence,
   loadInsertionOrder, loadOpsHandoff, loadSOW,
   buildDeck, renderDeck, deckNav, exportDeckHtml, exportDeckPdf, exportDeckPptx,
 });
