@@ -856,8 +856,8 @@ function renderHome() {
     </div>
     <div class="entry-card" onclick="setView('form:discovery')">
       <div class="ec-icon">🔍</div>
-      <h3>From Discovery</h3>
-      <p>Turn a Discovery Brief into a proposal — pull from IGI Discovery automatically, or fill in what you learned on the call.</p>
+      <h3>From Recon</h3>
+      <p>Turn a Recon brief into a proposal — pull from IGI Recon automatically, or fill in what you learned on the call.</p>
       <span class="ec-badge">Richest output</span>
     </div>
     <div class="entry-card" onclick="setView('form:rfp')">
@@ -1011,20 +1011,20 @@ function renderFormDisc() {
   return `
 <div class="form-wrap">
   <div class="form-header">
-    <h2>🔍 From Discovery</h2>
+    <h2>🔍 From Recon</h2>
     <p>Build a proposal from what was learned in a discovery session.</p>
   </div>
   <div class="sub-toggle">
-    <button id="tab-auto" class="active" onclick="switchDiscTab('auto')">Pull from IGI Discovery</button>
+    <button id="tab-auto" class="active" onclick="switchDiscTab('auto')">Pull from IGI Recon</button>
     <button id="tab-manual" onclick="switchDiscTab('manual')">Fill in what I learned</button>
   </div>
   <div id="form-error"></div>
 
   <!-- Auto: link to brief -->
   <div id="disc-auto">
-    <div class="alert alert-info" style="margin-bottom:20px;">If you ran IGI Discovery on this prospect, paste the discovery brief domain or ID below — IGI will pull the context automatically.</div>
+    <div class="alert alert-info" style="margin-bottom:20px;">If you ran IGI Recon on this prospect, paste the Recon brief domain or ID below — IGI will pull the context automatically.</div>
     <div class="form-group">
-      <label>Prospect Domain (from IGI Discovery) <span>*</span></label>
+      <label>Prospect Domain (from IGI Recon) <span>*</span></label>
       <input id="da-domain" type="text" placeholder="e.g. riverhvac.com" />
     </div>
     <div class="form-row">
@@ -1226,7 +1226,7 @@ async function submitDiscAuto() {
 
   // Fetch the discovery brief from Intel Engine
   setView('generating');
-  updateGenStep(0, 'Fetching Discovery Brief…');
+  updateGenStep(0, 'Fetching the Recon brief…');
   let discoveryBrief = null;
   try {
     discoveryBrief = await api('/discovery/brief', { domain, market, aeName });
@@ -1985,7 +1985,7 @@ const SECTION_DEFS = [
 function renderWorkspace() {
   const ctx = S.proposalContext;
   const c   = ctx.client;
-  const epLabel = { fresh: 'Start Fresh', discovery_auto: 'Discovery', discovery_manual: 'Discovery (Manual)', rfp: 'RFP' };
+  const epLabel = { fresh: 'Start Fresh', discovery_auto: 'Recon', discovery_manual: 'Recon (Manual)', rfp: 'RFP' };
   const epClass = { fresh: 'badge-fresh', discovery_auto: 'badge-discovery', discovery_manual: 'badge-discovery', rfp: 'badge-rfp' };
 
   // Phase 4: RFP entry uses the guided two-pane Build Workspace (checklist-left / work-pane-right).
@@ -4400,7 +4400,7 @@ function renderLibrary() {
     const outcomeClass = { win: 'outcome-win', loss: 'outcome-loss', pending: 'outcome-pending', no_decision: 'outcome-pending' };
     const outcomeLabel = { win: '🏆 Won', loss: '❌ Lost', pending: '—', no_decision: '⏸ No Decision' };
     const outcome = p.outcome?.result || 'pending';
-    const typeLabel = { fresh: 'Start Fresh', discovery_auto: 'Discovery', discovery_manual: 'Discovery (Manual)', rfp: 'RFP' };
+    const typeLabel = { fresh: 'Start Fresh', discovery_auto: 'Recon', discovery_manual: 'Recon (Manual)', rfp: 'RFP' };
     return `
     <tr onclick="openProposal('${p.id}')">
       <td><strong>${esc(p.client?.name || '—')}</strong><br><span style="font-size:12px;color:var(--text-muted)">${esc(p.client?.market || '')}</span></td>
