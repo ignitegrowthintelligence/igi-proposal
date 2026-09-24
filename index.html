@@ -14,6 +14,18 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <!-- Presentation deck export: html2canvas for PDF fidelity (jsPDF + pptxgenjs already loaded above) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- tnw step 7: sign in, the same Firebase project and pattern as Recon -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script>
+  firebase.initializeApp({
+    apiKey:        "AIzaSyBAMYMSTML-jSF74KNzYFfx8e8sikTiB7s",
+    authDomain:    "re-ignite-planner.firebaseapp.com",
+    projectId:     "re-ignite-planner",
+    storageBucket: "re-ignite-planner.firebasestorage.app"
+  });
+  const auth = firebase.auth();
+</script>
 <style>
 :root {
   --cyan:       #00aebd;
@@ -621,11 +633,27 @@ button.d3-tab:hover { color: var(--text); }
 
 <div id="app"></div>
 
+<!-- tnw step 7: sign in (the client share view never shows this) -->
+<div id="login-screen" style="display:none;position:fixed;inset:0;z-index:400;background:var(--bg-page);align-items:center;justify-content:center;">
+  <div style="width:100%;max-width:380px;padding:36px 32px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);">
+    <div style="font-size:20px;font-weight:700;margin-bottom:6px;">IGI <span style="color:var(--cyan)">Proposal</span></div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:22px;">Sign in with your work email. We'll send you a login link.</div>
+    <div class="login-email-wrap">
+      <input id="login-email" type="email" placeholder="you@yourcompany.com" autocomplete="email"
+        style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg-sec);color:inherit;font-size:14px;margin-bottom:10px;"
+        onkeydown="if(event.key==='Enter')sendMagicLink()" />
+      <button class="btn btn-primary" id="btn-magic" style="width:100%" onclick="sendMagicLink()">Send Login Link →</button>
+    </div>
+    <div id="login-status" style="font-size:13px;margin-top:14px;min-height:18px;"></div>
+  </div>
+</div>
+
 <!-- Export dropdown -->
 <div id="export-menu" style="display:none;position:fixed;z-index:150;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:6px 0;min-width:160px;">
   <div onclick="exportPDF()"  style="padding:9px 16px;font-size:13px;cursor:pointer;" onmouseover="this.style.background='var(--bg-sec)'" onmouseout="this.style.background=''">📄 Export PDF</div>
   <div onclick="exportPPTX()" style="padding:9px 16px;font-size:13px;cursor:pointer;" onmouseover="this.style.background='var(--bg-sec)'" onmouseout="this.style.background=''">📊 Export PowerPoint</div>
-  <div onclick="copyShareLink()" style="padding:9px 16px;font-size:13px;cursor:pointer;" onmouseover="this.style.background='var(--bg-sec)'" onmouseout="this.style.background=''">🔗 Copy Share Link</div>
+  <div onclick="copyShareLink()" style="padding:9px 16px;font-size:13px;cursor:pointer;" onmouseover="this.style.background='var(--bg-sec)'" onmouseout="this.style.background=''">🔗 Share link (turns sharing on)</div>
+  <div onclick="stopSharing()" style="padding:9px 16px;font-size:13px;cursor:pointer;" onmouseover="this.style.background='var(--bg-sec)'" onmouseout="this.style.background=''">🚫 Stop sharing</div>
 </div>
 
 <!-- Modals -->
@@ -793,6 +821,188 @@ async function apiGet(path) {
   const j = await r.json();
   if (!r.ok) throw new Error(j.error || 'API error ' + r.status);
   return j;
+}
+
+// ─── Sign in (tnw step 7) ──────────────────────────────────────────────────────
+// Same pattern as Recon: the gate door signs in automatically through the engine's mint,
+// the public door gets a login link, every engine call carries the signed in person's own
+// ID token, /auth/session runs after a fresh sign in and the stale check on a restored one.
+// The client share view (#share/<id>) never asks anyone to sign in.
+const IN_PERIMETER = location.hostname === 'igi.aurastudio.tsq.ai';
+const ACTION_CODE_SETTINGS = { url: location.origin + location.pathname, handleCodeInApp: true };
+
+let _propIdToken = '';
+try {
+  auth.onIdTokenChanged(function (u) {
+    if (!u) { _propIdToken = ''; return; }
+    u.getIdToken().then(function (t) { _propIdToken = t || ''; }).catch(function () { _propIdToken = ''; });
+  });
+} catch (e) { console.warn('[Proposal] id token listener unavailable:', e && e.message); }
+// One fetch wrapper: the own ID token on every request to the engine, when someone is signed
+// in and the call does not already carry one. Nobody signed in: nothing added.
+(function () {
+  if (window.__igiPropFetchWrapped) return;
+  window.__igiPropFetchWrapped = true;
+  const origFetch = window.fetch.bind(window);
+  window.fetch = function (input, init) {
+    try {
+      const url = (typeof input === 'string') ? input : ((input && input.url) || '');
+      if (_propIdToken && url.indexOf(INTEL_BASE) === 0) {
+        const h = new Headers((init && init.headers) || (typeof input === 'object' && input && input.headers) || {});
+        if (!h.has('Authorization')) h.set('Authorization', 'Bearer ' + _propIdToken);
+        init = Object.assign({}, init || {}, { headers: h });
+      }
+    } catch (e) { /* never break a fetch over the token */ }
+    return origFetch(input, init);
+  };
+})();
+
+function _loginStatus(cls, text) {
+  const s = document.getElementById('login-status');
+  if (s) { s.style.color = cls === 'error' ? 'var(--red)' : (cls === 'success' ? 'var(--green)' : 'var(--text-muted)'); s.textContent = text; }
+}
+function showLogin(msg, cls) {
+  document.getElementById('login-screen').style.display = 'flex';
+  if (IN_PERIMETER) { const w = document.querySelector('#login-screen .login-email-wrap'); if (w) w.style.display = 'none'; }
+  if (msg) _loginStatus(cls || 'error', msg);
+}
+function hideLogin() { document.getElementById('login-screen').style.display = 'none'; }
+
+// POST /auth/session; 200 refreshes the token once. Returns false ONLY when the engine says
+// the account is not set up (signs out and says so); anything else logs and carries on.
+async function _propSession() {
+  const u = auth.currentUser;
+  if (!u) return true;
+  try {
+    const t = await u.getIdToken();
+    const r = await fetch(INTEL_BASE + '/auth/session', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + t }, body: '{}' });
+    if (r.status === 200) { await u.getIdToken(true); return true; }
+    const j = await r.json().catch(() => ({}));
+    if (r.status === 403 && j && j.error === 'not_provisioned') {
+      try { await auth.signOut(); } catch (e) {}
+      showLogin('Your account is not set up for this tool', 'error');
+      return false;
+    }
+    console.warn('[Proposal] /auth/session answered', r.status, (j && j.error) || '');
+  } catch (e) {
+    console.warn('[Proposal] /auth/session failed:', e && e.message);
+  }
+  return true;
+}
+// A restored session only calls it when the token has no tenantId claim or its claims are
+// older than 24 hours. At most once per page load.
+let _propRestoreChecked = false;
+async function _propSessionIfStale() {
+  if (_propRestoreChecked) return true;
+  _propRestoreChecked = true;
+  const u = auth.currentUser;
+  if (!u) return true;
+  try {
+    const res = await u.getIdTokenResult();
+    const c = (res && res.claims) || {};
+    const at = Number(c.claimsAt) || 0;
+    if (c.tenantId && at && (Date.now() / 1000 - at) < 24 * 3600) return true;
+  } catch (e) {
+    console.warn('[Proposal] token claims unreadable:', e && e.message);
+    return true;
+  }
+  return _propSession();
+}
+
+async function sendMagicLink() {
+  const email = (document.getElementById('login-email').value || '').trim().toLowerCase();
+  if (!email || !email.includes('@')) { _loginStatus('error', 'Please enter a valid email address.'); return; }
+  const btn = document.getElementById('btn-magic'); btn.disabled = true;
+  _loginStatus('', 'Sending…');
+  try {
+    await auth.sendSignInLinkToEmail(email, ACTION_CODE_SETTINGS);
+    window.localStorage.setItem('proposalEmailForSignIn', email);
+    _loginStatus('success', 'Check your inbox for the login link.');
+  } catch (e) {
+    _loginStatus('error', e.message || 'Could not send the link.');
+  } finally { btn.disabled = false; }
+}
+
+// Gate door: the engine's mint through the gate. Returns 'fresh', 'reused' or ''.
+async function _ssoFirebaseSignIn() {
+  if (!IN_PERIMETER) return '';
+  try {
+    let email = '';
+    try { const ui = await fetch('/oauth2/userinfo', { credentials: 'same-origin' }); if (ui.ok) email = ((await ui.json()).email || '').toLowerCase(); } catch (e) {}
+    const cur = auth.currentUser;
+    if (cur && email && String(cur.email || '').toLowerCase() === email) return 'reused';
+    const r = await fetch('/auth/firebase-token', { credentials: 'include' });
+    if (!r.ok) { console.warn('[Proposal] Firebase token mint failed:', r.status); return ''; }
+    const data = await r.json();
+    if (!data || !data.token) { console.warn('[Proposal] Firebase token mint returned no token'); return ''; }
+    await auth.signInWithCustomToken(data.token);
+    return 'fresh';
+  } catch (e) {
+    console.warn('[Proposal] Firebase sign-in unavailable:', e && e.message);
+    return '';
+  }
+}
+
+// Boot for the seller side: resolves true once someone is signed in and the app may render.
+function _waitForAuthState() {
+  return new Promise((resolve) => { const off = auth.onAuthStateChanged((u) => { off(); resolve(u); }); });
+}
+async function signInFlow() {
+  if (auth.isSignInWithEmailLink(window.location.href)) {
+    let email = window.localStorage.getItem('proposalEmailForSignIn');
+    if (!email) email = window.prompt('Please confirm your email to complete sign-in:');
+    if (!email) { showLogin(); return false; }
+    try {
+      await auth.signInWithEmailLink(email.trim().toLowerCase(), window.location.href);
+      window.localStorage.removeItem('proposalEmailForSignIn');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return await _propSession();
+    } catch (e) {
+      showLogin('Sign-in failed: ' + (e.message || 'Invalid or expired link.'), 'error');
+      return false;
+    }
+  }
+  await _waitForAuthState();
+  if (IN_PERIMETER) {
+    const how = await _ssoFirebaseSignIn();
+    if (!how) { showLogin('We could not sign you in to IGI. Please reload this page.', 'error'); return false; }
+    return how === 'fresh' ? _propSession() : _propSessionIfStale();
+  }
+  if (auth.currentUser) return _propSessionIfStale();
+  showLogin();
+  return false;
+}
+// A proposal-save arriving from the login link lands here after sign in completes.
+auth.onAuthStateChanged(function (u) {
+  if (u && document.getElementById('login-screen').style.display === 'flex' && !IN_PERIMETER && S.view !== 'share') {
+    _propSessionIfStale().then(function (ok) { if (ok) { hideLogin(); render(); } });
+  }
+});
+
+// The seller's own full proposal. Uses the engine's seller route; only while the engine does
+// not have that route yet (non JSON 404) it falls back to the old link route.
+async function loadFullProposal(id) {
+  const r = await fetch(INTEL_BASE + '/proposal/load', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-IGI-Auth': INTEL_SECRET, 'X-IGI-Source': 'proposal' },
+    body: JSON.stringify({ id }) });
+  const text = await r.text();
+  let j = null; try { j = JSON.parse(text); } catch (e) { j = null; }
+  if (r.status === 404 && !j) return apiGet('/proposal/' + id);   // engine not updated yet
+  if (!r.ok) throw new Error((j && j.error) || 'API error ' + r.status);
+  return j;
+}
+// Turn the public link on or off. Returns true when the engine accepted it; while the engine
+// has no share route yet, every saved proposal is already public, so that also counts.
+async function setSharing(enabled) {
+  const r = await fetch(INTEL_BASE + '/proposal/share', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-IGI-Auth': INTEL_SECRET, 'X-IGI-Source': 'proposal' },
+    body: JSON.stringify({ id: S.proposalId, enabled }) });
+  const text = await r.text();
+  let j = null; try { j = JSON.parse(text); } catch (e) { j = null; }
+  if (r.status === 404 && !j) return enabled;   // engine not updated yet: links are public
+  if (!r.ok) throw new Error((j && j.error) || 'API error ' + r.status);
+  return true;
 }
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
@@ -4233,8 +4443,9 @@ async function saveProposal() {
     });
     S.proposalId = result.id;
     S.isDirty    = false;
-    // Update URL hash for share link
-    window.location.hash = 'share/' + S.proposalId;
+    // tnw step 7: the address points back at the seller's own proposal, not the client link
+    // (a new proposal is not shared until the seller clicks Share).
+    window.location.hash = 'proposal/' + S.proposalId;
     showToast('Proposal saved ✓');
   } catch (err) {
     alert('Save error: ' + err.message);
@@ -4360,11 +4571,31 @@ function exportPPTX() {
   prs.writeFile({ fileName: (c.name || 'IGI_Proposal').replace(/\s+/g, '_') + '_Proposal.pptx' });
 }
 
-function copyShareLink() {
+// tnw step 7: a proposal has no public link until the seller clicks Share. Share turns the
+// link on and shows it to copy; Stop sharing turns it off (the link then refuses).
+async function copyShareLink() {
   document.getElementById('export-menu').style.display = 'none';
   if (!S.proposalId) { alert('Save the proposal first to generate a share link.'); return; }
   const url = window.location.origin + window.location.pathname + '#share/' + S.proposalId;
-  navigator.clipboard.writeText(url).then(() => showToast('Share link copied ✓'));
+  try {
+    await setSharing(true);
+    S.shareLinkEnabled = true;
+    try { await navigator.clipboard.writeText(url); } catch (e) {}
+    window.prompt('Sharing is ON. Anyone with this link can view the proposal (copied to your clipboard):', url);
+  } catch (err) {
+    alert('Could not turn sharing on: ' + err.message);
+  }
+}
+async function stopSharing() {
+  document.getElementById('export-menu').style.display = 'none';
+  if (!S.proposalId) { alert('This proposal has not been saved yet, so it has no link.'); return; }
+  try {
+    await setSharing(false);
+    S.shareLinkEnabled = false;
+    showToast('Sharing is OFF. The link no longer opens ✓');
+  } catch (err) {
+    alert('Could not turn sharing off: ' + err.message);
+  }
 }
 
 // ─── Proposals Library ────────────────────────────────────────────────────────
@@ -4429,7 +4660,8 @@ function renderLibrary() {
 
 async function openProposal(id) {
   try {
-    const data = await apiGet('/proposal/' + id);
+    const data = await loadFullProposal(id);   // tnw step 7: the seller's route, not the public link
+    S.shareLinkEnabled = !!data.shareLinkEnabled;
     S.proposalContext = data.proposalContext;
     S.sections        = data.sections;
     S.proposalId      = data.id;
@@ -4609,7 +4841,19 @@ Object.assign(window, {
 // ─── Boot ────────────────────────────────────────────────────────────────────────────
 try {
   checkShareLink();
-  if (S.view === 'home') render();
+  // tnw step 7: the client share view (#share/<id>) opens with no sign in, exactly as before.
+  // Everything else is the seller's side and signs in first.
+  if (S.view === 'home') {
+    signInFlow().then(function (ok) {
+      if (!ok) return;
+      hideLogin();
+      const m = (window.location.hash || '').match(/^#proposal\/(.+)$/);
+      if (m) openProposal(decodeURIComponent(m[1])); else render();
+    }).catch(function (e) {
+      console.error('[IGI Proposal] sign in error:', e);
+      showLogin('Sign in failed. Please reload this page.', 'error');
+    });
+  }
 } catch(e) {
   console.error('[IGI Proposal] Boot error:', e);
   document.getElementById('app').innerHTML = '<div class="empty-state" style="margin-top:60px;"><h3>Something went wrong</h3><p style="color:var(--red)">' + e.message + '</p></div>';
