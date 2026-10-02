@@ -831,29 +831,46 @@ async function apiGet(path) {
 const IN_PERIMETER = location.hostname === 'igi.aurastudio.tsq.ai';
 const ACTION_CODE_SETTINGS = { url: location.origin + location.pathname, handleCodeInApp: true };
 
-let _propIdToken = '';
-try {
-  auth.onIdTokenChanged(function (u) {
-    if (!u) { _propIdToken = ''; return; }
-    u.getIdToken().then(function (t) { _propIdToken = t || ''; }).catch(function () { _propIdToken = ''; });
-  });
-} catch (e) { console.warn('[Proposal] id token listener unavailable:', e && e.message); }
-// One fetch wrapper: the own ID token on every request to the engine, when someone is signed
-// in and the call does not already carry one. Nobody signed in: nothing added.
+// ppe (2 Oct 2026; vantage docs/plans/2026-10-02-enforce-the-rest.md section 3): a FRESH token on
+// every engine call. The wrapper used to attach a cached copy, which a laptop waking from sleep
+// sends expired (the engine logs via=bad reason=expired-token). Now, before each engine call, it
+// asks Firebase: getIdToken() returns the cached token, or refreshes it when under 5 minutes are
+// left, so a good token costs nothing. While sign in is still settling it waits, at most 3 s.
+// It REPLACES any Authorization on an engine call. Nobody signed in: nothing added, as before.
+// The client link (GET /proposal/<id>, no sign in) is passed through untouched and never waits.
+let _propAuthReadyResolve;
+const _propAuthReady = new Promise(function (r) { _propAuthReadyResolve = r; });
+try { const _off = auth.onAuthStateChanged(function () { _propAuthReadyResolve(); try { _off(); } catch (e) {} }); }
+catch (e) { _propAuthReadyResolve(); console.warn('[Proposal] auth state listener unavailable:', e && e.message); }
+async function _freshEngineToken() {
+  let u = auth.currentUser;
+  if (!u) { await Promise.race([_propAuthReady, new Promise(function (r) { setTimeout(r, 3000); })]); u = auth.currentUser; }
+  if (!u) return '';
+  try { return await u.getIdToken(); } catch (e) { return ''; }   // refreshes when < 5 min left
+}
 (function () {
   if (window.__igiPropFetchWrapped) return;
   window.__igiPropFetchWrapped = true;
   const origFetch = window.fetch.bind(window);
   window.fetch = function (input, init) {
+    let url = '', method = 'GET';
     try {
-      const url = (typeof input === 'string') ? input : ((input && input.url) || '');
-      if (_propIdToken && url.indexOf(INTEL_BASE) === 0) {
-        const h = new Headers((init && init.headers) || (typeof input === 'object' && input && input.headers) || {});
-        if (!h.has('Authorization')) h.set('Authorization', 'Bearer ' + _propIdToken);
-        init = Object.assign({}, init || {}, { headers: h });
-      }
-    } catch (e) { /* never break a fetch over the token */ }
-    return origFetch(input, init);
+      url = (typeof input === 'string') ? input : ((input && input.url) || '');
+      method = String((init && init.method) || (typeof input === 'object' && input && input.method) || 'GET').toUpperCase();
+    } catch (e) { return origFetch(input, init); }
+    if (url.indexOf(INTEL_BASE) !== 0) return origFetch(input, init);
+    const path = url.slice(INTEL_BASE.length).split('?')[0];
+    if (method === 'GET' && /^\/proposal\/[^/]+$/.test(path)) return origFetch(input, init);   // the client link
+    return _freshEngineToken().then(function (tok) {
+      try {
+        if (tok) {
+          const h = new Headers((init && init.headers) || (typeof input === 'object' && input && input.headers) || {});
+          h.set('Authorization', 'Bearer ' + tok);
+          init = Object.assign({}, init || {}, { headers: h });
+        }
+      } catch (e) { /* never break a fetch over the token */ }
+      return origFetch(input, init);
+    });
   };
 })();
 
