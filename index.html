@@ -1943,7 +1943,7 @@ function proceedToBuild() {
 // ─── Phase 2: pipeline logging + tag-driven CTAs ────────────────────────────────
 function fmtDate(d) {
   if (!d) return 'TBD';
-  const dt = new Date(d);
+  const dt = parseDue(d) || new Date(NaN);   // date-only values are calendar dates (parseDue), not midnight UTC
   if (isNaN(dt.getTime())) return esc(String(d));
   const hasTime = /\d{2}:\d{2}/.test(String(d));
   const opts = hasTime
