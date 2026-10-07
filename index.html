@@ -3246,7 +3246,7 @@ function _detected(item, key, fn) {
 }
 
 // Pricing: itemized only when the RFP asks for a breakdown of fees; otherwise the Media Plan is the pricing.
-const RX_ITEMIZE = /itemi[sz]e|broken out|break\s?-?\s?down (?:of|by)|fee (?:schedule|breakdown)|line[- ]items?\b|fees? and (?:mark-?ups?|commissions?)|mark-?ups?\b|(?:disclose|identify|list|state|detail)\w* (?:all |each |any )?(?:fees|costs)\b|(?:fees|costs) (?:must|shall|should|will) be (?:fully |clearly |separately )?(?:disclosed|identified|listed|itemized|broken out)|management fee|agency fee|creative fee|hourly rates?/i;
+const RX_ITEMIZE = /itemi[sz]e|broken out|break\s?-?\s?down (?:of|by)|fee (?:schedule|breakdown)|line[- ]items?\b|fees? and (?:mark-?ups?|commissions?)|mark-?ups?\b|(?:disclose|identify|list|state|detail)\w* (?:all |each |any )?(?:fees|costs)\b|(?:fees|costs) (?:must|shall|should|will) be (?:fully |clearly |separately )?(?:disclosed|identified|listed|itemized|broken out)|management fee|agency fee|creative fee|hourly rates?|(?:pric\w*|costs?|fees?|rates?|budgets?)\s+(?:by|per|for each|for every)\s+(?:channel|tactic|medium|media|line|item|category|platform|service|placement)|rate\s?-?cards?|detailed (?:pricing|costs?|fees|budget)|including (?:all |any )?(?:fees|costs)/i;
 const RX_ITEMIZE_STRONG = /itemi[sz]e|broken out|break\s?-?\s?down|fees? and mark-?ups?|(?:fees|costs) (?:must|shall|should|will) be|(?:disclose|identify|list|detail)\w* (?:all |each |any )?(?:fees|costs)\b/i;
 const RX_MONEYISH = /fee|cost|pric|budget|mark-?up|commission|rate|line items?|spend/i;
 const PRICE_FIELDS = [['management', 'Management Fee'], ['creative', 'Creative Fee'], ['other', 'Other Fees'], ['media', 'Media Cost']];
