@@ -885,27 +885,65 @@ function showLogin(msg, cls) {
 }
 function hideLogin() { document.getElementById('login-screen').style.display = 'none'; }
 
+// igi-session: begin (tnw Step 12; tests/session.test.mjs reads this block)
 // POST /auth/session; 200 refreshes the token once. Returns false ONLY when the engine says
 // the account is not set up (signs out and says so); anything else logs and carries on.
-async function _propSession() {
-  const u = auth.currentUser;
-  if (!u) return true;
+// tnw Step 12 (Justin, 22 Oct): a failure (5xx, the 10 s timeout, no network) is tried once
+// more; if that fails too and the token has no tenantId claim, the page says "Could not finish
+// signing in" with Try again, instead of loading with no Firestore access. A first call that
+// succeeds changes nothing.
+async function _propSessionOnce(u) {
   try {
     const t = await u.getIdToken();
     const r = await fetch(INTEL_BASE + '/auth/session', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + t }, body: '{}' });
-    if (r.status === 200) { await u.getIdToken(true); return true; }
-    const j = await r.json().catch(() => ({}));
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + t }, body: '{}',
+      signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(10000) : undefined });
+    if (r.status === 200) { await u.getIdToken(true); return 'ok'; }
+    const j = await r.json().catch(function () { return {}; });
     if (r.status === 403 && j && j.error === 'not_provisioned') {
       try { await auth.signOut(); } catch (e) {}
       showLogin('Your account is not set up for this tool', 'error');
-      return false;
+      return 'refused';
     }
     console.warn('[Proposal] /auth/session answered', r.status, (j && j.error) || '');
+    return r.status >= 500 ? 'failed' : 'other';
   } catch (e) {
     console.warn('[Proposal] /auth/session failed:', e && e.message);
+    return 'failed';
   }
-  return true;
+}
+async function _propHasTenantClaim(u) {
+  try { const c = ((await u.getIdTokenResult()) || {}).claims || {}; return typeof c.tenantId === 'string' && c.tenantId.length > 0; }
+  catch (e) { return false; }
+}
+// "Could not finish signing in", over the whole page; Try again reloads, which runs the session step again.
+function _propSessionStuck() {
+  const show = function () {
+    if (document.getElementById('igi-session-stuck')) return;
+    const d = document.createElement('div');
+    d.id = 'igi-session-stuck';
+    d.style.cssText = 'position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:#0d1117;color:#fff;font:15px/1.5 Inter,Arial,sans-serif;padding:24px;';
+    d.innerHTML = '<div role="alertdialog" aria-labelledby="igi-session-stuck-t" style="max-width:360px;text-align:center;">'
+      + '<div id="igi-session-stuck-t" style="font-size:1.15rem;font-weight:700;margin-bottom:8px;">Could not finish signing in</div>'
+      + '<div style="color:rgba(255,255,255,.65);margin-bottom:20px;">The sign in service did not answer. Check your connection, then try again.</div>'
+      + '<button type="button" style="background:#fff;color:#0d1117;border:0;border-radius:6px;padding:10px 22px;font:inherit;font-weight:600;cursor:pointer;">Try again</button></div>';
+    d.querySelector('button').addEventListener('click', function () { location.reload(); });
+    document.body.appendChild(d);
+  };
+  if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+}
+async function _propSession() {
+  const u = auth.currentUser;
+  if (!u) return true;
+  let got = await _propSessionOnce(u);
+  if (got === 'failed') {
+    await new Promise(function (r) { setTimeout(r, 1500); });
+    got = await _propSessionOnce(u);
+  }
+  if (got === 'refused') return false;
+  if (got === 'ok' || got === 'other' || await _propHasTenantClaim(u)) return true;
+  _propSessionStuck();
+  return new Promise(function () {});   // the page goes no further without its claim
 }
 // A restored session only calls it when the token has no tenantId claim or its claims are
 // older than 24 hours. At most once per page load.
@@ -926,6 +964,7 @@ async function _propSessionIfStale() {
   }
   return _propSession();
 }
+// igi-session: end
 
 async function sendMagicLink() {
   const email = (document.getElementById('login-email').value || '').trim().toLowerCase();

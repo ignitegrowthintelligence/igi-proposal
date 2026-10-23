@@ -22,3 +22,4 @@
 
 ## Freeze (2026-10-05)
 - **2026-10-05:** index.html is frozen from c193f328e5dc4d89f2be06b3708a667542bb895f (approved maintenance 5 Oct 2026: date only values shown as calendar dates; 6 Oct 2026: pricing detector catches by-channel pricing and rate cards) for the Vantage Proposal RFP port. Approved maintenance re pins the Vantage parity harness with a logged reason.
+- **2026-10-22:** tenant wall maintenance under the freeze (tnw Step 12, Justin's "retry once", 22 Oct; HOLD until Step 12): POST /auth/session that fails (5xx, the 10 s timeout, no network) is tried once more; if that fails too and the token has no tenantId claim, the page shows "Could not finish signing in" with Try again (a reload) instead of loading with no Firestore access. A first call that succeeds changes nothing. Branch tnw/s12-session-retry; tests/session.test.mjs. The Vantage parity harness re pins after the merge, reason: tnw Step 12 session retry.
